@@ -1,6 +1,9 @@
 # Plano de construção
 ## Análise de requisitos
 [Requisitos definido pelo professor](https://github.com/kyriosdata/construcao-2025-01/blob/main/docs/fut.md)
+Diagramas:
+- [Diagrama de contexto](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.puml))
+- [Diagrama de container](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.puml))
 
 <!-- Análise: Os requisitos são claros desde que você tenha alguma familiaridade com testes unitários. Porém, a falta de casos de testes e saídas esperadas dificulta o processo de compreensão e desenvolvimento do código e, como se trata de uma discoiplina de cnstrução, isso é problemático. -->
 ## Arquitetura (grandes componentes da aplicação a ser desenvolvida)
