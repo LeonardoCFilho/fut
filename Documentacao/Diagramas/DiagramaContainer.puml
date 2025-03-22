@@ -1,0 +1,32 @@
+@startuml Container
+!define C4Containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+' Título e subtítulo do diagrama
+title Diagrama de Containers - FUT
+
+Person(user, "Usuário do FUT", "Oráculo que interage com o sistema.")
+
+' Sistema principal (Frontend e Backend)
+Container_Boundary(FUT, "FUT") {
+    Container(gui, "Frontend (GUI)", "Streamlit", "Interface gráfica para usuários interagirem com o sistema e visualizarem relatórios.")
+    Container(cli, "Frontend (CLI)", "Python", "Interface de linha de comando para interação direta com o sistema.")
+    Container(test_manager, "Gerenciador de Casos de Teste", "Python", "Gerencia os casos de teste armazenados em diretórios YAML.")
+    Container(test_executor, "Executor de Testes", "Python", "Executa validações FHIR com o validator_cli.")
+    Container(result_compiler, "Compilador de Resultados", "Python", "Compara os resultados obtidos com os esperados e gera relatórios em HTML.")
+    Container(data_storage, "Armazenamento de dados", "YAML ou Banco de Dados", "Armazena resultados de testes e dados persistentes, se necessário.")
+}
+
+' Sistemas externos
+System_Ext(fhir_validator, "Validador FHIR", "Ferramenta de validação FHIR (validator_cli).")
+
+' Relações entre containers
+Rel(user, gui, "Interação via Interface Gráfica")
+Rel(user, cli, "Interação via Linha de Comando")
+Rel(gui, result_compiler, "Solicita relatórios processados")
+Rel(gui, test_manager, "Permite inserção e organização de casos de teste")
+Rel(cli, test_executor, "Executa testes diretamente")
+Rel(test_manager, test_executor, "Fornece contexto e instâncias de teste")
+Rel(test_executor, fhir_validator, "Executa validações com instâncias FHIR")
+Rel(result_compiler, data_storage, "Armazena e consulta resultados de testes")
+@enduml

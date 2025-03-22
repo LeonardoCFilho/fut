@@ -1,0 +1,18 @@
+@startuml Contexto
+!define ContextDiagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+' Título e subtítulo do diagrama
+title Diagrama de Contexto - FUT
+
+' Elementos do sistema
+Person(user, "Usuário do FUT", "Oráculo que interage com o sistema.")
+System(fut, "FUT", "Ferramenta para automação de testes unitários.")
+
+' Sistemas externos
+System_Ext(fhir_validator, "Validador FHIR", "Ferramenta de validação FHIR (validator_cli).")
+
+' Relações
+Rel(user, fut, "Interação via CLI ou GUI")
+Rel(fut, fhir_validator, "Envia instâncias para validação")
+@enduml
