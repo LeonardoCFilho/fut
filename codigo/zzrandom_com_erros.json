@@ -1,0 +1,112 @@
+{
+    "address": [
+        {
+            "city": "Randomville",
+            "line": [
+                "123 Random St."
+            ],
+            "postalCode": "99999999999999",
+            "state": XY
+        }
+    ],
+
+
+    "abracadabra" : 123,
+    "email": "user@invalid",
+
+
+    "birthDate": "5-06-15",
+    "gender": "unknown",
+    "maritalStatus": {
+  "coding": [
+    {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
+      "code": "M",
+      "display": "Married"
+    }
+  ]
+},
+"contact": [
+  {
+    "name": {
+      "family": "Smith",
+      "given": ["Jane"]
+    },
+    "telecom": [
+      {
+        "system": "phone",
+        "value": "+1-123-456-7890",
+      }
+    ],
+    "relationship": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0131",
+            "code": "k",
+            "display": "leo-dd-ester-mat"
+          }
+        ]
+      }
+    ]
+  }
+],
+"generalPractitioner": [
+  {
+    "reference": "Practitioner/12345"
+  }
+],
+"managingOrganization": {
+  "reference": "Organization/67890"
+},
+"communication": [
+  {
+    "language": {
+      "coding": [
+        {
+          "system": "urn:ietf:bcp:47",
+          "code": "en",
+          "display": "english"
+        }
+      ]
+    },
+    "preferred": true
+  }
+],
+"photo": [
+  {
+    "contentType": "image/jpeg",
+    "url": "http://example.com/photos/john_doe.jpg"
+  }
+],
+"deceasedBoolean": false,
+"multipleBirthBoolean": false,
+
+
+    "identifier": [
+        {
+            "system": "http://example.com/patient-id",
+            "value": "627144"
+        }
+    ],
+    "name": [
+        {
+            "family": "doe",
+            "given": [
+                "john"
+            ]
+        }
+    ],
+    "telecom": [
+        {
+            "system": "phone",
+            "value": "+1-9303340743",
+            "value": "+1-9303340743",
+            "value": "+1-9303340743",
+            "value": "+1-9303340743",
+            "value": "+1-9303340743",
+            "value": "Leonardo Cortes",
+        }
+    ],
+    "resourceType": "Patient"
+}
