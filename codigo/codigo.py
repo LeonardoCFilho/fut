@@ -3,9 +3,7 @@ import json
 
 caminho_do_arquivo_fhir_que_voce_quer_validar = "zzrandom_com_erros.json"
 
-# Esse validador não é fornecedio nessa pasta. Se você NÃO tiver ele, no grupo do trabalho (Ester e os amigos da Ester), há um zip
-# como nome "fabio". Dentro desse zip, há um arquivo chamado "validador_cli.jar". Copie esse arquivo e jogue DENTRO da pasta atual.
-# Depois, apenas rode o código. Na primeira execução, meu PC demorou 5min para rodar; na segunda, 3 min; na terceira, 40 segundos.
+# O validador não está nativamente contido nessa pasta, baixe-o aqui: https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar 
 caminho_do_jar_do_validador_fhir_que_voce_quer_usar = "validator_cli.jar" # se não for a 4.0.1 não vai funcionar
 
 # função que vai validar
