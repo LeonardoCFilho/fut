@@ -4,8 +4,122 @@
 Diagramas:
 - [Diagrama de contexto](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.puml))
 - [Diagrama de container](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.puml))  
+### Plano do framework
+#### Padrões esperados  
+- Entrada:  
+  - Arquivo de teste (YAML) que é armazenado em pastas com o prefixo 'Grupo', cada pasta 'Grupo' agrupará casos de teste de acordo com o context.
+    - Estrutura do arquivo de teste (YAML):
+    ```yaml
+    # Entrada
+    test_id: Patient-001  # Identificador unico para cada teste (string).
+    description: Verifica a estrutura básica do arquivo de um Patient. # Descricao (string).
+    context:  # Definição do contexto de validação.
+      igs:  # Lista dos Guias de Implementação (IGs).
+        - br-core-r4  # IDs dos IGs (lista de strings).
+      profiles:  # Lista de perfis (StructureDefinitions) aplicados
+        - br-patient  # IDs dos perfis ou URLs canônicas (lista de strings).
+      resources:  # (Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.).
+        - valuesets/my-valueset.json  # Caminho do arquivo ou o recurso embutido.
+    caminho_instancia: instances/patient_example.json  # Caminho para o arquivo a ser testado
+    # Parâmetros para a comparação
+    resultados_esperados:  # Define os resultados esperados de validação.
+      status: success  # Nível geral esperado ('success', 'error', 'warning', 'information').
+      erros: []  # Lista de erros esperados (lista vazia indica sucesso).
+      avisos: []  # Lista de avisos esperados.
+      informacoes: []  # Lista de mensagens informativas esperadas.
+      invariantes: # Opcional.
+        - expressao: "OperationOutcome.issues.count() = 0"
+          esperado: True # Opcional, padrão: True.
+    ```
+- Saída
+  - JSON contendo:
+    - Resultados dentro do esperado
+    - Resultado fora do esperado:
+      - Diferença imprevista
+      - Diferença prevista com categoria (error, warning, etc) errada
 
-<!-- Análise: Os requisitos são claros desde que você tenha alguma familiaridade com testes unitários. Porém, a falta de casos de testes e saídas esperadas dificulta o processo de compreensão e desenvolvimento do código e, como se trata de uma discoiplina de cnstrução, isso é problemático. -->
+#### Funcionamento do código  
+1. Download do validator_cli  
+    - Garantir que a versão mais recente
+      - Crawler para a versão mais recente 
+    - Permitir endereçamento pelo usuário  
+
+2. Busca do arquivo de teste  
+    - Receber um caminho absoluto ou nome
+      - Se um caminho absoluto for recebido:
+        - Procurar arquivo nesse endereço
+        - Se não for encontrado, tentar um arquivo JSON de mesmo nome
+      - Se não buscar na pasta 'Testes'
+      - Se ainda o arquivo não for encontrado enviar mensagem de erro
+
+3. Execução dos testes 
+    - Se o usuário enviar uma pasta (prefixo Grupo) testar todos os arquivos, caso apenas um arquivo (YAML ou JSON) seja enviado apenas ele será testado
+      - Ler o caso de teste (YAML, JSON)
+      - Validar se o formato é válido (todos campos obrigatórios estão presentes e preenchidos de maneira correta)
+      - Extração de context (IGs, perfis e recursos)
+      - Localização da instância (caminho_instancia)
+      - Executar validação 
+      - Criar logs e comparar os resultados
+    - Observacoes
+      - Implementar timeout
+      - Implementar paralelização, de modo que o usuário possa limitar a quantidade de processos simultâneos
+
+4. Comparação de resultados
+    - Separar resultados:
+      - Resultados dentro do esperado
+      - Resultados fora do esperado:
+        - Oráculo não previu o resultado
+        - Oráculo não previu o resultado na classificação correta (error, warning, etc)
+
+5. Gerar relatório
+    - HTML (para legibilidade) e JSON
+    - [Recomendação do professor para o HTML:](https://github.com/kyriosdata/construcao-2025-01/blob/main/docs/fut.md#5-report-generation)
+      - Sumário da execução
+        - Estatísticas de acerto
+        - Número dos resultados (total de 'error', 'warning', etc)
+        - Tempo de duração
+        - Tempo médio por teste
+        - Lista dos Grupos com os resultados
+          - Cada Grupo:
+            a. Nome
+            b. Estatisticas
+            c. Referência para o JSON do resultado 
+      - Para cada teste
+        - Identificação (id, context, etc)
+        - Instância formatada
+        - Resultados esperados
+        - Resultados obtidos
+        - Sumarização das diferenças
+        - Referência para o JSON do resultado ou resultado por escrito (opcional)
+
+6. Interface
+    - Dashboard.
+      - Quantidade de testes executados em um dado período (meses, semanas, etc)
+      - % de acertos por categoria
+      - % de erros por categoria 
+      - Media de duração de testes 
+    - Gerenciador de blocos (arquivos).
+      - Arquivos recentemente testados
+      - Arquivos salvos/referenciados
+    - Gerenciador de casos de teste (CRUD).
+      - Lista de testes (YAML) permitindo: Leitura, Edição e Deleção
+      - Opção de criar novo teste (com template)
+    - Execução de testes (seleção, progresso, resultado em tempo real).
+      - Previsão de conclusão
+      - Diferenças nos resultados esperados e os obtidos
+      - Exibição de um teste já executado
+    - Vizualização dos resultados (Navegação, filtros, comparação).
+      - Permitir a expansão de detalhes de cada teste
+      - Filtros
+        - Resultado previsto
+        - Resultado inesperado
+        - Número de erros
+    - Configurações.
+      - Opção para escolher o validador a ser utilizado
+      - Configurar tempo para timeout
+      - Configuração de threads
+      - Configuração de armazenamento
+<!-- Análise: Os requisitos são claros desde que você tenha alguma familiaridade com testes unitários. Porém, a falta de casos de testes e saídas esperadas dificulta o processo de compreensão e desenvolvimento do código e, como se trata de uma discoiplina de construção, isso é problemático. -->
 ## Arquitetura (grandes componentes da aplicação a ser desenvolvida)
 ### Frontend:
    - Interface Gráfica (GUI): Utilizar do Streamlit.
@@ -64,8 +178,8 @@ Diagramas:
 ## Estratégia para comunicação entre membros da equipe (discord, ...)
 Whatsapp
 ## Papel no projeto:
-Amanda: Testes
-Deivison: Frontend
-Ester: Full stack
-Leonardo: Líder
-Mateus: Backend
+Amanda: Testes  
+Deivison: Frontend  
+Ester: Full stack  
+Leonardo: Líder  
+Mateus: Backend  
