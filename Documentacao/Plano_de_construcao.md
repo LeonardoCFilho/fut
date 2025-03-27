@@ -1,9 +1,11 @@
 # Plano de construção
 ## Análise de requisitos
 [Requisitos definido pelo professor](https://github.com/kyriosdata/construcao-2025-01/blob/main/docs/fut.md)  
+
 Diagramas:
 - [Diagrama de contexto](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.puml))
 - [Diagrama de container](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.puml))  
+<!-- Análise: Os requisitos são claros desde que você tenha alguma familiaridade com testes unitários. Porém, a falta de casos de testes e saídas esperadas dificulta o processo de compreensão e desenvolvimento do código e, como se trata de uma disciplina de construção, isso é problemático. -->
 ### Plano do framework
 #### Padrões esperados  
 - Entrada:  
@@ -11,7 +13,7 @@ Diagramas:
     - Estrutura do arquivo de teste (YAML):
     ```yaml
     # Entrada
-    test_id: Patient-001  # Identificador unico para cada teste (string).
+    test_id: Patient-001  # Identificador único para cada teste (string).
     description: Verifica a estrutura básica do arquivo de um Patient. # Descricao (string).
     context:  # Definição do contexto de validação.
       igs:  # Lista dos Guias de Implementação (IGs).
@@ -33,8 +35,8 @@ Diagramas:
     ```
 - Saída
   - JSON contendo:
-    - Resultados dentro do esperado
-    - Resultado fora do esperado:
+    - Resultados esperado (escrito pelo Oráculo)
+    - Resultados inesperado:
       - Diferença imprevista
       - Diferença prevista com categoria (error, warning, etc) errada
 
@@ -49,13 +51,13 @@ Diagramas:
       - Se um caminho absoluto for recebido:
         - Procurar arquivo nesse endereço
         - Se não for encontrado, tentar um arquivo JSON de mesmo nome
-      - Se não buscar na pasta 'Testes'
-      - Se ainda o arquivo não for encontrado enviar mensagem de erro
+      - Se não: Buscar na pasta 'Testes'
+      - Se o arquivo ainda não for encontrado enviar mensagem de erro
 
 3. Execução dos testes 
     - Se o usuário enviar uma pasta (prefixo Grupo) testar todos os arquivos, caso apenas um arquivo (YAML ou JSON) seja enviado apenas ele será testado
       - Ler o caso de teste (YAML, JSON)
-      - Validar se o formato é válido (todos campos obrigatórios estão presentes e preenchidos de maneira correta)
+      - Validar se o formato é válido (os campos obrigatórios estejam presentes e preenchidos corretamente)
       - Extração de context (IGs, perfis e recursos)
       - Localização da instância (caminho_instancia)
       - Executar validação 
@@ -79,8 +81,8 @@ Diagramas:
         - Número dos resultados (total de 'error', 'warning', etc)
         - Tempo de duração
         - Tempo médio por teste
-        - Lista dos Grupos com os resultados
-          - Cada Grupo:
+        - Lista por pasta (Grupo) com os resultados
+          - Cada pasta:
             a. Nome
             b. Estatisticas
             c. Referência para o JSON do resultado 
@@ -92,7 +94,7 @@ Diagramas:
         - Sumarização das diferenças
         - Referência para o JSON do resultado ou resultado por escrito (opcional)
 
-6. Interface
+6. Interface (GUI)
     - Dashboard.
       - Quantidade de testes executados em um dado período (meses, semanas, etc)
       - % de acertos por categoria
@@ -105,9 +107,9 @@ Diagramas:
       - Lista de testes (YAML) permitindo: Leitura, Edição e Deleção
       - Opção de criar novo teste (com template)
     - Execução de testes (seleção, progresso, resultado em tempo real).
-      - Previsão de conclusão
+      - Tempo estimado de conclusão
       - Diferenças nos resultados esperados e os obtidos
-      - Exibição de um teste já executado
+      - Exibição dos detalhes de um teste já executado
     - Vizualização dos resultados (Navegação, filtros, comparação).
       - Permitir a expansão de detalhes de cada teste
       - Filtros
@@ -118,14 +120,14 @@ Diagramas:
       - Opção para escolher o validador a ser utilizado
       - Configurar tempo para timeout
       - Configuração de threads
-      - Configuração de armazenamento
-<!-- Análise: Os requisitos são claros desde que você tenha alguma familiaridade com testes unitários. Porém, a falta de casos de testes e saídas esperadas dificulta o processo de compreensão e desenvolvimento do código e, como se trata de uma discoiplina de construção, isso é problemático. -->
+      - Configuração de armazenamento  
+
 ## Arquitetura (grandes componentes da aplicação a ser desenvolvida)
 ### Frontend:
    - Interface Gráfica (GUI): Utilizar do Streamlit.
    - Relatórios: Geração de relatórios em formato HTML com a ajuda de templates como Jinja2, que podem ser visualizados na interface ou exportados.
 ### Backend:
-- Gerenciador de caso de teste:  Responsável por gerenciar os casos de teste, em uma estrutura de diretórios.
+- Gerenciador de caso de teste: Responsável por gerenciar os casos de teste, em uma estrutura de diretórios.
 - Executor de testes:
   - Realiza a execução do FHIR Validator.
   - Gerencia a execução paralela dos testes e o controle de tempo limite.
