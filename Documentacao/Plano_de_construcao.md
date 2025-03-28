@@ -13,23 +13,23 @@ Diagramas:
     - Estrutura do arquivo de teste (YAML):
     ```yaml
     # Entrada
-    test_id: Patient-001  # Identificador único para cada teste (string).
-    description: Verifica a estrutura básica do arquivo de um Patient. # Descricao (string).
+    test_id: Patient-001  # (Obrigatório) Identificador único para cada teste (string).
+    description: Verifica a estrutura básica do arquivo de um Patient. # (Recomendado) Descricao (string).
     context:  # Definição do contexto de validação.
-      igs:  # Lista dos Guias de Implementação (IGs).
+      igs:  # (Recomendado) Lista dos Guias de Implementação (IGs).
         - br-core-r4  # IDs dos IGs (lista de strings).
-      profiles:  # Lista de perfis (StructureDefinitions) aplicados
+      profiles:  # (Recomendado) Lista de perfis (StructureDefinitions) aplicados
         - br-patient  # IDs dos perfis ou URLs canônicas (lista de strings).
       resources:  # (Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.).
         - valuesets/my-valueset.json  # Caminho do arquivo ou o recurso embutido.
-    caminho_instancia: instances/patient_example.json  # Caminho para o arquivo a ser testado
+    caminho_instancia: instances/patient_example.json  #  (Obrigatório) Caminho para o arquivo a ser testado
     # Parâmetros para a comparação
-    resultados_esperados:  # Define os resultados esperados de validação.
-      status: success  # Nível geral esperado ('success', 'error', 'warning', 'information').
-      erros: []  # Lista de erros esperados (lista vazia indica sucesso).
-      avisos: []  # Lista de avisos esperados.
-      informacoes: []  # Lista de mensagens informativas esperadas.
-      invariantes: # Opcional.
+    resultados_esperados:  #  (Obrigatório) Define os resultados esperados de validação.
+      status: success  #  (Obrigatório) Nível geral esperado ('success', 'error', 'warning', 'information').
+      erros: []  #  (Obrigatório) Lista de erros esperados (lista vazia indica sucesso).
+      avisos: []  #  (Obrigatório) Lista de avisos esperados.
+      informacoes: []  #  (Obrigatório) Lista de mensagens informativas esperadas.
+      invariantes: # (Opcional)
         - expressao: "OperationOutcome.issues.count() = 0"
           esperado: True # Opcional, padrão: True.
     ```
@@ -100,17 +100,14 @@ Diagramas:
       - % de acertos por categoria
       - % de erros por categoria 
       - Media de duração de testes 
-    - Gerenciador de blocos (arquivos).
-      - Arquivos recentemente testados
-      - Arquivos salvos/referenciados
-    - Gerenciador de casos de teste (CRUD).
+    - Gerenciador de arquivos.
       - Lista de testes (YAML) permitindo: Leitura, Edição e Deleção
+        - Arquivos recentemente testados e/ou referenciados
       - Opção de criar novo teste (com template)
-    - Execução de testes (seleção, progresso, resultado em tempo real).
+    - Execução de testes e vizualização de resultados.
       - Tempo estimado de conclusão
       - Diferenças nos resultados esperados e os obtidos
       - Exibição dos detalhes de um teste já executado
-    - Vizualização dos resultados (Navegação, filtros, comparação).
       - Permitir a expansão de detalhes de cada teste
       - Filtros
         - Resultado previsto
