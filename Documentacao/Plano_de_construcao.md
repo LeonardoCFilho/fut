@@ -6,8 +6,8 @@ Diagramas:
 - [Diagrama de contexto](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.puml))
 - [Diagrama de container](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.puml))  
 <!-- Análise: Os requisitos são claros desde que você tenha alguma familiaridade com testes unitários. Porém, a falta de casos de testes e saídas esperadas dificulta o processo de compreensão e desenvolvimento do código e, como se trata de uma disciplina de construção, isso é problemático. -->
-### Plano do framework
-#### Padrões esperados  
+## Arquitetura (grandes componentes da aplicação a ser desenvolvida)
+### Padrões esperados  
 - Entrada:  
   - Arquivo de teste (YAML) que é armazenado em pastas com o prefixo 'Grupo', cada pasta 'Grupo' agrupará casos de teste de acordo com o context.
     - Estrutura do arquivo de teste (YAML):
@@ -40,7 +40,7 @@ Diagramas:
       - Diferença imprevista
       - Diferença prevista com categoria (error, warning, etc) errada
 
-#### Funcionamento do código  
+### Funcionamento do código  
 1. Download do validator_cli  
     - Garantir que a versão mais recente
       - Crawler para a versão mais recente 
@@ -117,13 +117,8 @@ Diagramas:
       - Opção para escolher o validador a ser utilizado
       - Configurar tempo para timeout
       - Configuração de threads
-      - Configuração de armazenamento  
-
-## Arquitetura (grandes componentes da aplicação a ser desenvolvida)
-### Frontend:
-   - Interface Gráfica (GUI): Utilizar do Streamlit.
-   - Relatórios: Geração de relatórios em formato HTML com a ajuda de templates como Jinja2, que podem ser visualizados na interface ou exportados.
-### Backend:
+      - Configuração de armazenamento
+### Arquitetura do backend
 - Gerenciador de caso de teste: Responsável por gerenciar os casos de teste, em uma estrutura de diretórios.
 - Executor de testes:
   - Realiza a execução do FHIR Validator.
@@ -133,15 +128,6 @@ Diagramas:
   - Geração de relatórios de resultados, utilizando Jinja2 para HTML e Plotly para gráficos interativos (se necessário).
   - Exportação em formatos como HTML e JSON.
 - Data Storage: Caso haja a necessidade de persistir resultados de testes para consultas futuras ou integração com outras ferramentas, pode ser implementado um banco de dados simples ou arquivos como JSON/YAML.
-<!-- ### 3. Componentes Modulares:
-   - Validator Interface: Camada de abstração entre o código e o validador FHIR, para facilitar a troca do validador ou a implementação de novas versões.
-   - Context Manager: Responsável por organizar e fornecer o contexto para os testes, como IGs (Implementation Guides), perfis (StructureDefinitions) e recursos adicionais (ValueSets, CodeSystems).
-   - Error Handling e Logging: Implementar uma estratégia robusta para tratar erros e registrar eventos importantes para troubleshooting, usando bibliotecas como logging.
-   - Parallelization: Suporte a execução paralela de testes para otimizar o tempo de execução, com controle cuidadoso do acesso a arquivos e gestão de concorrência. -->
-<!-- ### Arquitetura em Camadas:
-   - Camada de Apresentação (Frontend): Interface do usuário.
-   - Camada de Lógica de Negócio: Responsável por coordenar a execução dos testes, comparar resultados e gerar relatórios.
-   - Camada de Dados: Manipulação dos dados de entrada, resultados e persistência de dados (se necessário). -->
 ## Tecnologias
 - Linguagem: Python.
 - Interface gráfica: Streamlit.
