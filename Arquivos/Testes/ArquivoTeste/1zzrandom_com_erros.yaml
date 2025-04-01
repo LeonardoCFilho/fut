@@ -1,0 +1,19 @@
+test_id: Patient-001  # (Obrigatório) Identificador único para cada teste (string).
+description: Verifica a estrutura básica do arquivo de um Patient. # (Recomendado) Descricao (string).
+context:  # Definição do contexto de validação.
+  igs:  # (Recomendado) Lista dos Guias de Implementação (IGs).
+    - br-core-r4  # IDs dos IGs (lista de strings).
+  profiles:  # (Recomendado) Lista de perfis (StructureDefinitions) aplicados
+    - br-patient  # IDs dos perfis ou URLs canônicas (lista de strings).
+  resources:  # (Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.).
+    - valuesets/my-valueset.json  # Caminho do arquivo ou o recurso embutido.
+caminho_instancia: ../Json/zzrandom_com_erros.json  #  (Obrigatório) Caminho para o arquivo a ser testado
+# Parâmetros para a comparação
+resultados_esperados:  #  (Obrigatório) Define os resultados esperados de validação.
+  status: success  #  (Obrigatório) Nível geral esperado ('success', 'error', 'warning', 'information').
+  erros: []  #  (Obrigatório) Lista de erros esperados (lista vazia indica sucesso).
+  avisos: []  #  (Obrigatório) Lista de avisos esperados.
+  informacoes: []  #  (Obrigatório) Lista de mensagens informativas esperadas.
+  invariantes: # (Opcional)
+    - expressao: "OperationOutcome.issues.count() = 0"
+      esperado: True # Opcional, padrão: True.
