@@ -1,0 +1,5 @@
+# Não enviar o validator_cli (grande demais)
+Backend/validator_cli.jar
+
+# Não enviar o ambiente virtual (criação e uso depende do SO)
+.venv_fut/

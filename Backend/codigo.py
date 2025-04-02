@@ -1,7 +1,7 @@
 # Link do colab do código: https://colab.research.google.com/drive/1R8RTxAQ72TZ1_HfuM1KpnZw3b0XzbCNd#scrollTo=h3tl_P7uwiQy
 
 # temp
-caminho_do_arquivo_fhir_que_voce_quer_validar = "../Arquivos/Testes/ArquivosFHIR/zzrandom_com_erros.json"
+caminho_do_arquivo_fhir_que_voce_quer_validar = "Arquivos/Testes/ArquivosFHIR/zzrandom_com_erros.json"
 
 # Ideia: Função recebe uma url qualquer e tenta baixar um arquivo com nome/endereço enderecoArquivo
 # P.s.: Nome do arquivo precisa do tipo do arquivo (.jar, .tgz, etc), mandar caminho absoluto ou apenas o nome do arquivo (nesse caso será salvo na pasta 'Backend')
@@ -19,7 +19,7 @@ def baixaArquivoUrl(url, enderecoArquivo):
     #except requests.exceptions.RequestException as e:
     #    print(f"Erro no download: {e}")
     except Exception as e:
-        return e
+        raise e
 
 
 # Ideia: Função instala ou atualiza o validator_cli.jar
@@ -27,6 +27,12 @@ def baixaArquivoUrl(url, enderecoArquivo):
 def atualizarValidatorCli():
     linkDownloadValidator = "https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar"
     import os , zipfile, requests
+    # Garantindo que o validator será instalado no local correto (pasta Backend)
+    caminhoValidator = os.getcwd()
+    if not caminhoValidator.endswith("Backend"):
+        caminhoValidator = os.path.join(caminhoValidator, "Backend")
+    caminhoValidator = os.path.join(caminhoValidator, "validator_cli.jar")
+    # Iniciando as verificações
     if os.path.exists("validator_cli.jar"): # Verificar se já está instalado
         # Está instalado => verificar última versão
         # 1º verificar a versão do validator baixado
@@ -41,8 +47,8 @@ def atualizarValidatorCli():
                             versaoBaixada = linhaLegivel.split("orgfhir.version=")[1]
         # Erros, adicionar logging e alterar isso para o front depois
         except Exception as e:
-            return e
-        # Não deu erros até aqui => verificar última versão no git
+            raise e
+        # 2º verificar última versão no git
         try:
             api_url = "https://api.github.com/repos/hapifhir/org.hl7.fhir.core/releases/latest"
             # Criar request
@@ -55,15 +61,15 @@ def atualizarValidatorCli():
                 return response.status_code
         # Erros, adicionar logging e alterar isso para o front depois
         except Exception as e:
-            return e
-        # Comparar as versões
-        if versaoBaixada != versaoGit:
+            raise e
+        # 3º Verificar se foram encontradas, se sim compará-las
+        if (versaoBaixada and versaoGit) and versaoBaixada != versaoGit: # Há uma versão mais recente
             # Instalar a nova
             try: 
-                baixaArquivoUrl(linkDownloadValidator, "NOVOvalidator_cli.jar") # nome temporário (para não subscrever a versão antiga)
+                baixaArquivoUrl(linkDownloadValidator, caminhoValidator.replace("validator_cli.jar", "NOVOvalidator_cli.jar")) # nome temporário (para não subscrever a versão antiga)
             # Erros, adicionar logging e alterar isso para o front depois
             except Exception as e:
-                return e
+                raise e
             # Não deu erro => nova versão foi instalada
             if os.path.exists("NOVOvalidator_cli.jar"): # por segurança
                 # removendo a antiga
@@ -72,35 +78,44 @@ def atualizarValidatorCli():
                 os.rename("NOVOvalidator_cli.jar", "validator_cli.jar")
     else:
         # Não está instalado => fazer a instalação
-        try: 
-            baixaArquivoUrl(linkDownloadValidator, "validator_cli.jar")
+        try:
+            baixaArquivoUrl(linkDownloadValidator, caminhoValidator)
         # Erros, adicionar logging e alterar isso para o front depois
         except Exception as e:
-            return e
+            raise e
 
 # Ideia: Função recebe o caminho do validator_cli e um arquivo a ser testado
 # P.s.: Essa função apenas realiza o teste e retorna os resultados (Não faz limpeza na entrada nem da saída)
 def validarArquivoFhir(arquivoValidar: str, args = None, pathValidatorCli: str = None): # Eventualmente pathValidatorCli vai ter um valor padrão (caminho será armazenado no manifest)
-    import subprocess, os
+    import subprocess, os, time
     # Se é para usar o nosso validador padrão ou não
     if not pathValidatorCli: # Usuário não solicitou validator especial => usar o padrão (Estará na pasta backend)
         atualizarValidatorCli()
-        pathValidatorCli = "validator_cli.jar"
+        pathValidatorCli = "Backend/validator_cli.jar"
     # Iniciar a validação
     try:
-        # comando que será executado no subprocess
-        comando = ["java", "-jar", os.path.abspath(pathValidatorCli), os.path.abspath(arquivoValidar), "-output", "teste.json", "-version", "4.0.1"] # Version se refere ao tipo de padrão FHIR, não a versão do validator
-        if args: # Se context ter sido fornecido, args conterá os argumentos do contexto
-            comando += args # Espera-se que args seja uma string formatada ou uma lista de strings
-        # resultado da execução do subprocess
-        resultado = subprocess.run(comando, capture_output=True, text=True)
-        return resultado # Um json
+        if os.path.exists(arquivoValidar):
+            # comando que será executado no subprocess
+            comando = ["java", "-jar", os.path.abspath(pathValidatorCli), os.path.abspath(arquivoValidar), "-version", "4.0.1"] # Version se refere ao tipo de padrão FHIR, não a versão do validator
+            if args: # Se context ter sido fornecido, args conterá os argumentos do contexto
+                comando += args # Espera-se que args seja uma string formatada ou uma lista de strings
+            # resultado da execução do subprocess
+            start = time.time()
+            resultado = subprocess.run(comando, capture_output=True, text=True)
+            print(f"Arquivo validado em: {time.time()-start:.2f} segundos") # temp, exibir quantos segundos cada iteração levou
+            return resultado # Um json
+        else:
+            raise FileNotFoundError("Arquivo de entrada não foi encontrado")
     # Erros, adicionar logging e alterar isso para o front depois
     except Exception as e:
-        return None # Caso de erro, diagnóstico fácil
+        raise e # Caso de erro, diagnóstico fácil
 
-# Teste com um arquivo JSON/XML
-resultado = validarArquivoFhir(caminho_do_arquivo_fhir_que_voce_quer_validar)
+resultado = None
+try:
+    # Teste com um arquivo JSON/XML
+    resultado = validarArquivoFhir(caminho_do_arquivo_fhir_que_voce_quer_validar)
+except Exception as e:
+    print(e)
 
 # Abaixo, a saída da função validar_fhir é formatada para, dentro do dicionário dicio, capturar os campos: warning, error, note, fatal, dentre outros
 dicio = None

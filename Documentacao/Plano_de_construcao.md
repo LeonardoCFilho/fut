@@ -17,9 +17,9 @@ Diagramas:
     description: Verifica a estrutura básica do arquivo de um Patient. # (Recomendado) Descricao (string).
     context:  # Definição do contexto de validação.
       igs:  # (Recomendado) Lista dos Guias de Implementação (IGs).
-        - br-core-r4  # IDs dos IGs (lista de strings).
+        - br-core-r4  # IDs ou url dos IGs (lista de strings).
       profiles:  # (Recomendado) Lista de perfis (StructureDefinitions) aplicados
-        - br-patient  # IDs dos perfis ou URLs canônicas (lista de strings).
+        - br-patient  # IDs ou url dos perfis ou URLs canônicas (lista de strings).
       resources:  # (Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.).
         - valuesets/my-valueset.json  # Caminho do arquivo ou o recurso embutido.
     caminho_instancia: instances/patient_example.json  #  (Obrigatório) Caminho para o arquivo a ser testado
@@ -43,7 +43,7 @@ Diagramas:
 ### Funcionamento do código  
 1. Download do validator_cli  
     - Garantir que a versão mais recente
-      - Crawler para a versão mais recente 
+      - Verificar no git versão mais recente
     - Permitir endereçamento pelo usuário  
 
 2. Busca do arquivo de teste  
@@ -57,6 +57,7 @@ Diagramas:
 3. Execução dos testes 
     - Se o usuário enviar uma pasta (prefixo Grupo) testar todos os arquivos, caso apenas um arquivo (YAML ou JSON) seja enviado apenas ele será testado
       - Ler o caso de teste (YAML, JSON)
+        - Cada arquivo de teste obrigatoriamente contém uma instância a ser testada, não sendo permitido múltiplas instâncias no mesmo arquivo de teste
       - Validar se o formato é válido (os campos obrigatórios estejam presentes e preenchidos corretamente)
       - Extração de context (IGs, perfis e recursos)
       - Localização da instância (caminho_instancia)
@@ -117,17 +118,17 @@ Diagramas:
       - Opção para escolher o validador a ser utilizado
       - Configurar tempo para timeout
       - Configuração de threads
-      - Configuração de armazenamento
+      - Configuração de armazenamento  
 ### Arquitetura do backend
-- Gerenciador de caso de teste: Responsável por gerenciar os casos de teste, em uma estrutura de diretórios.
-- Executor de testes:
-  - Realiza a execução do FHIR Validator.
-  - Gerencia a execução paralela dos testes e o controle de tempo limite.
-- Compilador de resultados: 
-  - Compara os resultados obtidos pela validação com os resultados esperados definidos nos casos de teste.
-  - Geração de relatórios de resultados, utilizando Jinja2 para HTML e Plotly para gráficos interativos (se necessário).
-  - Exportação em formatos como HTML e JSON.
-- Data Storage: Caso haja a necessidade de persistir resultados de testes para consultas futuras ou integração com outras ferramentas, pode ser implementado um banco de dados simples ou arquivos como JSON/YAML.
+1. Gerenciador de caso de teste: Responsável por gerenciar os casos de teste, em uma estrutura de diretórios.
+2. Executor de testes:
+    - Realiza a execução do FHIR Validator.
+    - Gerencia a execução paralela dos testes e o controle de tempo limite.
+3. Compilador de resultados: 
+    - Compara os resultados obtidos pela validação com os resultados esperados definidos nos casos de teste.
+    - Geração de relatórios de resultados, utilizando Jinja2 para HTML e Plotly para gráficos interativos (se necessário).
+    - Exportação em formatos como HTML e JSON.
+4. Data Storage: Caso haja a necessidade de persistir resultados de testes para consultas futuras ou integração com outras ferramentas, pode ser implementado um banco de dados simples ou arquivos como JSON/YAML.
 ## Tecnologias
 - Linguagem: Python.
 - Interface gráfica: Streamlit.
