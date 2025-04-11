@@ -1,39 +1,35 @@
 # Link do colab do código: https://colab.research.google.com/drive/1R8RTxAQ72TZ1_HfuM1KpnZw3b0XzbCNd#scrollTo=h3tl_P7uwiQy
 
-# temp
-caminho_do_arquivo_fhir_que_voce_quer_validar = "Arquivos/Testes/ArquivosFHIR/zzrandom_com_erros.json"
+if __name__ == "__main__":
+    # pip freeze > Arquivos/requirements.txt
+    from pathlib import Path
+    # Caminhos utilizados no nosso projeto
+    pathFut = Path(__file__)  # Diretório do arquivo atual
+    while "fut" not in pathFut.name:  # Subir um nível se o diretório atual for 'fut'
+        pathFut = pathFut.parent
+    pathVenv = pathFut / ".venv-fut"
+    pathApps = pathFut / "Backend" / "apps.py"
 
-if __name__ == '__main__':
-    # Importar a classe para executar
-    from Classes.executor_teste import ExecutorTestes
-    executorDeTestes = ExecutorTestes()  
+    # Organizando o ambiente virtual
+    print("Configurando ambiente virtual...")
+    from setup import setupAmbienteVirtual
+    setupAmbienteVirtual(pathFut, pathVenv)
 
-    # Tentar executar o teste
-    resultado = None
-    try:
-        # Teste com um arquivo JSON/XML
-        resultado = executorDeTestes.validarArquivoFhir(caminho_do_arquivo_fhir_que_voce_quer_validar)
-    except Exception as e:
-        print(f"Erro: {e}")
-    
-    # Abaixo, a saída da função validar_fhir é formatada para, dentro do dicionário dicio, capturar os campos: warning, error, note, fatal, dentre outros
-    dicio = None
-    if resultado:
-        formatado = resultado.stdout.split("\n")
-        dicio = {'erro': [], 'warning': [], 'note': [], 'fatal': [], 'else': []}
-        for linha in formatado:
-            if 'warning @' in linha.lower():
-                dicio['warning'].append(linha)
-            elif 'error @' in linha.lower():
-                dicio['erro'].append(linha)
-            elif 'note @' in linha.lower():
-                dicio['note'].append(linha)
-            elif 'fatal @' in linha.lower():
-                dicio['fatal'].append(linha)
-            elif '@' in linha:
-                dicio['else'].append(linha)
-    if dicio:
-        import json
-        print(json.dumps(dicio, ensure_ascii=False, indent=4))
+    # Iniciar execução do programa (leitura do terminal)
+    print("Iniciando o sistema:")
+    import platform, sys, subprocess
+    # Lendo o terminal (entrada será transferida para apps.py)
+    args = sys.argv[1:]  # Ler args 
+    args_str = " ".join(args) if args else ''   # Converter para string (vazia ou não)
+    # Criando o comando de acordo com o SO (executar o codigo com o ambiente virtual)
+    soAtual = platform.system()
+    if soAtual == "Windows":
+        argsAmbienteVirtual = f"{pathVenv.resolve()}\\Scripts\\activate"
+        comandoMain = f'cmd /c "{argsAmbienteVirtual} & python {pathApps} {args_str}"'
     else:
-        print("Ocorreu algum erro")
+        argsAmbienteVirtual = f"bash -i -c 'source {pathVenv}/bin/activate"
+        comandoMain = f"{argsAmbienteVirtual} && python3 {pathApps} {args_str}'"  
+    try:   
+        subprocess.run(comandoMain, shell=True, check=True) # Executar o ambiente virtual e apps.py
+    except subprocess.CalledProcessError as e:
+        print(f"Erro: {e}")

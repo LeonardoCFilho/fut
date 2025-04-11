@@ -1,0 +1,96 @@
+{
+  "type": "object",
+  "properties": {
+    "test_id": {
+      "type": "string",
+      "description": "(Obrigatório) Identificador único para cada teste"
+    },
+    "description": {
+      "type": "string",
+      "description": "(Recomendado) Descricao"
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "igs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "(Recomendado) Lista dos Guias de Implementação (IGs)."
+          },
+          "description": "(Recomendado) Lista dos Guias de Implementação (IGs).",
+          "default": []
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "(Recomendado) Lista de perfis (StructureDefinitions) aplicados"
+          },
+          "description": "(Recomendado) Lista de perfis (StructureDefinitions) aplicados",
+          "default": []
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "(Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.)."
+          },
+          "description": "(Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.).",
+          "default": []
+        }
+      },
+      "description": "Definição do contexto de validação"
+    },
+    "caminho_instancia": {
+      "type": "string",
+      "description": "(Obrigatório) Caminho para o arquivo a ser testado"
+    },
+    "resultados_esperados": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["success", "error", "warning", "information"],
+          "description": "(Obrigatório) Nível geral esperado"
+        },
+        "erros": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "(Obrigatório/Opcional em success) Lista de erros esperados"
+          },
+          "description": "(Obrigatório/Opcional em success) Lista de erros esperados"
+        },
+        "avisos": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "(Obrigatório/Opcional em success) Lista de avisos esperados"
+          },
+          "description": "(Obrigatório/Opcional em success) Lista de avisos esperados"
+        },
+        "informacoes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "(Obrigatório/Opcional em success) Lista de mensagens informativas esperadas"
+          },
+          "description": "(Obrigatório/Opcional em success) Lista de mensagens informativas esperadas"
+        },
+        "invariantes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "(Opcional) Lista de invariantes"
+          },
+          "description": "(Opcional) Lista de invariantes"
+        }
+      },
+      "required": ["status", "erros", "avisos", "informacoes"],
+      "description": "(Obrigatório) Define os resultados esperados de validação."
+    }
+  },
+  "required": ["test_id", "caminho_instancia", "resultados_esperados"],
+  "additionalProperties": false
+}

@@ -1,8 +1,8 @@
 # Não enviar o validator_cli (grande demais)
 Backend/validator_cli.jar
-
-Backend/Classes/__pycache__
-
-# Arquivos temporários:
-Backend/teste.json
-template.yaml
+# Ambiente virtual é criado na máquina do usuário (garantir compatibilidade)
+.venv-fut
+# Arquivos de upload desnecessário (Criados durante execução)
+**/__pycache__
+# Arquivo de backup
+**/OLD*.*

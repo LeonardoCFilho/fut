@@ -5,7 +5,7 @@
 Diagramas:
 - [Diagrama de contexto](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.puml))
 - [Diagrama de container](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.png) ([Código gerador](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.puml))  
-<!-- Análise: Os requisitos são claros desde que você tenha alguma familiaridade com testes unitários. Porém, a falta de casos de testes e saídas esperadas dificulta o processo de compreensão e desenvolvimento do código e, como se trata de uma disciplina de construção, isso é problemático. -->
+
 ## Arquitetura (grandes componentes da aplicação a ser desenvolvida)
 ### Padrões esperados  
 - Entrada:  
@@ -17,24 +17,24 @@ Diagramas:
     description: Verifica a estrutura básica do arquivo de um Patient. # (Recomendado) Descricao (string).
     context:  # Definição do contexto de validação.
       igs:  # (Recomendado) Lista dos Guias de Implementação (IGs).
-        - br-core-r4  # IDs ou url dos IGs (lista de strings).
+        - br-core-r4  # IDs ou url dos IGs (Apenas 1 por linha).
       profiles:  # (Recomendado) Lista de perfis (StructureDefinitions) aplicados
-        - br-patient  # IDs ou url dos perfis ou URLs canônicas (lista de strings).
+        - br-patient  # IDs ou url dos perfis ou URLs canônicas (Apenas 1 por linha).
       resources:  # (Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.).
-        - valuesets/my-valueset.json  # Caminho do arquivo ou o recurso embutido.
-    caminho_instancia: instances/patient_example.json  #  (Obrigatório) Caminho para o arquivo a ser testado
+        - valuesets/my-valueset.json  # Caminho do arquivo ou o recurso embutido. (Apenas 1 por linha).
+    caminho_instancia: instances/patient_example.json  #  (Obrigatório) Caminho para o arquivo a ser testado (string)
     # Parâmetros para a comparação
     resultados_esperados:  #  (Obrigatório) Define os resultados esperados de validação.
       status: success  #  (Obrigatório) Nível geral esperado ('success', 'error', 'warning', 'information').
-      erros: []  #  (Obrigatório) Lista de erros esperados (lista vazia indica sucesso).
-      avisos: []  #  (Obrigatório) Lista de avisos esperados.
-      informacoes: []  #  (Obrigatório) Lista de mensagens informativas esperadas.
+      erros: []  #  (Obrigatório/Opcional em success) Lista de erros esperados (lista de string).
+      avisos: []  #  (Obrigatório/Opcional em success) Lista de avisos esperados (lista de string).
+      informacoes: []  #  (Obrigatório/Opcional em success) Lista de mensagens informativas esperadas (lista de string).
       invariantes: # (Opcional)
-        - expressao: "OperationOutcome.issues.count() = 0"
-          esperado: True # Opcional, padrão: True.
+        - expressao: "OperationOutcome.issues.count() = 0" #(string)
+          esperado: True # Resultado esperado (Booleano)
     ```
 - Saída
-  - JSON contendo:
+  - JSON ou HTML contendo:
     - Resultados esperado (escrito pelo Oráculo)
     - Resultados inesperado:
       - Diferença imprevista
@@ -44,26 +44,27 @@ Diagramas:
 1. Download do validator_cli  
     - Garantir que a versão mais recente
       - Verificar no git versão mais recente
-    - Permitir endereçamento pelo usuário  
+    - Permitir endereçamento pelo usuário (feito em configurações)
 
 2. Busca do arquivo de teste  
-    - Receber um caminho absoluto ou nome
-      - Se um caminho absoluto for recebido:
-        - Procurar arquivo nesse endereço
-        - Se não for encontrado, tentar um arquivo JSON de mesmo nome
-      - Se não: Buscar na pasta 'Testes'
-      - Se o arquivo ainda não for encontrado enviar mensagem de erro
+    - Permite arquivos individuais, por prefixo ou todos da pasta atual (entrada vazia)  
+      - Se um caminho for recebido:  
+        - Procurar arquivo nesse endereço  
+        - Se não for encontrado, tentar um arquivo JSON de mesmo nome  
+        - Se o arquivo ainda não for encontrado enviar mensagem de erro  
+      - Caso contrário buscar todos os arquivos .yaml na pasta atual que seguem os filtros recebidos  
 
 3. Execução dos testes 
-    - Se o usuário enviar uma pasta (prefixo Grupo) testar todos os arquivos, caso apenas um arquivo (YAML ou JSON) seja enviado apenas ele será testado
+    - Se o usuário não inserir dados especifícos todos os arquivos serão testados, caso arquivos individuais (YAML ou JSON) sejam enviados apenas eles serão testados, o mesmo é válido para entrada a partir de prefixo
       - Ler o caso de teste (YAML, JSON)
         - Cada arquivo de teste obrigatoriamente contém uma instância a ser testada, não sendo permitido múltiplas instâncias no mesmo arquivo de teste
       - Validar se o formato é válido (os campos obrigatórios estejam presentes e preenchidos corretamente)
       - Extração de context (IGs, perfis e recursos)
       - Localização da instância (caminho_instancia)
-      - Executar validação 
-      - Criar logs e comparar os resultados
-    - Observacoes
+      - Executar validação  
+        - Output será salva em uma pasta separada, a qual pode ser temporária dependendo da escolha do usuário (feito em configurações)
+        - Criar logs  
+    - Observações
       - Implementar timeout
       - Implementar paralelização, de modo que o usuário possa limitar a quantidade de processos simultâneos
 
@@ -75,23 +76,19 @@ Diagramas:
         - Oráculo não previu o resultado na classificação correta (error, warning, etc)
 
 5. Gerar relatório
-    - HTML (para legibilidade) e JSON
-    - [Recomendação do professor para o HTML:](https://github.com/kyriosdata/construcao-2025-01/blob/main/docs/fut.md#5-report-generation)
+    - HTML (para legibilidade) ou JSON
+    - [Recomendação do professor para o HTML:](https://github.com/kyriosdata/construcao-2025-01/blob/main/docs/fut.md#5-geração-de-relatórios)
       - Sumário da execução
+        - Data e hora da execução
         - Estatísticas de acerto
         - Número dos resultados (total de 'error', 'warning', etc)
         - Tempo de duração
         - Tempo médio por teste
-        - Lista por pasta (Grupo) com os resultados
-          - Cada pasta:
-            a. Nome
-            b. Estatisticas
-            c. Referência para o JSON do resultado 
       - Para cada teste
-        - Identificação (id, context, etc)
-        - Instância formatada
+        - Identificação (id, description e context)
+        - Instância (formatada)
         - Resultados esperados
-        - Resultados obtidos
+        - Resultados obtidos (tabela com diagnósticos, localização e severidade do OperationOutcome)
         - Sumarização das diferenças
         - Referência para o JSON do resultado ou resultado por escrito (opcional)
 
@@ -116,9 +113,11 @@ Diagramas:
         - Número de erros
     - Configurações.
       - Opção para escolher o validador a ser utilizado
-      - Configurar tempo para timeout
-      - Configuração de threads
+      - Opção para manter o .json resultado do validator_cli
+      - Configurar tempo para timeout (em segundos)
+      - Configuração de threads (número máximo permitido)
       - Configuração de armazenamento  
+
 ### Arquitetura do backend
 1. Gerenciador de caso de teste: Responsável por gerenciar os casos de teste, em uma estrutura de diretórios.
 2. Executor de testes:
@@ -146,9 +145,6 @@ Diagramas:
 ### Geração de Dados de Teste:
   - A aplicação deve ser capaz de gerar dados de teste válidos para cada recurso FHIR.
   - Critério de Aceitação: Os dados gerados devem passar na validação de estrutura FHIR.
-<!-- ### Suporte a Grandes Volumes de Dados:
-  - A aplicação deve ser capaz de lidar com grandes volumes de dados FHIR (ex.: validação de lote de recursos).
-  - Critério de Aceitação: A aplicação consegue validar um lote de 1000 recursos FHIR em menos de 10 segundos.  -->
 ### Documentação Clara (Caso seja feito uso do YAML):
   - A aplicação deve fornecer documentação detalhada sobre como configurar e usar as funcionalidades.
   - Critério de Aceitação: Um novo usuário consegue configurar e executar um teste unitário em menos de 30 minutos seguindo a documentação.
