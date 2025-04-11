@@ -202,9 +202,9 @@ class ExecutorTestes:
                 flagYamlValido = True # Arquivo é válido
             except jsonschema.exceptions.ValidationError as e:
                 # Aumentar feedback para o usuário dps
-                #print(e)
+                print(e)
                 flagYamlValido = False # Deu erro => arquivo é inválido
-                caminhoOutput = None
+                outputValidacao = [None, -1]
             
             # Se válido => testar o arquivo FHIR
             if flagYamlValido:
@@ -213,8 +213,8 @@ class ExecutorTestes:
                     argsArquivoFHIR = argsArquivoFHIR + " -ig ".join(data['context']['igs'])
                 if len(data['context']['profiles']) > 0:
                     argsArquivoFHIR = argsArquivoFHIR = " -profile ".join(data['context']['profiles'])
-                #if len(data['context']['resources']) > 0:
-                #    argsArquivoFHIR = argsArquivoFHIR + " ".join(data['context']['resources'])
+                if len(data['context']['resources']) > 0: # Aparentemente ig aceita (testar mais a fundo)
+                    argsArquivoFHIR = argsArquivoFHIR + " -ig ".join(data['context']['resources'])
                 outputValidacao = self.validarArquivoFhir(data['caminho_instancia'], args= argsArquivoFHIR)
 
             # Retornar os dados 
@@ -243,24 +243,26 @@ class ExecutorTestes:
         # Threads
         #concurrent.futures
         #import configparser
-
         # Ler a entrada
         if len(argsEntrada) == 0: # Ler a pasta inteira
             arquivosYaml = Path.cwd().glob('*.yaml')
         else: # Ler os arquivos em esepecífico
             arquivosYaml = [] # Lista para inserir todos os caminhos
+            # Garantir que a entrada é uma lista
+            if isinstance(argsEntrada, str):
+                argsEntrada = [argsEntrada]
+            # Ler argsEntrada inteira
             for pathArquivoValidar in argsEntrada:
+                # Endereçar o arquivo
                 pathArquivoAtual = Path(pathArquivoValidar)
                 if not pathArquivoAtual.is_absolute():
                     pathArquivoAtual = Path.cwd() / pathArquivoAtual
-
-                # Pesquisa por prefixo
-                if '*' in pathArquivoAtual.name:
-                    arquivosYaml += [file for file in pathArquivoAtual.parent.glob(f'{str(pathArquivoAtual.name).split("*")[0]}*.yaml') if file.is_file()]
-                # Sem prefixo
-                else: 
+                # Adicionar a lista
+                if pathArquivoAtual.suffix == ".yaml" and pathArquivoAtual.exists():
                     arquivosYaml.append(pathArquivoAtual)
-        #print(arquivosYaml)
+                elif pathArquivoAtual.with_suffix(".json").exists():
+                    arquivosYaml.append(pathArquivoAtual.with_suffix(".json"))
+
         # Iniciar a validação
         listaArquivosTeste = []
         for arquivoValidar in arquivosYaml:
@@ -272,4 +274,6 @@ class ExecutorTestes:
                 print(f"Erro ao validar arquivo: {e}")
 
         # Trigger para a criação do relatório final aqui
+        # temp
+        print(arquivosYaml)
         print(listaArquivosTeste)

@@ -18,3 +18,6 @@ Exemplo:
   ```bash  
   python Backend/main.py  --help
   ```
+
+### **Importante**
+No momento o relatório ainda não é criado, apenas uma pasta oculta chamada .temp-fut com os .json de output do validator_cli, a criação do relatório será implementada em breve
