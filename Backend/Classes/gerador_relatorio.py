@@ -2,8 +2,8 @@ import json # padrao
 import pathlib #padrao
 from datetime import datetime #padrao
 from copy import deepcopy #padrao
-from shutil import rmtree #padrao
 from yaml import safe_load
+from shutil import rmtree
 
 class GeradorRelatorios:
     chaves = {
@@ -89,7 +89,7 @@ class GeradorRelatorios:
             if not any(i in status_possiveis for i in ('error', 'fatal')) and status_esperado.strip() == 'success':
                 status_real = 'success'
             else:
-                status_real = next(item for item in status_possiveis if item in ('fatal', 'error', 'warning', 'information'))
+                status_real = next((item for item in status_possiveis if item in ('fatal', 'error', 'warning', 'information')), None)
             
             if status_real != status_esperado.strip():
                 status = False
@@ -141,11 +141,11 @@ class GeradorRelatorios:
                 relatorio_unitario['status_real'] = status_real
                 for item in in_congruencias:
                     if item[2] and item[3] == 0:
-                        relatorio_unitario['correspondencia'].append([item[0], item[1], *item[2]])
+                        relatorio_unitario['correspondencia'].append({'tipo':item[0], 'codigo':item[1], 'descricao': item[2][0], 'local': item[2][1]})
                     elif not item[2] and item[3] == 0:
-                        relatorio_unitario['discordancia']['issue_esperada_ausente_no_real'].append([item[0], item[1], None])
+                        relatorio_unitario['discordancia']['issue_esperada_ausente_no_real'].append({'tipo':item[0], 'codigo':item[1], 'descricao': None, 'local': None})
                     elif item[3] == 1:
-                        relatorio_unitario['discordancia']['issue_real_ausente_na_esperada'].append([item[0], item[1], *item[2]])
+                        relatorio_unitario['discordancia']['issue_real_ausente_na_esperada'].append({'tipo':item[0], 'codigo':item[1], 'descricao': item[2][0], 'local': item[2][1]})
                 
                 for chave in self.erros_esperados.keys():
                     dic_temp[f"%_{chave}_reais_acertados"] += quantidades[chave]
