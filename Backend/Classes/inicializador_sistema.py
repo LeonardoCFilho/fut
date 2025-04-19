@@ -39,5 +39,8 @@ class InicializadorSistema:
         # Não é absoluto => validator_cli padrão, endereçar com a pasta do nosso projeto
         if not pathValidator.is_absolute():
             pathValidator = self.pathFut / pathValidator
+            # Garante que o valitor_cli esteja instalado
+            from Classes.gerenciador_validator import GerenciadorValidator  
+            GerenciadorValidator.instalaValidatorCli(pathValidator)
         
         return pathValidator

@@ -1,7 +1,7 @@
 # Link do colab do código: https://colab.research.google.com/drive/1R8RTxAQ72TZ1_HfuM1KpnZw3b0XzbCNd#scrollTo=h3tl_P7uwiQy
 
 if __name__ == "__main__":
-    # pip freeze > Arquivos/requirements.txt
+    # source fut/.venv-fut/bin/activate && pip freeze > fut/Arquivos/requirements.txt && deactivate
     from pathlib import Path
     # Caminhos utilizados no nosso projeto
     pathFut = Path(__file__)  # Diretório do arquivo atual

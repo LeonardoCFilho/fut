@@ -1,3 +1,4 @@
+from pathlib import Path
 # Singleton
 class GerenciadorTestes:
   _instance = None
@@ -15,6 +16,34 @@ class GerenciadorTestes:
       GerenciadorTestes(pathFut)
     return GerenciadorTestes._instance
 
+  # Ideia: Faz download de um arquivo a partir de uma URL para o caminho especificado.
+  # P.s.: Especificar o tipo de arquivo no nome do arquivo
+  def baixaArquivoUrl(self, url, enderecoArquivo, maxTentativas = 3):
+    import requests
+    from asyncio import sleep
+    numTentativas = 0
+    while numTentativas < maxTentativas:
+      try:
+        # Iniciando request
+        response = requests.get(url, stream=True)
+        response.raise_for_status()  # Lança exceção em caso de erro
+  
+        # Iniciando download
+        enderecoArquivo = Path(enderecoArquivo)
+        with enderecoArquivo.open("wb") as arquivo_baixado:
+          for chunk in response.iter_content(chunk_size=8192):
+            arquivo_baixado.write(chunk)
+        return 
+  
+      # Caso de erro, adicionar logs
+      except Exception as e:
+        numTentativas += 1 # Contabilizar tentativa
+        if numTentativas < maxTentativas:
+          print(f"Erro na tentativa {numTentativas+1} de download, reiniciando...")
+          sleep(3)
+        else:
+          raise e
+                
     # Ideia: Cria um arquivo .yaml que segue o nosso template para caso de teste
     # P.s.: Referência para o template: https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md#padrões-esperados
   def criaTemplateYaml(self):
@@ -37,7 +66,7 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
   information: []  #  (Obrigatório) Lista de mensagens informativas esperadas (lista de string).
   invariantes:  # (Opcional)"""
     with open("template.yaml", "w", encoding="utf-8") as file:
-        file.write(templeteYaml)
+      file.write(templeteYaml)
 
   def iniciarSistema(self, args:list, versaoRelatorio = 'JSON'):
     from pathlib import Path
@@ -75,6 +104,8 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
     import concurrent.futures
     with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
       resultadosValidacao = list(executor.map(validarArquivo, listArquivosValidar))
+    
+    print("Testes finalizados!")
 
     #print("Arquivos encontrados:", listArquivosValidar)
     #print("Relatório de testes:", resultadosValidacao)
@@ -84,5 +115,6 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
     geradorRelatorio = GeradorRelatorios(resultadosValidacao)
     if versaoRelatorio.lower() == "json":
       geradorRelatorio.gerarRelatorioJson()
+      print("Relatório JSON criado!")
     #elif versaoRelatorio.lower() == "html":
     #  geradorRelatorio.gerarRelatorioHtml()

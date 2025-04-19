@@ -5,22 +5,40 @@ import subprocess
 import requests, zipfile
 from asyncio import sleep
 
+linkDownloadValidator = "https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar"
+
 class GerenciadorValidator(InicializadorSistema):
+    
     # Construtor
     def __init__(self, pathFut):
         super().__init__(pathFut)
+        
 
-    # Ideia: Instala ou atualiza o validator_cli.jar padrão
-    def atualizarValidatorCli(self):
-        linkDownloadValidator = "https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar"
+    # Ideia: Faz a instalação inicial do validator_cli
+    @classmethod
+    def instalaValidatorCli(cls, pathValidator):
+        from Classes.gerenciador_testes import GerenciadorTestes
+        if not pathValidator.exists(): # Evitar sobrescrita
+            try:
+                GerenciadorTestes.get_instance().baixaArquivoUrl(linkDownloadValidator, pathValidator)
+            except Exception as e:
+                raise e
+
+    # Ideia: Instala ou atualiza o validator_cli.jar 
+    def atualizarValidatorCli(self, pathValidator = None):
+        # Não foi especificado, usar nosso validator_cli
+        if not pathValidator:
+            pathValidator = self.pathValidator
+
+        from Classes.gerenciador_testes import GerenciadorTestes
         # Verificando se o validator já existe
-        if self.pathValidator.exists(): 
+        if pathValidator.exists(): 
             versaoBaixada = None
             versaoGit = None 
 
             # 1º Verifica a versão do arquivo baixado
             try:
-                with zipfile.ZipFile(self.pathValidator, 'r') as jar:
+                with zipfile.ZipFile(pathValidator, 'r') as jar:
                     with jar.open('fhir-build.properties') as manifest:
                         for linha in manifest:
                             linhaLegivel = linha.decode(errors="ignore").strip()
@@ -52,20 +70,17 @@ class GerenciadorValidator(InicializadorSistema):
             # 3º Compara as versões e atualiza se necessário
             if (versaoBaixada and versaoGit) and (versaoBaixada != versaoGit):
                 try:
-                    caminhoValidatorTemp = self.pathValidator.with_name("NOVOvalidator_cli.jar")
-                    self.baixaArquivoUrl(linkDownloadValidator, caminhoValidatorTemp)
+                    caminhoValidatorTemp = pathValidator.with_name("NOVOvalidator_cli.jar")
+                    GerenciadorTestes.get_instance().baixaArquivoUrl(linkDownloadValidator, caminhoValidatorTemp)
                 except Exception as e:
                     raise e
 
                 if caminhoValidatorTemp.exists():
-                    self.pathValidator.unlink()  # Remove o arquivo antigo
-                    caminhoValidatorTemp.rename(self.pathValidator)
+                    pathValidator.unlink()  # Remove o arquivo antigo
+                    caminhoValidatorTemp.rename(pathValidator)
         else:
             # Se o validator não estiver instalado, faz a instalação inicial
-            try:
-                self.baixaArquivoUrl(linkDownloadValidator, self.pathValidator)
-            except Exception as e:
-                raise e
+            self.instalaValidatorCli(pathValidator)
 
     # Ideia: Executa a validação do arquivo FHIR usando o validator_cli.jar.
     def validarArquivoFhir(self, arquivoValidar: Path, args=None):  
