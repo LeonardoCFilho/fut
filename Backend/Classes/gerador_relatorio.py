@@ -149,7 +149,7 @@ class GeradorRelatorios:
                 
                 for chave in self.erros_esperados.keys():
                     dic_temp[f"%_{chave}_reais_acertados"] += quantidades[chave]
-            relatorios[caminho_yaml] = relatorio_unitario
+            relatorios[str(caminho_yaml)] = relatorio_unitario
             relatorio_unitario = deepcopy(copia_relatorio_unitario)
 
         soma_parcial = sum(dic_temp.values())
