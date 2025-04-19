@@ -20,4 +20,4 @@ Exemplo:
   ```
 
 ### **Importante**
-No momento o relatório ainda não é criado, apenas uma pasta oculta chamada .temp-fut com os .json de output do validator_cli, a criação do relatório será implementada em breve
+No momento apenas o relatório JSON é criado, esse relatório será criado na pasta que o projeto é executado, sendo nomeado: relatorio_final_fut.json

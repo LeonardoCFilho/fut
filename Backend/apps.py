@@ -1,10 +1,15 @@
-import sys
 from pathlib import Path
 
 # Caminhos utilizados no nosso projeto
+maxIteracoes = 10
+numIteracoes = 0
 pathFut = Path(__file__)  # Diretório do arquivo atual
-while "fut" not in pathFut.name:  # Subir um nível se o diretório atual for 'fut'
+while "fut" not in pathFut.name:  # Subir um nível se o diretório atual não for 'fut'
     pathFut = pathFut.parent
+    numIteracoes +=1 
+
+    if numIteracoes >= maxIteracoes:
+        raise FileNotFoundError("Problemas ao encontrar a pasta do projeto, renomeie-a para 'fut' ou 'fut-main'")
 
 # Implementar colorama dps
 
@@ -18,8 +23,8 @@ textoMagenta = "\033[35m"
 fimTextoColorido = "\033[0m"
 
 def mainMenu():
-    # Retrieve arguments passed from the command line
-    args = sys.argv[1:]  # Exclude the script name (sys.argv[0])
+    import sys
+    args = sys.argv[1:] 
     if len(args) == 1:
         args = str(args[0])
     match args:
@@ -33,9 +38,10 @@ Indicando arquivos específicos como fut teste/x.yml y.yml, ele executa o teste 
 Usando curingas, por exemplo, fut patient-*.yml, ele executa todos os testes cujos nomes iniciam com patient- e terminam com .yml.
 
 {textoSublinhado}Comandos{fimTextoColorido}:
-{textoCiano}--help  {fimTextoColorido}\t\tAbri o menu atual e exibe mais informações sobre o programa
-{textoCiano}gui     {fimTextoColorido}\t\tInicializa a interface gráfica (Ainda não foi implementada)
-{textoCiano}template{fimTextoColorido}\t\tGera um arquivo .yaml que segue o template de arquivos de teste
+{textoCiano}--help       {fimTextoColorido}\t\tAbri o menu atual e exibe mais informações sobre o programa
+{textoCiano}gui          {fimTextoColorido}\t\tInicializa a interface gráfica (Ainda não foi implementada)
+{textoCiano}template     {fimTextoColorido}\t\tGera um arquivo .yaml que segue o template de arquivos de teste
+{textoCiano}configuracoes{fimTextoColorido}\t\tPermite a edição de configurações globais do sistema
 
 Mais detalhes em: \033[4;34mhttps://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md{fimTextoColorido} """
             print(stringHelp)
@@ -48,19 +54,31 @@ Mais detalhes em: \033[4;34mhttps://github.com/LeonardoCFilho/fut/blob/main/Docu
         case "template":
             print("Criando template...")
             from Classes.gerenciador_testes import GerenciadorTestes
-            gerenciadorTestes = GerenciadorTestes()
+            gerenciadorTestes = GerenciadorTestes.get_instance()
             gerenciadorTestes.criaTemplateYaml()
+        case "configuracoes":
+            listaConfiguracoes = [
+                "timeout",
+                "threads",
+                "pathValidator_cli",
+                "flagArmazenarSaidaValidator",
+            ]
+            print("Exibindo configurações:")
+            pass
         case _:
             # Adicionar caso que o comando termine com 'help' ou 'ajuda'
             print("Iniciando testes!")
-            from Classes.executor_teste import ExecutorTestes
-            executorDeTestes = ExecutorTestes(pathFut)  
-            try:
-                if not args: # Garantir que há uma list
-                    args = []
-                executorDeTestes.receberArquivosValidar(args)
-            except Exception as e:
-                print(f"Erro: {e}")
+            if "help" in args or "ajuda" in args:
+                print("Caso você estivesse procurando ajuda, digite 'fut --help'")
+
+            sys.path.append("Backend/Classes")
+
+            from Classes.gerenciador_testes import GerenciadorTestes
+            gerenciadorTestes = GerenciadorTestes.get_instance(pathFut)
+
+            gerenciadorTestes.iniciarSistema(args)
+
+
             
 if __name__ == "__main__":
     mainMenu()

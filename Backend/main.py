@@ -22,8 +22,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]  # Ler args 
     args_str = " ".join(args) if args else ''   # Converter para string (vazia ou não)
     # Criando o comando de acordo com o SO (executar o codigo com o ambiente virtual)
-    soAtual = platform.system()
-    if soAtual == "Windows":
+    if platform.system() == "Windows":
         argsAmbienteVirtual = f"{pathVenv.resolve()}\\Scripts\\activate"
         comandoMain = f'cmd /c "{argsAmbienteVirtual} & python {pathApps} {args_str}"'
     else:

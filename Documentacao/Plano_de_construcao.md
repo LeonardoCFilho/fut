@@ -26,9 +26,10 @@ Diagramas:
     # Parâmetros para a comparação
     resultados_esperados:  #  (Obrigatório) Define os resultados esperados de validação.
       status: success  #  (Obrigatório) Nível geral esperado ('success', 'error', 'warning', 'information').
-      erros: []  #  (Obrigatório/Opcional em success) Lista de erros esperados (lista de string).
-      avisos: []  #  (Obrigatório/Opcional em success) Lista de avisos esperados (lista de string).
-      informacoes: []  #  (Obrigatório/Opcional em success) Lista de mensagens informativas esperadas (lista de string).
+      error: []  #  (Obrigatório) Lista de erros esperados (lista de string).
+      warning: []  #  (Obrigatório) Lista de avisos esperados (lista de string).
+      fatal: [] #  #  (Obrigatório) Lista de mensagens erros fatais esperados (lista de string).
+      information: []  #  (Obrigatório) Lista de mensagens informativas esperadas (lista de string).
       invariantes: # (Opcional)
         - expressao: "OperationOutcome.issues.count() = 0" #(string)
           esperado: True # Resultado esperado (Booleano)

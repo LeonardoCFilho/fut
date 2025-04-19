@@ -10,7 +10,8 @@ context:  # Definição do contexto de validação.
 caminho_instancia: "zrandom_com_erros.json"  # (Obrigatório) Caminho para o arquivo a ser testado.
 resultados_esperados:  # (Obrigatório) Define os resultados esperados de validação.
   status: "success"  # (Obrigatório) Nível geral esperado ('success', 'error', 'warning', 'information').
-  erros: []  # (Obrigatório) Lista de erros esperados (lista vazia indica sucesso).
-  avisos: []  # (Obrigatório) Lista de avisos esperados.
-  informacoes: []  # (Obrigatório) Lista de mensagens informativas esperadas.
+  error: []  # (Obrigatório) Lista de erros esperados (lista vazia indica sucesso).
+  warning: []  # (Obrigatório) Lista de avisos esperados.
+  fatal: [] #  #  (Obrigatório) Lista de mensagens erros fatais esperados (lista de string).
+  information: []  # (Obrigatório) Lista de mensagens informativas esperadas.
   invariantes: []  # (Opcional) Claúsulas adicionais a serem verificadas.

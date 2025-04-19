@@ -54,29 +54,37 @@
           "enum": ["success", "error", "warning", "information"],
           "description": "(Obrigatório) Nível geral esperado"
         },
-        "erros": {
+        "error": {
           "type": "array",
           "items": {
             "type": "string",
-            "description": "(Obrigatório/Opcional em success) Lista de erros esperados"
+            "description": "(Obrigatório) Lista de erros esperados"
           },
-          "description": "(Obrigatório/Opcional em success) Lista de erros esperados"
+          "description": "(Obrigatório) Lista de erros esperados"
         },
-        "avisos": {
+        "warning": {
           "type": "array",
           "items": {
             "type": "string",
-            "description": "(Obrigatório/Opcional em success) Lista de avisos esperados"
+            "description": "(Obrigatório) Lista de avisos esperados"
           },
-          "description": "(Obrigatório/Opcional em success) Lista de avisos esperados"
+          "description": "(Obrigatório) Lista de avisos esperados"
         },
-        "informacoes": {
+        "fatal": {
           "type": "array",
           "items": {
             "type": "string",
-            "description": "(Obrigatório/Opcional em success) Lista de mensagens informativas esperadas"
+            "description": "(Obrigatório) Lista de mensagens erros fatais esperados"
           },
-          "description": "(Obrigatório/Opcional em success) Lista de mensagens informativas esperadas"
+          "description": "(Obrigatório) Lista de mensagens erros fatais esperados"
+        },
+        "information": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "(Obrigatório) Lista de mensagens informativas esperadas"
+          },
+          "description": "(Obrigatório) Lista de mensagens informativas esperadas"
         },
         "invariantes": {
           "type": "array",
@@ -87,7 +95,7 @@
           "description": "(Opcional) Lista de invariantes"
         }
       },
-      "required": ["status", "erros", "avisos", "informacoes"],
+      "required": ["status", "error", "warning", "information", "fatal"],
       "description": "(Obrigatório) Define os resultados esperados de validação."
     }
   },
