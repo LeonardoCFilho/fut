@@ -1,10 +1,3 @@
-import json # padrao
-import pathlib #padrao
-from datetime import datetime #padrao
-from copy import deepcopy #padrao
-from yaml import safe_load
-from shutil import rmtree
-
 class GeradorRelatorios:
     chaves = {
         0: "caminho_yaml", # arquivo .yaml
@@ -57,14 +50,17 @@ class GeradorRelatorios:
         in_congruencias = [[]]
         status = None
         quantidades = None
+        quantidades_totais = None
         status_real = None
         status_esperado = None
         if yaml_valido:
             discordancia_vazia = True
             quantidades = deepcopy(self.erros_esperados)
+            quantidades_totais = deepcopy(self.erros_esperados)
             # {'error': [], 'warning': [], 'fatal':[], 'information': []}
             for chave in quantidades.keys():
-                quantidades[chave] = len(copia_saida_real[chave])
+                quantidades[chave] = 0
+                quantidades_totais[chave] = len(copia_saida_real[chave])
             status_esperado = copia_saida_esperada['status']
             for chave, valor in copia_saida_esperada.items():
                 if chave != 'status':
@@ -73,6 +69,7 @@ class GeradorRelatorios:
                             v_temp = list(v_real.keys())[0] == v_esperada
                             if v_temp:
                                 in_congruencias[0].append([chave, v_esperada, list(copia_saida_real[chave].pop(index).values())[0], 0])
+                                quantidades[chave] += 1
                                 break
                         else:
                             in_congruencias[0].append([chave, v_esperada, False, 0])
@@ -97,7 +94,7 @@ class GeradorRelatorios:
                 status = True
             else:
                 status = False
-        return in_congruencias + [yaml_valido, tempo_de_execucao, status, status_esperado, status_real, caminho_yaml, quantidades, motivo_da_invalidez]
+        return in_congruencias + [yaml_valido, tempo_de_execucao, status, status_esperado, status_real, caminho_yaml, quantidades, quantidades_totais, motivo_da_invalidez]
 
     # Função que gera os relatórios unitários e o relatório final
     def gerarRelatorios(self):
@@ -125,12 +122,14 @@ class GeradorRelatorios:
                 for dicionario in self.casos_de_teste_
             ]
         )
-        dic_temp = {}
+        issues_corretas = {}
+        issues_reais = {}
         for chave in self.erros_esperados.keys():
-            dic_temp[f"%_{chave}_reais_acertados"] = 0
+            issues_corretas[f"%_{chave}_reais_acertados"] = 0
+            issues_reais[f"quantidade_{chave}_reais_totais"] = 0
 
         for relat in resultados:
-            in_congruencias, yaml_valido, tempo_de_execucao, status, status_esperado, status_real, caminho_yaml, quantidades, motivo_da_invalidez, = relat
+            in_congruencias, yaml_valido, tempo_de_execucao, status, status_esperado, status_real, caminho_yaml, quantidades, quantidades_totais, motivo_da_invalidez, = relat
             relatorio_unitario['yaml_valido'] = yaml_valido
             relatorio_unitario['motivo_da_invalidez'] = motivo_da_invalidez
             if yaml_valido:
@@ -148,19 +147,20 @@ class GeradorRelatorios:
                         relatorio_unitario['discordancia']['issue_real_ausente_na_esperada'].append({'tipo':item[0], 'codigo':item[1], 'descricao': item[2][0], 'local': item[2][1]})
                 
                 for chave in self.erros_esperados.keys():
-                    dic_temp[f"%_{chave}_reais_acertados"] += quantidades[chave]
+                    issues_corretas[f"%_{chave}_reais_acertados"] += quantidades[chave]
+                    issues_reais[f"quantidade_{chave}_reais_totais"] += quantidades_totais[chave]
+
             relatorios[str(caminho_yaml)] = relatorio_unitario
             relatorio_unitario = deepcopy(copia_relatorio_unitario)
 
-        soma_parcial = sum(dic_temp.values())
-        if not soma_parcial:
-            soma_parcial = 1
+        issue_correta_soma_parcial = max(sum(issues_corretas.values()),1)
+
         tempo_total = sum([i['tempo_de_execucao'] for i in relatorios.values() if i['yaml_valido']])
         numero_de_testes_validos = len([0 for i in relatorios.values() if i['yaml_valido']])
 
         for chave in self.erros_esperados.keys():
-            dic_temp[f"%_{chave}_reais_acertados"] =  round(dic_temp[f"%_{chave}_reais_acertados"]/soma_parcial,2)
-
+            issues_corretas[f"%_{chave}_reais_acertados"] =  round(issues_corretas[f"%_{chave}_reais_acertados"]/issue_correta_soma_parcial,2)
+        
         relatorio_final = {
             'numero_de_testes_validos': numero_de_testes_validos,
             'numeros_de_testes_totais' : len(relatorios),
@@ -168,7 +168,8 @@ class GeradorRelatorios:
             'tempo_medio': round(tempo_total/numero_de_testes_validos,1),
             'data': datetime.now().strftime("%Y/%m/%d - %H:%M")
         }
-        relatorio_final.update(dic_temp)
+        relatorio_final.update(issues_reais)
+        relatorio_final.update(issues_corretas)
         relatorios['relatorio_final'] = relatorio_final
         return relatorios
 
