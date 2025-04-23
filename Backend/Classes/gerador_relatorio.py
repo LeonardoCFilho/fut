@@ -101,7 +101,7 @@ class GeradorRelatorios:
 
         relatorios = {}
         relatorio_unitario = {
-            'status' : None,
+            'status' : False,
             'yaml_valido' : None,
             'motivo_da_invalidez': None,
             'tempo_de_execucao' : None,
