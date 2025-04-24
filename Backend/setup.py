@@ -12,7 +12,7 @@ def instalarRequirements(pathFut, pathVenv):
         if pathRequirements.exists():
             print("Arquivo encontrado!\nInstalando bibliotecas...")
             pip_path = pathVenv / "bin" / "pip"  # Caminho do pip dentro do venv
-            result = subprocess.check_output([str(pip_path), "install", "-r", str(pathRequirements)], stderr=subprocess.STDOUT, text=True)
+            result = subprocess.check_output([str(pip_path.resolve()), "install", "-r", str(pathRequirements.resolve())], stderr=subprocess.STDOUT, text=True)
             pathRequirements.rename(pathFut / "Arquivos" / "OLDrequirements.txt")
             return result  # Retorna a saída capturada
     except subprocess.CalledProcessError as e:
