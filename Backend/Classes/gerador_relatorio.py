@@ -1,3 +1,10 @@
+import json # padrao
+import pathlib #padrao
+from datetime import datetime #padrao
+from copy import deepcopy
+from yaml import safe_load
+from shutil import rmtree
+
 class GeradorRelatorios:
     chaves = {
         0: "caminho_yaml", # arquivo .yaml
@@ -164,7 +171,7 @@ class GeradorRelatorios:
         relatorio_final = {
             'numero_de_testes_validos': numero_de_testes_validos,
             'numeros_de_testes_totais' : len(relatorios),
-            'tempo_total': tempo_total,
+            'tempo_total': round(tempo_total,1),
             'tempo_medio': round(tempo_total/numero_de_testes_validos,1),
             'data': datetime.now().strftime("%Y/%m/%d - %H:%M")
         }
