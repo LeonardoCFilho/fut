@@ -116,6 +116,10 @@ class GerenciadorValidator(InicializadorSistema):
                 end = time.time()
                 #print(resultado.stdout)
                 #print(resultado.stderr)
+                if not caminhoRelatorio.exists():
+                    diconario = { 'issue': [{ 'severity': 'fatal', 'code': 'non-existent', 'details' : {'text': "non-existent ig or resource or profile"}, 'expression':  [] }] }
+                    with open(caminhoRelatorio, mode="w", encoding="utf8") as arquivo:
+                        dump(diconario, arquivo, indent=4, ensure_ascii=False)
                 return [caminhoRelatorio, (end - start)]
             else:
                 raise FileNotFoundError(f"Arquivo de entrada não foi encontrado: {arquivoValidar}")
