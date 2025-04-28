@@ -47,6 +47,14 @@ class InicializadorSistema:
 
         # Flag para alterar (ou não) o valor em settings.ini
         flagAlteracaoValida = False
+
+        # pathValidator_cli tem tratamento especial (existencia ou não do arquivo)
+        if configuracaoSerAlterada.lower == "pathvalidator_cli":
+            caminhoArquivo = Path(novoValor)
+            if not caminhoArquivo.is_absolute:
+                caminhoArquivo = Path.cwd() + caminhoArquivo
+            if not caminhoArquivo.exists():
+                raise FileNotFoundError(f"Novo validator_cli não foi encontrado, endereço usado: {caminhoArquivo.resolve()}")
         
         # Checar se a configuração é válida, se não tentar alterar
         if configuracaoSerAlterada in dictConfiguracoes:

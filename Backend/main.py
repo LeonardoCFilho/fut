@@ -1,5 +1,11 @@
 # Link do colab do código: https://colab.research.google.com/drive/1R8RTxAQ72TZ1_HfuM1KpnZw3b0XzbCNd#scrollTo=h3tl_P7uwiQy
 
+import logging 
+
+logging.basicConfig(level=logging.INFO, # .info, .warning, .error, .critical
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[logging.FileHandler('fut.log', mode='a')])
+
 if __name__ == "__main__":
     # source fut/.venv-fut/bin/activate && pip freeze > fut/Arquivos/requirements.txt && deactivate
     from pathlib import Path

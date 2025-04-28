@@ -9,7 +9,6 @@ from asyncio import sleep
 linkDownloadValidator = "https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar"
 
 class GerenciadorValidator(InicializadorSistema):
-    
     # Construtor
     def __init__(self, pathFut):
         super().__init__(pathFut)
