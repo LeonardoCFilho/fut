@@ -22,13 +22,28 @@ textoCiano = "\033[36m"
 textoMagenta = "\033[35m"
 fimTextoColorido = "\033[0m"
 
-def mainMenu():
+listaConfiguracoes = [
+    "timeout",
+    "threads",
+    "pathValidator_cli",
+    "flagArmazenarSaidaValidator",
+]
+
+def mainMenu(args = None):
     import sys
-    args = sys.argv[1:] 
-    if len(args) == 1:
-        args = str(args[0])
+    # Ou le o terminal para receber args, ou recebe antes da execução
+    if not args:
+        args = sys.argv[1:] 
+        if len(args) == 1:
+            args = str(args[0])
+    # Preparar para execução
+    from Classes.gerenciador_testes import GerenciadorTestes
+    gerenciadorTestes = GerenciadorTestes.get_instance(pathFut)
+    from Classes.inicializador_sistema import InicializadorSistema
+    objetoAlterarConfiguracoes = InicializadorSistema(pathFut)
+    # Opções a serem selecionadas
     match args:
-        case "--help":
+        case ["--help"]:
             stringHelp=f"""\n\n{textoNegrito}Ajuda:{fimTextoColorido}
 Sistema de teste unitário para arquivos FHIR (versão 4.0.1)
 
@@ -53,18 +68,38 @@ Mais detalhes em: \033[4;34mhttps://github.com/LeonardoCFilho/fut/blob/main/Docu
             # print("Finalizando processo...")
         case "template":
             print("Criando template...")
-            from Classes.gerenciador_testes import GerenciadorTestes
-            gerenciadorTestes = GerenciadorTestes.get_instance()
             gerenciadorTestes.criaTemplateYaml()
         case "configuracoes":
-            listaConfiguracoes = [
-                "timeout",
-                "threads",
-                "pathValidator_cli",
-                "flagArmazenarSaidaValidator",
-            ]
-            print("Exibindo configurações:")
-            pass
+            stringConfiguracoes = f"""As configurações disponíveis para o Sistema de teste unitário para arquivos FHIR são as seguintes:
+
+1. {textoSublinhado}[hardware]{fimTextoColorido}
+ - {textoCiano}timeout (int):{fimTextoColorido} Define o tempo limite, em segundos, para a execução de cada teste. Exemplo de valor: `600` (10 minutos).
+ - {textoCiano}threads (int):{fimTextoColorido} Especifica o número máximo de threads a serem usadas para executar os testes paralelamente. Exemplo de valor: `4`.
+
+2. {textoSublinhado}[enderecamento]{fimTextoColorido}
+ - {textoCiano}pathValidator_cli (str):{fimTextoColorido} Caminho personalizado para o arquivo `validator_cli.jar`, caso seja necessário sobrescrever o caminho padrão. Exemplo de valor: `~/Downloads/validator_cli.jar`.
+ - {textoCiano}flagArmazenarSaidaValidator (bool):{fimTextoColorido} Indica se a saída do validador deve ser armazenada. Valores aceitos: `True` (armazenar saída) ou `False` (não armazenar). Exemplo de valor: `False`.
+
+Essas configurações podem ser editadas com o comando `fut configuracoes <nome da configuração> <novo valor>`, permitindo ajustar o comportamento global do sistema conforme suas necessidades. Certifique-se de que os valores correspondam aos tipos esperados para garantir a atualização da configuração."""         
+            print(stringConfiguracoes)
+        case ["configuracoes", lerValorConfiguracao]:
+            if str(lerValorConfiguracao) in listaConfiguracoes:
+                valorConfiguracao = objetoAlterarConfiguracoes.returnValorSettings(lerValorConfiguracao)
+                print(f"{textoCiano}Configurações:{fimTextoColorido} O valor atual de '{lerValorConfiguracao}' é {valorConfiguracao}")
+            else: 
+                print("Configuração não reconhecida, verifique a escrita.")
+        case ["configuracoes", configuracaoSerAlterada, novoValor]:
+            if str(configuracaoSerAlterada) in listaConfiguracoes:
+                from Classes.inicializador_sistema import InicializadorSistema
+                objetoAlterarConfiguracoes = InicializadorSistema(pathFut)
+                try:
+                    valorAntigo = objetoAlterarConfiguracoes.returnValorSettings(configuracaoSerAlterada)
+                    objetoAlterarConfiguracoes.alterarValorSetting(configuracaoSerAlterada, novoValor)
+                    print(f"Configuração alterada com sucesso!\nValor de {configuracaoSerAlterada} foi alterado de {valorAntigo} para {novoValor}")
+                except Exception as e: # em caso de erro nada acontece em settings.ini
+                    print(f"Erro: {e}")
+            else: 
+                print("Configuração não reconhecida, verifique a escrita.")
         case _:
             # Adicionar caso que o comando termine com 'help' ou 'ajuda'
             print("Iniciando testes!")
@@ -73,8 +108,7 @@ Mais detalhes em: \033[4;34mhttps://github.com/LeonardoCFilho/fut/blob/main/Docu
 
             sys.path.append("Backend/Classes")
 
-            from Classes.gerenciador_testes import GerenciadorTestes
-            gerenciadorTestes = GerenciadorTestes.get_instance(pathFut)
+            
 
             gerenciadorTestes.iniciarSistema(args)
 

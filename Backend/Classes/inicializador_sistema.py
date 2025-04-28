@@ -17,6 +17,7 @@ class InicializadorSistema:
         if not self.pathValidator.exists():
             raise FileNotFoundError("validator_cli.jar não foi encontrado! Tente retornar seu valor ao padrão")
 
+    # Ideia: Faz a requisição do valor de uma configuração (em settings.ini) e seu valor é retornado como str ou None(caso de erro)
     def returnValorSettings(self, settingsBuscada):
         # Ler o arquivo de configuracoes
         import configparser
@@ -31,6 +32,57 @@ class InicializadorSistema:
         # Caso de erro
         return None
 
+    # Ideia: Permite o usuário alterar o valor de uma configuração do settings.ini
+    def alterarValorSetting(self, configuracaoSerAlterada, novoValor):
+        novoValor = str(novoValor) # Por segurança, adicionar previsibilidade
+        # Possiveis configurações
+        dictConfiguracoes = {
+            "timeout": int,
+            "threads": int,
+            "pathValidator_cli": str,
+        }
+        listaConfiguracoesBool = [
+            "flagArmazenarSaidaValidator",
+        ]
+
+        # Flag para alterar (ou não) o valor em settings.ini
+        flagAlteracaoValida = False
+        
+        # Checar se a configuração é válida, se não tentar alterar
+        if configuracaoSerAlterada in dictConfiguracoes:
+            tipoConfiguracao = dictConfiguracoes[configuracaoSerAlterada]
+            #print(f"Configuração: {configuracaoSerAlterada}, Valor Novo: {novoValor}, Tipo Esperado: {tipoConfiguracao}") # debug
+            if not isinstance(novoValor, dictConfiguracoes[configuracaoSerAlterada]):
+                try:
+                    novoValor = tipoConfiguracao(novoValor)
+                    flagAlteracaoValida = True
+                except ValueError:
+                    raise ValueError(f"Novo valor para configuração inválido! Essa configuração é do tipo {tipoConfiguracao.__name__}.")
+        
+        # Configuração booleana tem tratamento especial
+        if configuracaoSerAlterada in listaConfiguracoesBool:
+            if novoValor.lower() in ["true", "1", "yes", "sim"]:
+                novoValor = "True"
+            else:
+                novoValor = "False"
+            flagAlteracaoValida = True
+
+        # Ler o arquivo de configuracoes
+        import configparser
+        settings = configparser.ConfigParser()
+        settings.read(self.pathSettings)
+
+        # Buscar a configuração requisitada (se válido)
+        if flagAlteracaoValida:
+            for secao in settings.sections():
+                if configuracaoSerAlterada in settings[secao]:
+                    settings[secao][configuracaoSerAlterada] = str(novoValor)
+
+        # Sobrescrever o arquivo para alterar mudanças
+        with open(self.pathSettings, 'w') as configfile:
+            settings.write(configfile)
+
+    # Ideia: Garantir que o Path do validator seja válido (pode ser o padrão ou o do usuário)
     def _resolveValidatorPath(self) -> Path:
         # Ler e limpar o caminho do validator
         pathValidator = str(self.returnValorSettings('pathValidator_cli')).split('#')[0].strip()
