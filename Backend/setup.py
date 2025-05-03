@@ -13,7 +13,7 @@ def instalarRequirements(pathFut, pathVenv):
             print("Arquivo encontrado!\nInstalando bibliotecas...")
             pip_path = pathVenv / "bin" / "pip"  # Caminho do pip dentro do venv
             result = subprocess.check_output([str(pip_path.resolve()), "install", "-r", str(pathRequirements.resolve())], stderr=subprocess.STDOUT, text=True)
-            pathRequirements.rename(pathFut / "Arquivos" / "OLDrequirements.txt")
+            #pathRequirements.rename(pathFut / "Arquivos" / "OLDrequirements.txt")
             return result  # Retorna a saída capturada
     except subprocess.CalledProcessError as e:
         print(f"Ocorreu um erro durante a instalação: {e}")
@@ -55,6 +55,11 @@ def setupAmbienteVirtual(pathFut:Path, pathVenv:Path):
     # Instalar dependências do requirements.txt
     instalarRequirements(pathFut, pathVenv)
     # Atualiza bibliotecas
-    # Tentar otimizar
-    #check_for_updates() 
+    #check_for_updates() # Habilitar apenas quando necessario
     print("Ambiente virtual preparado!\n")
+
+if __name__ == "__main__":
+    from main import acharCaminhoProjeto
+    pathFut = acharCaminhoProjeto()
+    pathVenv = pathFut / ".venv-fut"
+    setupAmbienteVirtual(pathFut,pathVenv)

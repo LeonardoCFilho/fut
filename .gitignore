@@ -6,3 +6,5 @@ Backend/validator_cli.jar
 **/__pycache__
 # Arquivo de backup
 **/OLD*.*
+# Criando a cada iteração do programa
+**/fut.log

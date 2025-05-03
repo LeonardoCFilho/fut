@@ -1,4 +1,17 @@
 from pathlib import Path
+from Classes.inicializador_sistema import InicializadorSistema
+from Classes.gerador_relatorio import GeradorRelatorios
+from Classes.executor_teste import ExecutorTestes
+from Classes.gerenciador_validator import GerenciadorValidator
+from Classes.Exceptions import ExcecaoTemplate
+import os
+import concurrent.futures
+import requests
+import sys
+import time
+import logging
+logger = logging.getLogger(__name__)
+
 # Singleton
 class GerenciadorTestes:
   _instance = None
@@ -12,18 +25,17 @@ class GerenciadorTestes:
   def get_instance(pathFut=None):
     if GerenciadorTestes._instance is None:
       if pathFut is None:
-        raise ValueError()
-      GerenciadorTestes(pathFut)
+        raise ValueError("Caminho da pasta do projeto deve ser providenciada na primeira execução")
+      GerenciadorTestes._instance = GerenciadorTestes(pathFut)
     return GerenciadorTestes._instance
 
   # Ideia: Faz download de um arquivo a partir de uma URL para o caminho especificado.
   # P.s.: Especificar o tipo de arquivo no nome do arquivo
   def baixaArquivoUrl(self, url, enderecoArquivo, maxTentativas = 3):
-    import requests
-    from asyncio import sleep
     numTentativas = 0
     while numTentativas < maxTentativas:
       try:
+        logger.info(f"Tentando fazer o download de {enderecoArquivo}")
         # Iniciando request
         response = requests.get(url, stream=True)
         response.raise_for_status()  # Lança exceção em caso de erro
@@ -33,88 +45,133 @@ class GerenciadorTestes:
         with enderecoArquivo.open("wb") as arquivo_baixado:
           for chunk in response.iter_content(chunk_size=8192):
             arquivo_baixado.write(chunk)
+        logger.info("Download feito com sucesso")
         return 
   
       # Caso de erro, adicionar logs
       except Exception as e:
         numTentativas += 1 # Contabilizar tentativa
         if numTentativas < maxTentativas:
+          logger.warning(f"Erro na tentativa {numTentativas+1} de download para {url}")
           print(f"Erro na tentativa {numTentativas+1} de download, reiniciando...")
-          sleep(3)
+          time.sleep(3)
         else:
+          logger.error(f"Falha ao tentar fazer o download de {url} após {maxTentativas} tentativas. Erro: {str(e)}")
           raise e
                 
     # Ideia: Cria um arquivo .yaml que segue o nosso template para caso de teste
     # P.s.: Referência para o template: https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md#padrões-esperados
-  def criaTemplateYaml(self):
-    templeteYaml = """test_id:  # (Obrigatório) Identificador único para cada teste (string).
-description:  # (Recomendado) Descricao (string).
+  
+  def criaYamlTeste(self, dadosArquivo = None, caminhoArquivo = None):
+    logger.info(f"Arquivo de teste criado em {caminhoArquivo}")
+    if not dadosArquivo:
+      logger.info("Template de um arquivo de teste criado")
+      dadosArquivo = {
+        "test_id": '',
+        "description": '',
+        "igs": '',
+        "profiles": '',
+        "resources": '',
+        "caminho_instancia": '',
+        "status": '',
+        "error": '',
+        "warning": '',
+        "fatal": '',
+        "information": '',
+        "invariantes": '',
+      }
+    templeteYaml = f"""test_id: {dadosArquivo['test_id']} # (Obrigatório) Identificador único para cada teste (string).
+description: {dadosArquivo['description']} # (Recomendado) Descricao (string).
 context: # Definição do contexto de validação.
   igs: # (Recomendado) Lista dos Guias de Implementação (IGs).
-    -  # IDs ou url dos IGs (Apenas 1 por linha).
+    - {dadosArquivo['igs']} # IDs ou url dos IGs (Apenas 1 por linha).
   profiles:  # (Recomendado) Lista de perfis (StructureDefinitions) aplicados
-    -  # IDs ou url dos perfis ou URLs canônicas (Apenas 1 por linha).
+    - {dadosArquivo['profiles']} # IDs ou url dos perfis ou URLs canônicas (Apenas 1 por linha).
   resources:  # (Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.).
-    -  # Caminho do arquivo ou o recurso embutido (Apenas 1 por linha).
-caminho_instancia:  #  (Obrigatório) Caminho para o arquivo a ser testado (string)
+    - {dadosArquivo['resources']} # Caminho do arquivo ou o recurso embutido (Apenas 1 por linha).
+caminho_instancia: {dadosArquivo['caminho_instancia']} #  (Obrigatório) Caminho para o arquivo a ser testado (string)
 # Parâmetros para a comparação
 resultados_esperados:  #  (Obrigatório) Define os resultados esperados de validação.
-  status: success  #  (Obrigatório) Nível geral esperado ('success', 'error', 'warning', 'information').
-  error: []  #  (Obrigatório) Lista de erros esperados (lista de string).
-  warning: []  #  (Obrigatório) Lista de avisos esperados (lista de string).
-  fatal: [] #  #  (Obrigatório) Lista de mensagens erros fatais esperados (lista de string).
-  information: []  #  (Obrigatório) Lista de mensagens informativas esperadas (lista de string).
-  invariantes:  # (Opcional)"""
-    with open("template.yaml", "w", encoding="utf-8") as file:
-      file.write(templeteYaml)
+  status: {dadosArquivo['status']}  #  (Obrigatório) Nível geral esperado ('success', 'error', 'warning', 'information').
+  error: [{dadosArquivo['error']}]  #  (Obrigatório) Lista de erros esperados (lista de string).
+  warning: [{dadosArquivo['warning']}]  #  (Obrigatório) Lista de avisos esperados (lista de string).
+  fatal: [{dadosArquivo['fatal']}] #  #  (Obrigatório) Lista de mensagens erros fatais esperados (lista de string).
+  information: [{dadosArquivo['information']}]  #  (Obrigatório) Lista de mensagens informativas esperadas (lista de string).
+  invariantes: {dadosArquivo['invariantes']} # (Opcional)"""
+    if caminhoArquivo:
+      with open(caminhoArquivo, "w", encoding="utf-8") as file:
+        file.write(templeteYaml)
+    else: 
+      with open("template.yaml", "w", encoding="utf-8") as file:
+        file.write(templeteYaml)
 
-  def iniciarSistema(self, args:list, versaoRelatorio = 'JSON'):
-    from pathlib import Path
-
+  def iniciarSistema(self):
     # Criar o inicializador do sistema
-    from Classes.inicializador_sistema import InicializadorSistema
     try:
-      inicializadorSistema = InicializadorSistema(self.pathFut)
-    except FileNotFoundError:
-       # Descrever quais arquivos
-       raise FileNotFoundError("Arquivos essenciais não encontrados")
+      logger.info("Preparando para a execução de testes")
+      return InicializadorSistema(self.pathFut)
+    except FileNotFoundError as e:
+       logger.fatal(f"Arquivos essencial '{e.args[0]}' não foi encontrado")
+       raise FileNotFoundError(f"Arquivos essencial '{e.args[0]}' não foi encontrado")
 
+  def prepararExecucaoTestes(self,args):
     # Fazer a leitura dos argumentos recebidos
-    from Classes.executor_teste import ExecutorTestes
     executorDeTestes = ExecutorTestes(self.pathFut)  
-    try:
-      if not args: # Garantir que há uma list
-        args = []
-      listArquivosValidar = executorDeTestes.listarArquivosValidar(args)
-    except Exception as e:
-      raise e
+    logger.info("Lista de testes a serem examinadas criada")
+    if not args: # Garantir que há uma list
+      args = []
+    #print(executorDeTestes.listarArquivosValidar(args)) # debug
+    return executorDeTestes.listarArquivosValidar(args)
 
-    # Determinar número de threads
-    # Pela settings
-    import os
-    numThreads = int(inicializadorSistema.returnValorSettings('threads'))
-    numThreads = min(numThreads, os.cpu_count())
+  def iniciarCriacaoRelatorio(self, resultadosValidacao, versaoRelatorio):
+    # Criar o relatório
+    logger.info(f"Iniciando a criação do relatório, relatório selecionado é do tipo {versaoRelatorio}")
+    geradorRelatorio = GeradorRelatorios(resultadosValidacao)
+    geradorRelatorio.gerarRelatorioJson() # Arquivo .json sempre é criado
+    #if versaoRelatorio.lower() == "json":
+    #  print("Relatório JSON criado!") 
+    #if versaoRelatorio.lower() == "html":
+    #  geradorRelatorio.gerarRelatorioHtml()
 
+  def executarThreadsTeste(self, args, numThreads):
     # Função para as threads
     def validarArquivo(arquivoValidar):
-      executor = ExecutorTestes(self.pathFut)
-      return executor.validarArquivoTeste(arquivoValidar)
+      executorTesteThreads = ExecutorTestes(self.pathFut)
+      return executorTesteThreads.validarArquivoTeste(arquivoValidar)
 
     # Iniciar a validação
-    import concurrent.futures
+    logger.info("Iniciando a execução dos testes requisitados")
     with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-      resultadosValidacao = list(executor.map(validarArquivo, listArquivosValidar))
+      return list(executor.map(validarArquivo, self.prepararExecucaoTestes(args)))
+
+
+  def executarTestes(self, args:list, versaoRelatorio = 'JSON'):
+    inicializadorSistema = self.iniciarSistema()
+
+    # Garantir que o validator esteja atualizado
+    atualizarValidator = GerenciadorValidator(self.pathFut)
+    try:
+      atualizarValidator.atualizarValidatorCli(inicializadorSistema.pathValidator)
+    except ExcecaoTemplate as e:
+      logger.fatal(f"O arquivo do validator_cli é inválido: {e}")
+      sys.exit("Arquivo validator_cli é inválido, verifique seu download ou considere utilizar o validator padrão")
+    except requests.exceptions.ConnectionError as e:
+      pass # Já está registrado no log e não é um erro crítico
+    except Exception as e:
+      logger.error(f"Erro ao atualizar o validator: {e}") # Programa continua executando, mas não usar a versçao mais recente do validator
+
+    # Determinar número de threads
+    numThreads = int(inicializadorSistema.returnValorSettings('max_threads')) # Pela settings
+    numThreads = min(numThreads, os.cpu_count()) # Não criar mais threads que o computador tem
     
+    startTestes = time.time()
+    resultadosValidacao = self.executarThreadsTeste(args, numThreads)
+    endTestes = time.time()
+    
+    logger.info("Testes listados completos")
     print("Testes finalizados!")
 
-    #print("Arquivos encontrados:", listArquivosValidar)
-    #print("Relatório de testes:", resultadosValidacao)
+    self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio) 
 
-    # Criar o relatório
-    from Classes.gerador_relatorio import GeradorRelatorios
-    geradorRelatorio = GeradorRelatorios(resultadosValidacao)
-    if versaoRelatorio.lower() == "json":
-      geradorRelatorio.gerarRelatorioJson()
-      print("Relatório JSON criado!")
-    #elif versaoRelatorio.lower() == "html":
-    #  geradorRelatorio.gerarRelatorioHtml()
+    #print("Arquivos encontrados:", listArquivosValidar) # debug
+    #print("Relatório de testes:", resultadosValidacao) # debug

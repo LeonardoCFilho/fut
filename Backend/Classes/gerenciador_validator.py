@@ -1,10 +1,13 @@
 from pathlib import Path
 from json import dump
 from Classes.inicializador_sistema import InicializadorSistema
+from Classes.Exceptions import ExcecaoTemplate
 import time
 import subprocess
 import requests, zipfile
-from asyncio import sleep
+import time
+import logging
+logger = logging.getLogger(__name__)
 
 linkDownloadValidator = "https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar"
 
@@ -12,7 +15,6 @@ class GerenciadorValidator(InicializadorSistema):
     # Construtor
     def __init__(self, pathFut):
         super().__init__(pathFut)
-        
 
     # Ideia: Faz a instalação inicial do validator_cli
     @classmethod
@@ -20,8 +22,10 @@ class GerenciadorValidator(InicializadorSistema):
         from Classes.gerenciador_testes import GerenciadorTestes
         if not pathValidator.exists(): # Evitar sobrescrita
             try:
+                logger.info("Fazendo download do validator_cli")
                 GerenciadorTestes.get_instance().baixaArquivoUrl(linkDownloadValidator, pathValidator)
             except Exception as e:
+                logger.fatal(f"Erro ao instalar o validator_cli: {e}")
                 raise e
 
     # Ideia: Instala ou atualiza o validator_cli.jar 
@@ -29,6 +33,7 @@ class GerenciadorValidator(InicializadorSistema):
         # Não foi especificado, usar nosso validator_cli
         if not pathValidator:
             pathValidator = self.pathValidator
+        logger.info("Buscando atualizações do validator_cli")
 
         from Classes.gerenciador_testes import GerenciadorTestes
         # Verificando se o validator já existe
@@ -45,12 +50,12 @@ class GerenciadorValidator(InicializadorSistema):
                             if "orgfhir.version" in linhaLegivel:
                                 versaoBaixada = linhaLegivel.split("orgfhir.version=")[1]
             except Exception as e:
-                raise e
+                raise ExcecaoTemplate("Arquivo validator_cli inválido", e)
 
             # 2º Consulta o GitHub pela última versão
             maxTentativas = 3
             numTentativas = 0
-            while numTentativas < maxTentativas:
+            while numTentativas <= maxTentativas:
                 try:
                     apiUrl = "https://api.github.com/repos/hapifhir/org.hl7.fhir.core/releases/latest"
                     response = requests.get(apiUrl)
@@ -61,10 +66,13 @@ class GerenciadorValidator(InicializadorSistema):
                         return response.status_code
                 except Exception as e:
                     numTentativas += 1 # Contabilizar tentativa
-                    if numTentativas < maxTentativas:
-                        print(f"Erro na tentativa {numTentativas+1} de conexão a plataforma, reiniciando...")
-                        sleep(3)
+                    if numTentativas <= maxTentativas:
+                        logger.warning(f"Erro na tentativa {numTentativas} de conexão com o git do validato_cli")
+                        print(f"Erro na tentativa {numTentativas} de conexão a plataforma, reiniciando...")
+                        time.sleep(3)
                     else:
+                        logger.warning(f"Erro ao conectar com o github do validator_cli: {e}")
+                        print(f"Não foi posssível atualizar o validator_cli, executando os testes com a versão instalada '{versaoBaixada}'")
                         raise e
 
             # 3º Compara as versões e atualiza se necessário
@@ -72,13 +80,19 @@ class GerenciadorValidator(InicializadorSistema):
                 try:
                     caminhoValidatorTemp = pathValidator.with_name("NOVOvalidator_cli.jar")
                     GerenciadorTestes.get_instance().baixaArquivoUrl(linkDownloadValidator, caminhoValidatorTemp)
+                    logger.info("Download da versão mais recente do validator_cli feita")
                 except Exception as e:
+                    logger.error(f"Erro ao instalar a versão mais nova do validator: {e}")
                     raise e
 
-                if caminhoValidatorTemp.exists():
+                if caminhoValidatorTemp.exists(): # Por segurança
+                    logger.info("Atualizando o validator_cli")
                     pathValidator.unlink()  # Remove o arquivo antigo
                     caminhoValidatorTemp.rename(pathValidator)
+            else:
+                logger.info("Verificação de atualização finalizada")
         else:
+            logger.info("Nenhuma instancia de validator_cli encontrada, fazendo o download")
             # Se o validator não estiver instalado, faz a instalação inicial
             self.instalaValidatorCli(pathValidator)
 
@@ -90,7 +104,7 @@ class GerenciadorValidator(InicializadorSistema):
 
         # ENVIAR PARA gerenciador_testes ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         tempoTimeout = int(self.returnValorSettings('timeout'))
-        flagSalvarOutput = self.returnValorSettings('flagArmazenarSaidaValidator').lower() in ["true", "1", "yes"]
+        flagSalvarOutput = self.returnValorSettings('armazenar_saida_validator').lower() in ["true", "1", "yes"]
         if flagSalvarOutput: # Pasta permanente
             pastaRelatorio = Path.cwd() / "resultados-fut"
         else: # Pasta temporária (Apagada após a criação do relatório final)
@@ -122,8 +136,11 @@ class GerenciadorValidator(InicializadorSistema):
                         dump(diconario, arquivo, indent=4, ensure_ascii=False)
                 return [caminhoRelatorio, (end - start)]
             else:
+                logger.warning(f"Erro ao encontrar o arquivo a ser validado: {arquivoValidar}")
                 raise FileNotFoundError(f"Arquivo de entrada não foi encontrado: {arquivoValidar}")
         except subprocess.TimeoutExpired as e:
+            logger.warning(f"Timeout na verificação de {arquivoValidar}")
             raise subprocess.TimeoutExpired(f"Timeout na validação de: {arquivoValidar}") from e
         except Exception as e:
+            logger.error(f"Erro durante a validação do arquivo FHIR: {e}")
             raise e

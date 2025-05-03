@@ -3,6 +3,9 @@ import yaml
 import json
 import jsonschema
 from Classes.inicializador_sistema import InicializadorSistema
+import subprocess
+import logging
+logger = logging.getLogger(__name__)
 
 class ExecutorTestes(InicializadorSistema):
     def __init__(self, pathFut):
@@ -38,7 +41,9 @@ class ExecutorTestes(InicializadorSistema):
         try:
             # Validar
             jsonschema.validate(instance=data, schema=schema)
+            #print("Sucesso")
         except jsonschema.exceptions.ValidationError as e:
+            logger.warning(f"Arquivo de teste invalido: {e}")
             print(f"Arquivo {arquivoTeste} invalido")
             #print(e) # temp
             # justificativaArquivoInvalido = ...
@@ -60,7 +65,12 @@ class ExecutorTestes(InicializadorSistema):
             argsArquivoFhir += geraArgsValidator(context,'resources', 'ig')
             from Classes.gerenciador_validator import GerenciadorValidator
             gerenciadorValidator = GerenciadorValidator(self.pathFut)
-            outputValidacao = gerenciadorValidator.validarArquivoFhir(Path(data['caminho_instancia']), args=argsArquivoFhir)
+            try:
+                outputValidacao = gerenciadorValidator.validarArquivoFhir(Path(data['caminho_instancia']), args=argsArquivoFhir)
+            except subprocess.TimeoutExpired as e:
+                pass # Já está registrado no log e não é um erro crítico
+            except Exception as e:
+                pass # Já está registrado no log (testar)
 
         return {
             'caminho_yaml': arquivoTeste,
@@ -97,11 +107,9 @@ class ExecutorTestes(InicializadorSistema):
                 if '*' in arquivoAtual.name:
                     argsEntrada.extend(list(arquivoAtual.parent.glob(f"{str(arquivoAtual.name).split('*')[0]}*.yaml")))
 
-                # Buscar primeiro arquivo YAML, não achou => procurar .json
+                # Buscar primeiro arquivo YAML
                 if (arquivoAtual.suffix == ".yaml" or arquivoAtual.suffix == ".yml") and arquivoAtual.exists():
                     arquivosYaml.append(arquivoAtual)
-                elif arquivoAtual.with_suffix(".json").exists():
-                    arquivosYaml.append(arquivoAtual.with_suffix(".json"))
         
         # Garantir que não há duplicatas
         arquivosYaml = list(set(arquivosYaml))

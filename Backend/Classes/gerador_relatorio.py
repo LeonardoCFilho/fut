@@ -4,6 +4,8 @@ from datetime import datetime #padrao
 from copy import deepcopy
 from yaml import safe_load
 from shutil import rmtree
+import logging
+logger = logging.getLogger(__name__)
 
 class GeradorRelatorios:
     chaves = {
