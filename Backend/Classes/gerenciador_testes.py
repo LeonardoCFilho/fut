@@ -120,7 +120,7 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
     logger.info("Lista de testes a serem examinadas criada")
     if not args: # Garantir que há uma list
       args = []
-    #print(executorDeTestes.listarArquivosValidar(args)) # debug
+    #print(executorDeTestes.listarArquivosValidar(args))
     return executorDeTestes.listarArquivosValidar(args)
 
   def iniciarCriacaoRelatorio(self, resultadosValidacao, versaoRelatorio):

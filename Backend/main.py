@@ -46,11 +46,10 @@ if __name__ == "__main__":
 
     # Começar a execução em si do cli
     from terminal import mainMenu
-    mainMenu(args)
-    #try:
-    #    mainMenu(args)
-    #    print("\n\nPrograma finalizado!")
-    #    logger.info("Execução do sistema finalizada")
-    #except Exception as e:
-    #    logger.error(f"Erro no sistema de testes: {str(e)}")
-    #    print(f"Erro: {str(e)}")
+    try:
+        mainMenu(args)
+        print("\n\nPrograma finalizado!")
+        logger.info("Execução do sistema finalizada")
+    except Exception as e:
+        logger.error(f"Erro no sistema de testes: {str(e)}")
+        print(f"Erro: {str(e)}")

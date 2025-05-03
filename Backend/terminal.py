@@ -63,11 +63,10 @@ def mainMenu(args = None):
             # Caso ele estive apenas procurando ajuda
             if "help" in args or "ajuda" in args:
                 print("Caso você estivesse procurando ajuda, digite 'fut --help'")
-            realizarTestes(args)
-            #try:
-            #    realizarTestes(args)
-            #except Exception as e:
-            #    print(f"Erro na execução dos testes: {e}")
+            try:
+                realizarTestes(args)
+            except Exception as e:
+                print(f"Erro na execução dos testes: {e}")
 
 
 if __name__ == "__main__":
