@@ -21,11 +21,16 @@ def alterarValorConfiguracao(configuracaoSerAlterada, novoValor):
         return f"Erro ao alterar a configuração '{configuracaoSerAlterada}': {str(e)}"
 
 # Recebe uma lista e faz a validação dos arquivos
-def realizarTestes(args):
+def realizarTestes(args, tipoRelatorio='JSON', entregaGradual=False):
     try: 
         logger.info("Teste de arquivos inicializado")
         gerenciadorTestes = GerenciadorTestes.get_instance()
-        gerenciadorTestes.executarTestes(args)
+        if entregaGradual: # Lidar com as entregas no frontend
+            for resultado in gerenciadorTestes.executarTestes(args, tipoRelatorio, entregaGradual):
+                yield resultado # é uma list, contém: dict com os dados do teste, % de testes finalizados
+        else:
+            list(gerenciadorTestes.executarTestes(args, tipoRelatorio, entregaGradual))
+
     except Exception as e:
         raise(e)
 

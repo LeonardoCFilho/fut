@@ -2,13 +2,43 @@ from pathlib import Path
 from utils import *
 from colorama import Style, Fore
 import sys
+import time
+import psutil
 from main import acharCaminhoProjeto
 import logging
 logger = logging.getLogger(__name__)
 
+# Para pintar o terminal
 textoCiano = Fore.CYAN
 fimTextoColorido = Style.RESET_ALL
+flagAnimacaoSpinner = True
 
+# Animação no terminal e checks do consumo computacional
+def spinner_animation():
+    spinner = ['|', '/', '-', '\\']
+    # Obter informações de consumo de poder computacional
+    threshold = 70 # Limite para forçar a saida do programa
+    memory = psutil.virtual_memory()
+    swap_memory = psutil.swap_memory()
+    cpu_percent = psutil.cpu_percent(interval=1)
+    while flagAnimacaoSpinner:
+        for symbol in spinner:
+            # Animação
+            sys.stdout.write(f'\r{symbol} Carregando...')
+            sys.stdout.flush()
+            time.sleep(0.2)
+            # Check para previnir o computador de travar
+            if memory.percent >= threshold or cpu_percent >= threshold or swap_memory.percent >= threshold:
+                sys.exit(f"Memória: {memory.percent}% | Swap: {swap_memory.percent}% | CPU: {cpu_percent}%\nComputador prestes a travar")
+
+# Cria a thread e inicia a animação
+def startSpinnerAnimation():
+    import threading
+    spinner_thread = threading.Thread(target=spinner_animation) # Thread so para a animação (e para previnir de crashar)
+    spinner_thread.daemon = True  # Terminar com a main.py
+    spinner_thread.start() 
+
+# Executável
 def mainMenu(args = None):
     # Ou le o terminal para receber args, ou recebe antes da execução
     if not args:
@@ -58,13 +88,39 @@ def mainMenu(args = None):
             else: 
                 print("Configuração não reconhecida, verifique a escrita.")
         case _:
+            logger.info("Iniciando testes")
             print("Iniciando testes!")
 
             # Caso ele estive apenas procurando ajuda
             if "help" in args or "ajuda" in args:
                 print("Caso você estivesse procurando ajuda, digite 'fut --help'")
+
+            # Iniciar testes em si
             try:
-                realizarTestes(args)
+                entregaGradual = True
+                startTestes = time.time()
+                pctPronto = 0.1
+
+                # Adicionando animação, para mais responsividade....
+                startSpinnerAnimation()
+
+                # Responsivo
+                if entregaGradual:
+                    for resultado in realizarTestes(args,entregaGradual=entregaGradual):
+                        if (resultado[-1]) >= pctPronto:
+                            resultadoLimpo = round(resultado[-1],1)
+                            # Limpar o terminal
+                            sys.stdout.write('\r')
+                            sys.stdout.flush()
+                            # Exibir progresso
+                            print(f"{max(resultadoLimpo, (pctPronto))*100:.1f}% dos testes finalizados em {(time.time()-startTestes):.1f}s")
+                            pctPronto = max(pctPronto+0.1, resultadoLimpo) # update
+                    global flagAnimacaoSpinner
+                    flagAnimacaoSpinner = False # Fim do processo => parar a animação
+                    sys.stdout.write('\r')
+                    sys.stdout.flush()
+                else: # Entrega de uma vez
+                    list(realizarTestes(args,entregaGradual=entregaGradual))
             except Exception as e:
                 print(f"Erro na execução dos testes: {e}")
 

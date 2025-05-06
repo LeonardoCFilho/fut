@@ -66,10 +66,16 @@ class ExecutorTestes(InicializadorSistema):
             from Classes.gerenciador_validator import GerenciadorValidator
             gerenciadorValidator = GerenciadorValidator(self.pathFut)
             try:
-                outputValidacao = gerenciadorValidator.validarArquivoFhir(Path(data['caminho_instancia']), args=argsArquivoFhir)
+                # Caminho do arquivo a ser validado
+                data['caminho_instancia'] = Path(data['caminho_instancia'])
+                if not data['caminho_instancia'].is_absolute(): # Para garantir consistencia
+                    data['caminho_instancia'] = arquivoTeste.parent / data['caminho_instancia']
+                # Iniciar testes em si
+                outputValidacao = gerenciadorValidator.validarArquivoFhir(data['caminho_instancia'], args=argsArquivoFhir)
             except subprocess.TimeoutExpired as e:
                 pass # Já está registrado no log e não é um erro crítico
             except Exception as e:
+                #print(e) # debug
                 pass # Já está registrado no log (testar)
 
         return {

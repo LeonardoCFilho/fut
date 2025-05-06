@@ -102,15 +102,9 @@ class GerenciadorValidator(InicializadorSistema):
         if not arquivoValidar.is_absolute():
             arquivoValidar = Path.cwd() / arquivoValidar
 
-        # ENVIAR PARA gerenciador_testes ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         tempoTimeout = int(self.returnValorSettings('timeout'))
-        flagSalvarOutput = self.returnValorSettings('armazenar_saida_validator').lower() in ["true", "1", "yes"]
-        if flagSalvarOutput: # Pasta permanente
-            pastaRelatorio = Path.cwd() / "resultados-fut"
-        else: # Pasta temporária (Apagada após a criação do relatório final)
-            pastaRelatorio = Path.cwd() / ".temp-fut"
-        pastaRelatorio.mkdir(exist_ok=True)
-        # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        from Classes.gerenciador_testes import GerenciadorTestes # Evitar import cíclico, não mover esse import
+        pastaRelatorio = GerenciadorTestes.get_instance().definePastaValidator()
 
         try:
             if arquivoValidar.exists():
@@ -128,8 +122,9 @@ class GerenciadorValidator(InicializadorSistema):
                 start = time.time()
                 resultado = subprocess.run(comando, capture_output=True, text=True, timeout=tempoTimeout)
                 end = time.time()
-                #print(resultado.stdout)
-                #print(resultado.stderr)
+                #print(resultado) # debug
+                #print(resultado.stdout) # debug
+                #print(resultado.stderr) # debug
                 if not caminhoRelatorio.exists():
                     diconario = { 'issue': [{ 'severity': 'fatal', 'code': 'non-existent', 'details' : {'text': "non-existent ig or resource or profile"}, 'expression':  [] }] }
                     with open(caminhoRelatorio, mode="w", encoding="utf8") as arquivo:

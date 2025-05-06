@@ -62,6 +62,7 @@ class GerenciadorTestes:
     # Ideia: Cria um arquivo .yaml que segue o nosso template para caso de teste
     # P.s.: Referência para o template: https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md#padrões-esperados
   
+  # Ideia: Cria ou um template de teste a ser preenchido pelo o usuário ou cria um arquivo de teste já preenchido
   def criaYamlTeste(self, dadosArquivo = None, caminhoArquivo = None):
     logger.info(f"Arquivo de teste criado em {caminhoArquivo}")
     if not dadosArquivo:
@@ -105,6 +106,7 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
       with open("template.yaml", "w", encoding="utf-8") as file:
         file.write(templeteYaml)
 
+  # Ideia: Garantir o funcionamento do sistema (e do objeto de InicializadorSistema)
   def iniciarSistema(self):
     # Criar o inicializador do sistema
     try:
@@ -114,40 +116,19 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
        logger.fatal(f"Arquivos essencial '{e.args[0]}' não foi encontrado")
        raise FileNotFoundError(f"Arquivos essencial '{e.args[0]}' não foi encontrado")
 
-  def prepararExecucaoTestes(self,args):
-    # Fazer a leitura dos argumentos recebidos
-    executorDeTestes = ExecutorTestes(self.pathFut)  
-    logger.info("Lista de testes a serem examinadas criada")
-    if not args: # Garantir que há uma list
-      args = []
-    #print(executorDeTestes.listarArquivosValidar(args))
-    return executorDeTestes.listarArquivosValidar(args)
+  # Ideia: Determinar a pasta que os arquivos do validator serão salvos
+  def definePastaValidator(self) -> Path:
+    iniciadorSistema = self.iniciarSistema()
+    flagSalvarOutput = iniciadorSistema.returnValorSettings('armazenar_saida_validator').lower() in ["true", "1", "yes"]
+    if flagSalvarOutput: # Pasta permanente
+      pastaRelatorio = Path.cwd() / "resultados-fut"
+    else: # Pasta temporária (Apagada após a criação do relatório final)
+      pastaRelatorio = Path.cwd() / ".temp-fut"
+    pastaRelatorio.mkdir(exist_ok=True) # Garantir que a pasta existe
+    return pastaRelatorio
 
-  def iniciarCriacaoRelatorio(self, resultadosValidacao, versaoRelatorio):
-    # Criar o relatório
-    logger.info(f"Iniciando a criação do relatório, relatório selecionado é do tipo {versaoRelatorio}")
-    geradorRelatorio = GeradorRelatorios(resultadosValidacao)
-    geradorRelatorio.gerarRelatorioJson() # Arquivo .json sempre é criado
-    #if versaoRelatorio.lower() == "json":
-    #  print("Relatório JSON criado!") 
-    #if versaoRelatorio.lower() == "html":
-    #  geradorRelatorio.gerarRelatorioHtml()
-
-  def executarThreadsTeste(self, args, numThreads):
-    # Função para as threads
-    def validarArquivo(arquivoValidar):
-      executorTesteThreads = ExecutorTestes(self.pathFut)
-      return executorTesteThreads.validarArquivoTeste(arquivoValidar)
-
-    # Iniciar a validação
-    logger.info("Iniciando a execução dos testes requisitados")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-      return list(executor.map(validarArquivo, self.prepararExecucaoTestes(args)))
-
-
-  def executarTestes(self, args:list, versaoRelatorio = 'JSON'):
-    inicializadorSistema = self.iniciarSistema()
-
+  # Ideia: Em execução, garantir que o validator esteja atualizado
+  def atualizarValidatorExecucao(self, inicializadorSistema):
     # Garantir que o validator esteja atualizado
     atualizarValidator = GerenciadorValidator(self.pathFut)
     try:
@@ -160,18 +141,72 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
     except Exception as e:
       logger.error(f"Erro ao atualizar o validator: {e}") # Programa continua executando, mas não usar a versçao mais recente do validator
 
+  # Ideia: Limpeza e preparo da entrada para os testes serem feitos
+  def prepararExecucaoTestes(self,args):
+    # Fazer a leitura dos argumentos recebidos
+    executorDeTestes = ExecutorTestes(self.pathFut)  
+    logger.info("Lista de testes a serem examinadas criada")
+    if not args: # Garantir que há uma list
+      args = []
+    #print(executorDeTestes.listarArquivosValidar(args))
+    return executorDeTestes.listarArquivosValidar(args)
+
+  # Ideia: Execução dos testes que o usuário solicitou + uso de threads
+  def executarThreadsTeste(self, listaArquivosTestar, numThreads):
+    # Função para as threads
+    def validarArquivo(arquivoValidar):
+      executorTesteThreads = ExecutorTestes(self.pathFut)
+      return executorTesteThreads.validarArquivoTeste(arquivoValidar)
+
+    # Iniciar a validação
+    logger.info("Iniciando a execução dos testes requisitados")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
+      for resultado in executor.map(validarArquivo, listaArquivosTestar):
+        yield resultado
+
+  # Ideia: Criar o relatório de acordo com a escolha do usuário (json ou html)
+  def iniciarCriacaoRelatorio(self, resultadosValidacao, versaoRelatorio):
+    # Criar o relatório
+    logger.info(f"Iniciando a criação do relatório, relatório selecionado é do tipo {versaoRelatorio}")
+    geradorRelatorio = GeradorRelatorios(resultadosValidacao)
+    geradorRelatorio.gerarRelatorioJson() # Arquivo .json sempre é criado
+    #if versaoRelatorio.lower() == "json":
+    #  print("Relatório JSON criado!") 
+    #if versaoRelatorio.lower() == "html":
+    #  geradorRelatorio.gerarRelatorioHtml()
+
+  # Ideia: Controlar o fluxo para a execução dos testes
+  def executarTestes(self, args:list, versaoRelatorio, entregaGradual = False):
+    try:
+      inicializadorSistema = self.iniciarSistema()
+    except FileNotFoundError as e:
+      logger.fatal(e)
+      sys.exit(e) # Sem esses arquivos o sistema não consegue rodar
+
+    self.atualizarValidatorExecucao(inicializadorSistema)
+
     # Determinar número de threads
     numThreads = int(inicializadorSistema.returnValorSettings('max_threads')) # Pela settings
-    numThreads = min(numThreads, os.cpu_count()) # Não criar mais threads que o computador tem
+    numThreads = min(numThreads, (os.cpu_count()-2)) # Não todas as threads
+
+    # Criar a lista de testes a serem executados
+    listaArquivosTestar = self.prepararExecucaoTestes(args)
     
     startTestes = time.time()
-    resultadosValidacao = self.executarThreadsTeste(args, numThreads)
+    resultadosValidacao = []
+    for resultado in self.executarThreadsTeste(listaArquivosTestar, numThreads):
+      resultadosValidacao.append(resultado)
+      # Entregas graduais
+      if entregaGradual:
+        yield [resultado, round((len(resultadosValidacao)/len(listaArquivosTestar)),4)]
     endTestes = time.time()
     
     logger.info("Testes listados completos")
     print("Testes finalizados!")
 
-    self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio) 
+    #print(resultadosValidacao) # debug
+
+    self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio) # (endTestes-startTestes) # Eventualmente enviar para o relatório
 
     #print("Arquivos encontrados:", listArquivosValidar) # debug
     #print("Relatório de testes:", resultadosValidacao) # debug

@@ -131,6 +131,6 @@ class InicializadorSistema:
             except Exception as e:
                 import sys
                 logger.fatal("Erro ao instalar o validator_cli padrão")
-                sys.exit("Erro ao instalar o validator_cli padrão")
+                sys.exit("Erro ao instalar o validator_cli padrão") # Sem esses arquivos o sistema não consegue rodar
         
         return pathValidator
