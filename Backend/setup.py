@@ -2,6 +2,7 @@ import subprocess
 import sys
 import venv
 from pathlib import Path
+import platform
 
 # Ideia: Buscar um requirements.txt (na pasta arquivos) e tenta instalar todas bibliotecas
 # P.s.: Após a instação o arquivo é renomeado para evitar redundância
@@ -11,7 +12,10 @@ def instalarRequirements(pathFut, pathVenv):
         pathRequirements = pathFut / "Arquivos" / "requirements.txt"
         if pathRequirements.exists():
             print("Arquivo encontrado!\nInstalando bibliotecas...")
-            pip_path = pathVenv / "bin" / "pip"  # Caminho do pip dentro do venv
+            if platform.system().lower() == 'windows':
+                pip_path = pathVenv / "Scripts" / "pip.exe"
+            else:
+                pip_path = pathVenv / "bin" / "pip"
             result = subprocess.check_output([str(pip_path.resolve()), "install", "-r", str(pathRequirements.resolve())], stderr=subprocess.STDOUT, text=True)
             #pathRequirements.rename(pathFut / "Arquivos" / "OLDrequirements.txt")
             return result  # Retorna a saída capturada
