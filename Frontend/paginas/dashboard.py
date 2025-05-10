@@ -1,132 +1,122 @@
 import streamlit as st
+import json
+import os
 import pandas as pd
 import plotly.express as px
-import matplotlib.pyplot as plt
+
+
+def carregar_relatorio():
+    caminho = r'C:\Users\DD\Desktop\Projetos\novo_streamlit\dados\relatorio.json'
+
+    if os.path.exists(caminho):
+        with open(caminho, 'r', encoding='utf-8') as f:
+            dados = json.load(f)
+        return dados
+    else:
+        st.error(f"Arquivo não encontrado: {caminho}")
+        return {}
+
+
+def preparar_dataframe(dados_json):
+    registros = []
+    for arquivo, conteudo in dados_json.items():
+        registros.append({
+            'arquivo': arquivo,
+            'yaml_valido': conteudo.get('yaml_valido', False),
+            'status': conteudo.get('status', False),
+            'tempo_execucao': conteudo.get('tempo_de_execucao'),
+            'status_real': conteudo.get('status_real'),
+            'status_esperado': conteudo.get('status_esperado'),
+            'total_correspondencias': len(conteudo.get('correspondencia', [])),
+            'esperada_ausente': len(conteudo.get('discordancia', {}).get('issue_esperada_ausente_no_real', [])),
+            'real_ausente': len(conteudo.get('discordancia', {}).get('issue_real_ausente_na_esperada', [])),
+        })
+    return pd.DataFrame(registros)
 
 
 def render():
-   
-    #para boas qtds de dados é bom usar
-    cores = {
-        'verde':'#008000',
-        'vermelho':'#800000',
-        'azul':'#4169E1'
-        }
+    st.title("Dashboard do Relatório FHIR")
+    dados_json = carregar_relatorio()
+    if not dados_json:
+        return
 
-    @st.cache_data
-    def carregar_dados():
-        try:
-            dados = pd.read_csv('dados_2.csv', parse_dates=['data'])
-            return dados
-        except FileNotFoundError:
-            st.error("Arquivo 'dados.csv' não encontrado!")
-            return pd.DataFrame(columns=['data', 'total', 'acertos', 'erros'])
+    df = preparar_dataframe(dados_json)
 
-    dados = carregar_dados()
+    st.subheader("Tabela de Resultados")
+    st.dataframe(df)
 
-    # titulo da pagina
-    st.title("Dashboard de Casos de Teste")
+    st.subheader("Gráfico de Validade do YAML")
+    yaml_counts = df['yaml_valido'].value_counts().rename({True: 'Válido', False: 'Inválido'})
+    fig_yaml = px.pie(values=yaml_counts.values, names=yaml_counts.index, title='Validade dos Arquivos YAML')
+    st.plotly_chart(fig_yaml)
 
-    # barra lateral para filtrar data
-    st.sidebar.header("Filtros")
-    data_inicial = st.sidebar.date_input("Data Inicial", dados['data'].min())
-    data_final = st.sidebar.date_input("Data Final", dados['data'].max())
+    #***********************************
+    st.subheader("Comparativo entre Status Esperado e Real")
 
+    # Filtra colunas e remove nulos
+    status_df = df[['status_real', 'status_esperado']].dropna()
 
-    # filtrando os dados 
-    dados_filtrados = dados[
-        (dados['data'] >= pd.to_datetime(data_inicial)) & 
-        (dados['data'] <= pd.to_datetime(data_final))
-    ]
+    # Contagem dos status
+    esperado_counts = status_df['status_esperado'].value_counts()
+    real_counts = status_df['status_real'].value_counts()
 
-    # ********************************** #
-    st.title('Todas as Estatísticas')
-    # criando as 3 colunas iniciais
-    col1, col2, col3 = st.columns(3)
+    # DataFrame para gráfico de barras
+    comparativo_df = pd.DataFrame({
+        'Esperado': esperado_counts,
+        'Real': real_counts
+    }).fillna(0).reset_index().rename(columns={'index': 'Status'})
+
+    # Layout com duas colunas
+    col1, col2 = st.columns(2)
+
     with col1:
-        fig_totais = px.area(
-            dados_filtrados,
-            x='data',
-            y='total',
-            title='Testes Totais',
-            color_discrete_sequence=[cores['azul']],
+        st.markdown("#### Gráfico de Barras")
+        fig_bar = px.bar(
+            comparativo_df.melt(id_vars='Status', value_vars=['Esperado', 'Real']),
+            x='Status',
+            y='value',
+            color='variable',
+            barmode='group',
+            title='Status Esperado vs Real',
+            labels={'value': 'Quantidade', 'variable': 'Tipo'}
         )
-        st.plotly_chart(fig_totais, use_container_width=True)
-        st.metric("Total de Testes", dados_filtrados['total'].sum())
+        st.plotly_chart(fig_bar, use_container_width=True)
 
     with col2:
-        fig_acertos = px.area(
-            dados_filtrados,
-            x='data',
-            y='acertos',
-            title='Acertos Totais',
-            color_discrete_sequence=[cores['verde']]
+        st.markdown("#### Gráfico Circular (Donut) do Status Real")
+        
+        # Ajusta as colunas corretamente
+        real_df = real_counts.reset_index()
+        real_df.columns = ['status', 'quantidade']
+
+        fig_donut = px.pie(
+            real_df,
+            names='status',
+            values='quantidade',
+            hole=0.4,  # transforma em donut
+            title='Distribuição dos Status Reais',
+            labels={'status': 'Status', 'quantidade': 'Quantidade'}
         )
-        st.plotly_chart(fig_acertos, use_container_width=True)
-        st.metric("Acertos", dados_filtrados['acertos'].sum())
+        st.plotly_chart(fig_donut, use_container_width=True)
+    #**************************************
 
-    with col3:
-        fig_erros = px.area(
-            dados_filtrados,
-            x='data',
-            y='erros',
-            title='Erros Totais',
-            color_discrete_sequence=[cores['vermelho']]
-        )
-        st.plotly_chart(fig_erros, use_container_width=True)
-        st.metric("Erros", dados_filtrados['erros'].sum())
-
-    # *******************************
-
-    #declarando barras
-    chart_data = dados_filtrados[["total", "acertos", "erros"]]
-    st.bar_chart(chart_data, color=[cor for nome,cor in cores.items()])
-
-    ###
-    fig_barras = px.bar(dados_filtrados, 
-        x=dados_filtrados.index, 
-        y=["total", "acertos", "erros"],
-        barmode='group',
-        title="Desempenho dos Testes",
-        #"color_discrete_sequence= str([cores['azul'], [cores['verde']], [cores['vermelho']]]),
+    st.subheader("Erros de Correspondência")
+    fig_erro = px.bar(
+        df,
+        x='arquivo',
+        y=['esperada_ausente', 'real_ausente'],
+        title='Quantidade de Issues Ausentes',
+        labels={'value': 'Qtd de Issues', 'arquivo': 'Arquivo'},
+        barmode='group'
     )
-    st.plotly_chart(fig_barras)
+    st.plotly_chart(fig_erro)
 
-    media_testes = dados_filtrados['total'].mean()
-
-    st.write(f"Média de testes por período: {media_testes:.2f}\n")
-
-    #tabela
-    st.subheader('Dados Filtrados')
-    st.dataframe(dados_filtrados)
-
-    # grafico de linha
-    st.subheader("Testes Executados por Período")
-    fig_linha = px.line(
-        dados_filtrados, 
-        x='data', 
-        y='total', 
-        markers=True,
-        labels={'data': 'Data', 'total': 'Total de Testes'}
+    st.subheader("Tempo de Execução")
+    df_tempo = df.dropna(subset=['tempo_execucao'])
+    fig_tempo = px.bar(
+        df_tempo,
+        x='arquivo',
+        y='tempo_execucao',
+        title='Tempo de Execução por Arquivo (ms)'
     )
-    st.plotly_chart(fig_linha)
-
-    # grafico de Pizza 
-    st.subheader("Distribuição de Acertos vs. Erros")
-    totais = dados_filtrados['total'].sum()
-    acertos_total = dados_filtrados['acertos'].sum()
-    erros_total = dados_filtrados['erros'].sum()
-
-    fig_pizza = px.pie(
-        names=['Acertos', 'Erros'],
-        values=[acertos_total, erros_total],
-        title='Taxa de Sucesso',
-        color_discrete_sequence=[cores['verde'], cores['vermelho']]
-    )
-    st.plotly_chart(fig_pizza)
-
-
-
-
-
-
+    st.plotly_chart(fig_tempo)
