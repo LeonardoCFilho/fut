@@ -65,7 +65,10 @@ def mainMenu(args = None):
         case "template":
             logger.info("Usuário criou um template")
             print("Criando template...")
-            criaArquivoTeste(gerenciadorTestes)
+            try:
+                criaArquivoTeste(gerenciadorTestes)
+            except PermissionError:
+                print("O programa não tem permissão para criar o arquivo!")
         case "configuracoes":
             logger.info("Usuário solicitou o menu de configurações")
             print(returnDialogo('configuracoes'))
@@ -119,10 +122,17 @@ def mainMenu(args = None):
                     flagAnimacaoSpinner = False # Fim do processo => parar a animação
                     sys.stdout.write('\r')
                     sys.stdout.flush()
-                else: # Entrega de uma vez
+                # Entrega de uma vez
+                else: 
                     list(realizarTestes(args,entregaGradual=entregaGradual))
             except Exception as e:
-                print(f"Erro na execução dos testes: {e}")
+                if 'nenhum arquivo de teste encontrado' in str(e).lower():
+                    if len(args) == 0:
+                        print("Nenhum arquivo YAML encontrado na pasta atual!")
+                    else:
+                        print("Caminhos fornecidos invalidos!")                    
+                else:
+                    print(f"Erro na execução dos testes: {e}")
 
 
 if __name__ == "__main__":

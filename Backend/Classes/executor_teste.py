@@ -26,12 +26,11 @@ class ExecutorTestes(InicializadorSistema):
         with open(schemaPath, 'r', encoding="utf-8") as jsonSchemaFile:
             schema = json.load(jsonSchemaFile)
         # Arquivo de teste
-        if arquivoTeste.suffix == ".json":
-            with open(arquivoTeste, "r", encoding="utf-8") as file:
-                data = json.load(file)  
-        elif arquivoTeste.suffix == ".yaml" or arquivoTeste.suffix == ".yml":
+        if arquivoTeste.suffix == ".yaml" or arquivoTeste.suffix == ".yml": # por segurança
             with open(arquivoTeste, "r", encoding="utf-8") as file:
                 data = yaml.safe_load(file)  
+
+        # Limpar a entrada
         data = self.limparEntrada(data)
 
         # Inicializar variaveis
@@ -53,9 +52,24 @@ class ExecutorTestes(InicializadorSistema):
         def geraArgsValidator(dictContext, secaoInteresse, prefixo):
             strArgsFormatados = ''
             if dictContext.get(secaoInteresse):
-                if dictContext[secaoInteresse] != [""] and dictContext[secaoInteresse] != "":
+                if dictContext[secaoInteresse] not in [None, "", [""]]:
                     strArgsFormatados = f" -{prefixo} " + f" -{prefixo} ".join(dictContext[secaoInteresse])
             return strArgsFormatados
+        
+        # Antes de tentar validar o arquivo verificar se existe:
+        # Preparar arquivo
+        data['caminho_instancia'] = Path(data['caminho_instancia'])
+        if not data['caminho_instancia'].is_absolute(): # Para garantir consistencia
+            data['caminho_instancia'] = arquivoTeste.parent / data['caminho_instancia']
+        # Tentar mais duas maneiras de achar o arquivo
+        if not data['caminho_instancia'].exists(): # Arquivo escrito no teste não existe
+            if arquivoTeste.with_suffix('.json').exists(): # Ver se versão com mesmo nome (mas .json) existe
+                data['caminho_instancia'] = arquivoTeste.with_suffix('.json')
+            elif Path(arquivoTeste.parent / f"{data['test_id']}.json").exists(): # Ver se existe pelo id
+                data['caminho_instancia'] = Path(arquivoTeste.parent / f"{data['test_id']}.json")
+            else: # Simplesmente não existe
+                flagYamlValido = False
+                justificativaArquivoInvalido = "Não foi possível encontrar o arquivo a ser testado"
 
         if flagYamlValido:
             argsArquivoFhir = ''
@@ -66,16 +80,13 @@ class ExecutorTestes(InicializadorSistema):
             from Classes.gerenciador_validator import GerenciadorValidator
             gerenciadorValidator = GerenciadorValidator(self.pathFut)
             try:
-                # Caminho do arquivo a ser validado
-                data['caminho_instancia'] = Path(data['caminho_instancia'])
-                if not data['caminho_instancia'].is_absolute(): # Para garantir consistencia
-                    data['caminho_instancia'] = arquivoTeste.parent / data['caminho_instancia']
-                # Iniciar testes em si
+                # Iniciar testes
                 outputValidacao = gerenciadorValidator.validarArquivoFhir(data['caminho_instancia'], args=argsArquivoFhir)
             except subprocess.TimeoutExpired as e:
                 pass # Já está registrado no log e não é um erro crítico
             except Exception as e:
-                #print(e) # debug
+                # print(e) # debug
+                # raise(e)
                 pass # Já está registrado no log (testar)
 
         return {
@@ -91,11 +102,12 @@ class ExecutorTestes(InicializadorSistema):
     # 2. O arquivo em específico
     # 3. Os arquivos que tenham o mesmo prefixo (uso de '*') 
     def listarArquivosValidar(self, argsEntrada):
+        arquivosYaml = []
+        # Ler todos da pasta atual
         if len(argsEntrada) == 0:
-            arquivosYaml = list(Path.cwd().glob('*.yaml'))
-            arquivosYaml += list(Path.cwd().glob('*.yml'))
+            arquivosYaml = list(Path.cwd().glob('*.yaml')) + list(Path.cwd().glob('*.yml'))
+        # Arquivos especificados
         else:
-            arquivosYaml = []
             # Garantir que argsEntrada é uma list
             if isinstance(argsEntrada, str):
                 argsEntrada = str(argsEntrada).split()
@@ -111,13 +123,16 @@ class ExecutorTestes(InicializadorSistema):
                     arquivoAtual = Path.cwd() / arquivoAtual
 
                 if '*' in arquivoAtual.name:
-                    argsEntrada.extend(list(arquivoAtual.parent.glob(f"{str(arquivoAtual.name).split('*')[0]}*.yaml")))
+                    pesquisaPrefixo = str(arquivoAtual.name).split('*')[0]
+                    argsEntrada.extend(list(arquivoAtual.parent.glob(f"{pesquisaPrefixo}*.yaml")))
 
-                # Buscar primeiro arquivo YAML
-                if (arquivoAtual.suffix == ".yaml" or arquivoAtual.suffix == ".yml") and arquivoAtual.exists():
+                # Verificar se o arquivo tem a extensão .yaml ou .yml e existe
+                if (arquivoAtual.suffix in [".yaml", ".yml"]) and arquivoAtual.exists():
                     arquivosYaml.append(arquivoAtual)
         
         # Garantir que não há duplicatas
         arquivosYaml = list(set(arquivosYaml))
+        # Por segurança, remover qualquer arquivo inexistente
+        arquivosYaml = [arquivo for arquivo in arquivosYaml if arquivo.exists()]
 
         return arquivosYaml

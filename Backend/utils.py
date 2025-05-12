@@ -21,6 +21,7 @@ def alterarValorConfiguracao(configuracaoSerAlterada, novoValor):
         return f"Erro ao alterar a configuração '{configuracaoSerAlterada}': {str(e)}"
 
 # Recebe uma lista e faz a validação dos arquivos
+# Retornar ValueError quando a lista de testes é vazia
 def realizarTestes(args, tipoRelatorio='JSON', entregaGradual=False):
     try: 
         logger.info("Teste de arquivos inicializado")
@@ -36,9 +37,13 @@ def realizarTestes(args, tipoRelatorio='JSON', entregaGradual=False):
 
 # Cria ou um template do arquivo de teste (nenhuma entrada enviada) ou um .yaml preenchido
 # Se o caminho não foi especificado o arquivo é criado na pasta de execução
+# Pode retornar PermissionError
 def criaArquivoTeste(dictInformacoesTeste:dict = None, caminhoArquivo = None):
     gerenciadorTestes = GerenciadorTestes.get_instance()
-    gerenciadorTestes.criaYamlTeste(dictInformacoesTeste, caminhoArquivo)
+    try:
+        gerenciadorTestes.criaYamlTeste(dictInformacoesTeste, caminhoArquivo)
+    except Exception as e:
+        raise(e)
 
 # Retorna ou o conteudo desejado ou uma string vazia (Caso de erro)
 def returnDialogo(dialogoDesejado: str):

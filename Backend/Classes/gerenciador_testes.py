@@ -65,8 +65,10 @@ class GerenciadorTestes:
   # Ideia: Cria ou um template de teste a ser preenchido pelo o usuário ou cria um arquivo de teste já preenchido
   def criaYamlTeste(self, dadosArquivo = None, caminhoArquivo = None):
     logger.info(f"Arquivo de teste criado em {caminhoArquivo}")
-    if not dadosArquivo:
-      logger.info("Template de um arquivo de teste criado")
+    if not caminhoArquivo: # Se o nome não é especificado => template
+      caminhoArquivo = "template.yaml"
+    if not dadosArquivo: # Sem informações especificadas => template
+      logger.info("Template de um arquivo de teste criado") 
       dadosArquivo = {
         "test_id": '',
         "description": '',
@@ -99,12 +101,12 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
   fatal: [{dadosArquivo['fatal']}] #  #  (Obrigatório) Lista de mensagens erros fatais esperados (lista de string).
   information: [{dadosArquivo['information']}]  #  (Obrigatório) Lista de mensagens informativas esperadas (lista de string).
   invariantes: {dadosArquivo['invariantes']} # (Opcional)"""
-    if caminhoArquivo:
-      with open(caminhoArquivo, "w", encoding="utf-8") as file:
+    import os
+    if caminhoArquivo and os.access(caminhoArquivo, os.W_OK): # Verificar se tem permissão de escrita
+      with open(caminhoArquivo, "w", encoding="utf-8") as file: # Se caminhoArquivo já existia ele é sobrescrito
         file.write(templeteYaml)
-    else: 
-      with open("template.yaml", "w", encoding="utf-8") as file:
-        file.write(templeteYaml)
+    else:
+      raise PermissionError
 
   # Ideia: Garantir o funcionamento do sistema (e do objeto de InicializadorSistema)
   def iniciarSistema(self):
@@ -192,21 +194,25 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
     # Criar a lista de testes a serem executados
     listaArquivosTestar = self.prepararExecucaoTestes(args)
     
-    startTestes = time.time()
-    resultadosValidacao = []
-    for resultado in self.executarThreadsTeste(listaArquivosTestar, numThreads):
-      resultadosValidacao.append(resultado)
-      # Entregas graduais
-      if entregaGradual:
-        yield [resultado, round((len(resultadosValidacao)/len(listaArquivosTestar)),4)]
-    endTestes = time.time()
-    
-    logger.info("Testes listados completos")
-    print("Testes finalizados!")
+    if len(listaArquivosTestar) > 0: # Caso valido de teste
+      startTestes = time.time()
+      resultadosValidacao = []
+      for resultado in self.executarThreadsTeste(listaArquivosTestar, numThreads):
+        resultadosValidacao.append(resultado)
+        # Entregas graduais
+        if entregaGradual:
+          yield [resultado, round((len(resultadosValidacao)/len(listaArquivosTestar)),4)]
+      endTestes = time.time()
 
-    #print(resultadosValidacao) # debug
+      logger.info("Testes listados completos")
+      print("Testes finalizados!")
 
-    self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio) # (endTestes-startTestes) # Eventualmente enviar para o relatório
+      #print(resultadosValidacao) # debug
 
-    #print("Arquivos encontrados:", listArquivosValidar) # debug
-    #print("Relatório de testes:", resultadosValidacao) # debug
+      self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio) # (endTestes-startTestes) # Eventualmente enviar para o relatório
+
+      #print("Arquivos encontrados:", listArquivosValidar) # debug
+      #print("Relatório de testes:", resultadosValidacao) # debug
+    else:
+      logger.info("Nenhum caso de teste válido encontrado")
+      raise ValueError("Nenhum arquivo de teste encontrado.")

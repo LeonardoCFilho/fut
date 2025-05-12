@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     # Iniciar execução do programa (leitura do terminal)
     logger.info("Iniciando o sistema")
-    print("Iniciando o sistema:")
+    print("Iniciando o sistema...")
     # Lendo o terminal (entrada será transferida para apps.py)
     args = sys.argv[1:]  # Ler args
     if not args: # Nada foi escrito => enviar string vazia
