@@ -7,4 +7,4 @@ Backend/validator_cli.jar
 # Arquivo de backup
 **/OLD*.*
 # Criando a cada iteração do programa
-**/fut.log
+**/fut*.log

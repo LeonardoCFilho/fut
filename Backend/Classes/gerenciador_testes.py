@@ -5,6 +5,7 @@ from Classes.executor_teste import ExecutorTestes
 from Classes.gerenciador_validator import GerenciadorValidator
 from Classes.Exceptions import ExcecaoTemplate
 import os
+import threading
 import concurrent.futures
 import requests
 import sys
@@ -15,23 +16,38 @@ logger = logging.getLogger(__name__)
 # Singleton
 class GerenciadorTestes:
   _instance = None
+  _lock = threading.Lock()  
   # Construtor
   def __init__(self, pathFut):
     if not GerenciadorTestes._instance:
       GerenciadorTestes._instance = self
       self.pathFut = pathFut
+      self.inicializador = None
   # Retorna o objeto singleton da classe
   @staticmethod
   def get_instance(pathFut=None):
-    if GerenciadorTestes._instance is None:
-      if pathFut is None:
-        raise ValueError("Caminho da pasta do projeto deve ser providenciada na primeira execução")
-      GerenciadorTestes._instance = GerenciadorTestes(pathFut)
+    with GerenciadorTestes._lock:
+      if GerenciadorTestes._instance is None:
+        if pathFut is None:
+          raise ValueError("Caminho da pasta do projeto deve ser providenciada na primeira execução")
+        GerenciadorTestes._instance = GerenciadorTestes(pathFut)
     return GerenciadorTestes._instance
+
+  # Ideia: Garantir o funcionamento do sistema (e do objeto de InicializadorSistema)
+  def iniciarSistema(self):
+    # Check if we already have an initializer instance
+    if self.inicializador is None:
+      logger.info("Criando instancia de InicializadorSistema para GerenciadorTestes")
+      try:
+        self.inicializador = InicializadorSistema(self.pathFut)
+      except FileNotFoundError as e:
+        logger.fatal(e)
+        sys.exit(e)
+    return self.inicializador
 
   # Ideia: Faz download de um arquivo a partir de uma URL para o caminho especificado.
   # P.s.: Especificar o tipo de arquivo no nome do arquivo
-  def baixaArquivoUrl(self, url, enderecoArquivo, maxTentativas = 3):
+  def baixarArquivoUrl(self, url, enderecoArquivo, maxTentativas = 3):
     numTentativas = 0
     while numTentativas < maxTentativas:
       try:
@@ -63,7 +79,7 @@ class GerenciadorTestes:
     # P.s.: Referência para o template: https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md#padrões-esperados
   
   # Ideia: Cria ou um template de teste a ser preenchido pelo o usuário ou cria um arquivo de teste já preenchido
-  def criaYamlTeste(self, dadosArquivo = None, caminhoArquivo = None):
+  def criaArquivoYamlTeste(self, dadosArquivo = None, caminhoArquivo = None):
     logger.info(f"Arquivo de teste criado em {caminhoArquivo}")
     if not caminhoArquivo: # Se o nome não é especificado => template
       caminhoArquivo = "template.yaml"
@@ -83,7 +99,7 @@ class GerenciadorTestes:
         "information": '',
         "invariantes": '',
       }
-    templeteYaml = f"""test_id: {dadosArquivo['test_id']} # (Obrigatório) Identificador único para cada teste (string).
+    templateYaml = f"""test_id: {dadosArquivo['test_id']} # (Obrigatório) Identificador único para cada teste (string).
 description: {dadosArquivo['description']} # (Recomendado) Descricao (string).
 context: # Definição do contexto de validação.
   igs: # (Recomendado) Lista dos Guias de Implementação (IGs).
@@ -101,25 +117,18 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
   fatal: [{dadosArquivo['fatal']}] #  #  (Obrigatório) Lista de mensagens erros fatais esperados (lista de string).
   information: [{dadosArquivo['information']}]  #  (Obrigatório) Lista de mensagens informativas esperadas (lista de string).
   invariantes: {dadosArquivo['invariantes']} # (Opcional)"""
-    import os
-    if caminhoArquivo and os.access(caminhoArquivo, os.W_OK): # Verificar se tem permissão de escrita
-      with open(caminhoArquivo, "w", encoding="utf-8") as file: # Se caminhoArquivo já existia ele é sobrescrito
-        file.write(templeteYaml)
-    else:
-      raise PermissionError
-
-  # Ideia: Garantir o funcionamento do sistema (e do objeto de InicializadorSistema)
-  def iniciarSistema(self):
-    # Criar o inicializador do sistema
     try:
-      logger.info("Preparando para a execução de testes")
-      return InicializadorSistema(self.pathFut)
-    except FileNotFoundError as e:
-       logger.fatal(f"Arquivos essencial '{e.args[0]}' não foi encontrado")
-       raise FileNotFoundError(f"Arquivos essencial '{e.args[0]}' não foi encontrado")
+      if caminhoArquivo: # Verificar se tem permissão de escrita
+        with open(caminhoArquivo, "w", encoding="utf-8") as file: # Se caminhoArquivo já existia ele é sobrescrito
+          file.write(templateYaml)
+    except PermissionError as e:
+      logger.error("Programa não tem permissão para criar o arquivo de teste requisitado")
+      raise e
+    except Exception as e:
+      raise e # improvavel
 
   # Ideia: Determinar a pasta que os arquivos do validator serão salvos
-  def definePastaValidator(self) -> Path:
+  def definirPastaValidator(self) -> Path:
     iniciadorSistema = self.iniciarSistema()
     flagSalvarOutput = iniciadorSistema.returnValorSettings('armazenar_saida_validator').lower() in ["true", "1", "yes"]
     if flagSalvarOutput: # Pasta permanente
@@ -130,7 +139,7 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
     return pastaRelatorio
 
   # Ideia: Em execução, garantir que o validator esteja atualizado
-  def atualizarValidatorExecucao(self, inicializadorSistema):
+  def atualizarExecucaoValidator(self, inicializadorSistema):
     # Garantir que o validator esteja atualizado
     atualizarValidator = GerenciadorValidator(self.pathFut)
     try:
@@ -150,8 +159,8 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
     logger.info("Lista de testes a serem examinadas criada")
     if not args: # Garantir que há uma list
       args = []
-    #print(executorDeTestes.listarArquivosValidar(args))
-    return executorDeTestes.listarArquivosValidar(args)
+    #print(executorDeTestes.gerarListaArquivosTeste(args))
+    return executorDeTestes.gerarListaArquivosTeste(args)
 
   # Ideia: Execução dos testes que o usuário solicitou + uso de threads
   def executarThreadsTeste(self, listaArquivosTestar, numThreads):
@@ -178,23 +187,28 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
     #  geradorRelatorio.gerarRelatorioHtml()
 
   # Ideia: Controlar o fluxo para a execução dos testes
-  def executarTestes(self, args:list, versaoRelatorio, entregaGradual = False):
+  def executarTestesCompleto(self, args:list, versaoRelatorio, entregaGradual = False):
     try:
       inicializadorSistema = self.iniciarSistema()
     except FileNotFoundError as e:
       logger.fatal(e)
       sys.exit(e) # Sem esses arquivos o sistema não consegue rodar
 
-    self.atualizarValidatorExecucao(inicializadorSistema)
+    self.atualizarExecucaoValidator(inicializadorSistema)
 
     # Determinar número de threads
     numThreads = int(inicializadorSistema.returnValorSettings('max_threads')) # Pela settings
-    numThreads = min(numThreads, (os.cpu_count()-2)) # Não todas as threads
+    numThreads = min(numThreads, max(1, (os.cpu_count()-2))) # Não todas as threads
 
     # Criar a lista de testes a serem executados
     listaArquivosTestar = self.prepararExecucaoTestes(args)
     
-    if len(listaArquivosTestar) > 0: # Caso valido de teste
+    if len(listaArquivosTestar) == 0: 
+      logger.info("Nenhum caso de teste válido encontrado")
+      raise ValueError("Nenhum arquivo de teste encontrado.")
+    
+    else:
+    # Caso valido de teste
       startTestes = time.time()
       resultadosValidacao = []
       for resultado in self.executarThreadsTeste(listaArquivosTestar, numThreads):
@@ -213,6 +227,3 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
 
       #print("Arquivos encontrados:", listArquivosValidar) # debug
       #print("Relatório de testes:", resultadosValidacao) # debug
-    else:
-      logger.info("Nenhum caso de teste válido encontrado")
-      raise ValueError("Nenhum arquivo de teste encontrado.")

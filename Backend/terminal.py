@@ -53,7 +53,7 @@ def mainMenu(args = None):
     match args:
         case "--help":
             logger.info("Usuário solicitou o menu de ajuda")
-            print(returnDialogo('help'))
+            print(obterDialogo('help'))
         case "gui":
             print("A interface gráfica será implementada em breve!")
             # logger.info("Iniciando a interface gráfica")
@@ -66,28 +66,28 @@ def mainMenu(args = None):
             logger.info("Usuário criou um template")
             print("Criando template...")
             try:
-                criaArquivoTeste(gerenciadorTestes)
+                gerarArquivoTeste(gerenciadorTestes)
             except PermissionError:
                 print("O programa não tem permissão para criar o arquivo!")
         case "configuracoes":
             logger.info("Usuário solicitou o menu de configurações")
-            print(returnDialogo('configuracoes'))
+            print(obterDialogo('configuracoes'))
         case ["configuracoes", configuracaoSerLida]:
             logger.info("Usuário solicitou o valor de uma configuração")
-            valorConfiguracao = lerValorConfiguracao(configuracaoSerLida)
+            valorConfiguracao = obterValorConfiguracao(configuracaoSerLida)
             if valorConfiguracao:
                 print(f"{textoCiano}Configurações:{fimTextoColorido} O valor atual de '{configuracaoSerLida}' é {valorConfiguracao}")
             else: 
                 print("Configuração não reconhecida, verifique a escrita.")
         case ["configuracoes", configuracaoSerAlterada, novoValor]:
             logger.info("Usuário tentou alterar o valor de uma configuração")
-            valorConfiguracao = lerValorConfiguracao(configuracaoSerAlterada)
+            valorConfiguracao = obterValorConfiguracao(configuracaoSerAlterada)
             if valorConfiguracao:
                 print("Alterando a configuração....")
-                resultadoAlteracao = alterarValorConfiguracao(configuracaoSerAlterada, novoValor)
+                resultadoAlteracao = atualizarValorConfiguracao(configuracaoSerAlterada, novoValor)
                 print(resultadoAlteracao)
                 if "Erro" not in resultadoAlteracao:
-                    print(f"Valor de '{configuracaoSerAlterada}' foi alterado de {valorConfiguracao} para {lerValorConfiguracao(configuracaoSerAlterada)}")
+                    print(f"Valor de '{configuracaoSerAlterada}' foi alterado de {valorConfiguracao} para {obterValorConfiguracao(configuracaoSerAlterada)}")
             else: 
                 print("Configuração não reconhecida, verifique a escrita.")
         case _:
@@ -109,7 +109,7 @@ def mainMenu(args = None):
 
                 # Responsivo
                 if entregaGradual:
-                    for resultado in realizarTestes(args,entregaGradual=entregaGradual):
+                    for resultado in iniciarExecucaoTestes(args,entregaGradual=entregaGradual):
                         if (resultado[-1]) >= pctPronto:
                             resultadoLimpo = round(resultado[-1],1)
                             # Limpar o terminal
@@ -124,7 +124,7 @@ def mainMenu(args = None):
                     sys.stdout.flush()
                 # Entrega de uma vez
                 else: 
-                    list(realizarTestes(args,entregaGradual=entregaGradual))
+                    list(iniciarExecucaoTestes(args,entregaGradual=entregaGradual))
             except Exception as e:
                 if 'nenhum arquivo de teste encontrado' in str(e).lower():
                     if len(args) == 0:

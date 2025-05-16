@@ -12,11 +12,11 @@ class ExecutorTestes(InicializadorSistema):
         super().__init__(pathFut)
     
     # Ideia: Padronizar as informações recebidas do arquivo de teste
-    def limparEntrada(self, data):
+    def limparConteudoEntrada(self, data):
         if isinstance(data, dict):
-            return {key: self.limparEntrada(value) for key, value in data.items()}
+            return {key: self.limparConteudoEntrada(value) for key, value in data.items()}
         elif isinstance(data, list):
-            return [self.limparEntrada(item) if item is not None else "" for item in data]
+            return [self.limparConteudoEntrada(item) if item is not None else "" for item in data]
         return data
 
     # Ideia: Valida um arquivo YAML usando o schema JSON e, se válido, chama a validação FHIR.
@@ -31,7 +31,7 @@ class ExecutorTestes(InicializadorSistema):
                 data = yaml.safe_load(file)  
 
         # Limpar a entrada
-        data = self.limparEntrada(data)
+        data = self.limparConteudoEntrada(data)
 
         # Inicializar variaveis
         flagYamlValido = True
@@ -101,7 +101,7 @@ class ExecutorTestes(InicializadorSistema):
     # 1. Todos os arquivos .yaml da pasta atual (entrada vazia)
     # 2. O arquivo em específico
     # 3. Os arquivos que tenham o mesmo prefixo (uso de '*') 
-    def listarArquivosValidar(self, argsEntrada):
+    def gerarListaArquivosTeste(self, argsEntrada):
         arquivosYaml = []
         # Ler todos da pasta atual
         if len(argsEntrada) == 0:

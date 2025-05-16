@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 import logging
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class InicializadorSistema:
         import configparser
         settings = configparser.ConfigParser()
         settings.read(self.pathSettings)
-        settingsBuscada = str(settingsBuscada)
+        settingsBuscada = str(settingsBuscada).lower()
 
         # Buscar a configuração requisitada
         for secao in settings.sections():
@@ -38,7 +39,9 @@ class InicializadorSistema:
 
     # Ideia: Permite o usuário alterar o valor de uma configuração do settings.ini
     def alterarValorSetting(self, configuracaoSerAlterada, novoValor):
-        novoValor = str(novoValor) # Por segurança, adicionar previsibilidade
+        # Por segurança, adicionar previsibilidade
+        novoValor = str(novoValor).lower()
+        configuracaoSerAlterada = configuracaoSerAlterada.lower()
         # Possiveis configurações
         dictConfiguracoes = {
             "timeout": int,
@@ -53,11 +56,11 @@ class InicializadorSistema:
         flagAlteracaoValida = False
 
         # caminho_validator tem tratamento especial (existencia ou não do arquivo)
-        if configuracaoSerAlterada.lower() == "caminho_validator":
+        if configuracaoSerAlterada == "caminho_validator":
             if novoValor != "reset":
                 caminhoArquivo = Path(novoValor)
-                if not caminhoArquivo.is_absolute:
-                    caminhoArquivo = Path.cwd() + caminhoArquivo
+                if not caminhoArquivo.is_absolute():
+                    caminhoArquivo = Path.cwd() / caminhoArquivo
                 if not caminhoArquivo.exists():
                     raise FileNotFoundError(f"Novo validator_cli não foi encontrado, endereço usado: {caminhoArquivo.resolve()}")
                 #print(novoValor)
@@ -79,7 +82,7 @@ class InicializadorSistema:
         
         # Configuração booleana tem tratamento especial
         if configuracaoSerAlterada in listaConfiguracoesBool:
-            if novoValor.lower() in ["true", "1", "yes", "sim"]:
+            if novoValor in ["true", "1", "yes", "sim"]:
                 novoValor = "True"
             else:
                 novoValor = "False"
@@ -87,12 +90,12 @@ class InicializadorSistema:
         
         # Adicionando alguns tratamentos especiais:
         # Tempo baixo demais
-        if configuracaoSerAlterada.lower() == 'timeout':
+        if configuracaoSerAlterada == 'timeout':
             if novoValor < 15:
                 flagAlteracaoValida = False
                 raise ValueError("A configuração de timeout necessita de pelo menos 15 segundos para garantir execução.")
         # Número de threads tem que ser natural*
-        if configuracaoSerAlterada.lower() == "max_threads":
+        if configuracaoSerAlterada == "max_threads":
             if novoValor < 1: 
                 flagAlteracaoValida = False
                 raise ValueError("O número de máximo de threads tem que ser maior que 0!")
@@ -110,12 +113,13 @@ class InicializadorSistema:
                     logger.info(f"Valor da configuração '{configuracaoSerAlterada}' foi alterado para {novoValor}")
 
             # Sobrescrever o arquivo para alterar mudanças
-            with open(self.pathSettings, 'w') as configfile:
+            with open(self.pathSettings, 'w', encoding="utf-8") as configfile:
                 settings.write(configfile)
         
         return flagAlteracaoValida
 
     # Ideia: Garantir que o Path do validator seja válido (pode ser o padrão ou o do usuário)
+    # Feita para ser usada apenas por InicializadorSistema
     def _resolveValidatorPath(self) -> Path:
         # Ler e limpar o caminho do validator
         pathValidator = str(self.returnValorSettings('caminho_validator')).split('#')[0].strip()
@@ -124,13 +128,21 @@ class InicializadorSistema:
         # Não é absoluto => validator_cli padrão, endereçar com a pasta do nosso projeto
         if not pathValidator.is_absolute():
             pathValidator = self.pathFut / pathValidator
-            # Garante que o valitor_cli esteja instalado
-            from Classes.gerenciador_validator import GerenciadorValidator  
+
+        ## Verificando o validator
+        from Classes.gerenciador_validator import GerenciadorValidator  
+        # Garante que o valitor_cli esteja instalado
+        if not pathValidator.exists():
             try:
                 GerenciadorValidator.instalaValidatorCli(pathValidator)
             except Exception as e:
-                import sys
                 logger.fatal("Erro ao instalar o validator_cli padrão")
                 sys.exit("Erro ao instalar o validator_cli padrão") # Sem esses arquivos o sistema não consegue rodar
+        
+        # Garantir que é válido
+        if not GerenciadorValidator.verificaVersaoValidator(pathValidator):
+            # Validator não é válido
+            logger.fatal("Validator_cli utilizado não é válido")
+            sys.exit("Validator_cli utilizado não é válido") # Sem esses arquivos o sistema não consegue rodar
         
         return pathValidator

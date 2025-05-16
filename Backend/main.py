@@ -3,11 +3,16 @@ import sys
 import logging 
 
 def organizarLogs(pathLog: Path):
-    if pathLog.exists():
-        pathOldLog = pathLog.with_name('OLD_fut.log')
-        if pathOldLog.exists(): # Já tinha um antigo => sobrescrever
-            pathOldLog.unlink()
-        pathLog.rename(pathOldLog)
+    numeroMaximoLogs = 5
+    # Apagar o ultimo (se existir)
+    ultimoLogPossivel = pathLog.with_name(f'fut_{numeroMaximoLogs}.log')
+    if ultimoLogPossivel.exists():
+        ultimoLogPossivel.unlink()  
+    # Renomear em sequencia
+    for i in range(numeroMaximoLogs-1, 0, -1):
+        tempOldLog = pathLog.with_name(f'fut_{i}.log')
+        if tempOldLog.exists():
+            tempOldLog.rename(pathLog.with_name(f'fut_{i+1}.log'))
 
 def acharCaminhoProjeto() -> Path:
     maxIteracoes = 10
@@ -24,7 +29,7 @@ if __name__ == "__main__":
     # Caminhos utilizados no nosso projeto
     pathFut = acharCaminhoProjeto()
     pathTerminal = pathFut / "Backend" / "terminal.py"
-    pathLog  = pathFut / 'Arquivos' / 'fut.log'
+    pathLog  = pathFut / 'Arquivos' / 'fut_1.log'
 
     # Logs
     organizarLogs(pathLog) # Garantir que a execução atual terá log próprio

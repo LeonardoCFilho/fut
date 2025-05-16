@@ -23,10 +23,24 @@ class GerenciadorValidator(InicializadorSistema):
         if not pathValidator.exists(): # Evitar sobrescrita
             try:
                 logger.info("Fazendo download do validator_cli")
-                GerenciadorTestes.get_instance().baixaArquivoUrl(linkDownloadValidator, pathValidator)
+                GerenciadorTestes.get_instance().baixarArquivoUrl(linkDownloadValidator, pathValidator)
             except Exception as e:
                 logger.fatal(f"Erro ao instalar o validator_cli: {e}")
                 raise e
+    
+    # Ideia: Retorna a versão do validator_cli ou None(caso de erro)
+    @classmethod
+    def verificaVersaoValidator(cls, pathValidator):
+        try:
+            with zipfile.ZipFile(pathValidator, 'r') as jar:
+                with jar.open('fhir-build.properties') as manifest:
+                    for linha in manifest:
+                        linhaLegivel = linha.decode(errors="ignore").strip()
+                        if "orgfhir.version" in linhaLegivel:
+                            versaoBaixada = linhaLegivel.split("orgfhir.version=")[1]
+                            return versaoBaixada
+        except Exception as e:
+            return None
 
     # Ideia: Instala ou atualiza o validator_cli.jar 
     def atualizarValidatorCli(self, pathValidator = None):
@@ -78,8 +92,8 @@ class GerenciadorValidator(InicializadorSistema):
             # 3º Compara as versões e atualiza se necessário
             if (versaoBaixada and versaoGit) and (versaoBaixada != versaoGit):
                 try:
-                    caminhoValidatorTemp = pathValidator.with_name("NOVOvalidator_cli.jar")
-                    GerenciadorTestes.get_instance().baixaArquivoUrl(linkDownloadValidator, caminhoValidatorTemp)
+                    caminhoValidatorTemp = pathValidator.with_name("temp_validator_cli.jar")
+                    GerenciadorTestes.get_instance().baixarArquivoUrl(linkDownloadValidator, caminhoValidatorTemp)
                     logger.info("Download da versão mais recente do validator_cli feita")
                 except Exception as e:
                     logger.error(f"Erro ao instalar a versão mais nova do validator: {e}")
@@ -92,7 +106,7 @@ class GerenciadorValidator(InicializadorSistema):
             else:
                 logger.info("Verificação de atualização finalizada")
         else:
-            logger.info("Nenhuma instancia de validator_cli encontrada, fazendo o download")
+            logger.info("Nenhuma instancia de validator_cli encontrada, iniciando o download")
             # Se o validator não estiver instalado, faz a instalação inicial
             self.instalaValidatorCli(pathValidator)
 
@@ -104,7 +118,7 @@ class GerenciadorValidator(InicializadorSistema):
 
         tempoTimeout = int(self.returnValorSettings('timeout'))
         from Classes.gerenciador_testes import GerenciadorTestes # Evitar import cíclico, não mover esse import
-        pastaRelatorio = GerenciadorTestes.get_instance().definePastaValidator()
+        pastaRelatorio = GerenciadorTestes.get_instance().definirPastaValidator()
 
         try:
             if arquivoValidar.exists():

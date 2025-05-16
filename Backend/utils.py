@@ -6,13 +6,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Retorna o valor da configuração buscada ou None(Configuração não foi encontrada no settings.ini)
-def lerValorConfiguracao(settingsBuscada):
+def obterValorConfiguracao(settingsBuscada):
     objetoLerConfiguracoes = InicializadorSistema(GerenciadorTestes.get_instance().pathFut)
     return objetoLerConfiguracoes.returnValorSettings(settingsBuscada)
 
 # Tenta alterar uma configuração
 # Retorna ou a mensagem de sucesso ou uma Exception
-def alterarValorConfiguracao(configuracaoSerAlterada, novoValor):
+def atualizarValorConfiguracao(configuracaoSerAlterada, novoValor):
     objetoAlterarConfiguracoes = InicializadorSistema(GerenciadorTestes.get_instance().pathFut)
     try:
         objetoAlterarConfiguracoes.alterarValorSetting(configuracaoSerAlterada, novoValor)
@@ -22,15 +22,15 @@ def alterarValorConfiguracao(configuracaoSerAlterada, novoValor):
 
 # Recebe uma lista e faz a validação dos arquivos
 # Retornar ValueError quando a lista de testes é vazia
-def realizarTestes(args, tipoRelatorio='JSON', entregaGradual=False):
+def iniciarExecucaoTestes(args, tipoRelatorio='JSON', entregaGradual=False):
     try: 
         logger.info("Teste de arquivos inicializado")
         gerenciadorTestes = GerenciadorTestes.get_instance()
         if entregaGradual: # Lidar com as entregas no frontend
-            for resultado in gerenciadorTestes.executarTestes(args, tipoRelatorio, entregaGradual):
+            for resultado in gerenciadorTestes.executarTestesCompleto(args, tipoRelatorio, entregaGradual):
                 yield resultado # é uma list, contém: dict com os dados do teste, % de testes finalizados
         else:
-            list(gerenciadorTestes.executarTestes(args, tipoRelatorio, entregaGradual))
+            list(gerenciadorTestes.executarTestesCompleto(args, tipoRelatorio, entregaGradual))
 
     except Exception as e:
         raise(e)
@@ -38,15 +38,15 @@ def realizarTestes(args, tipoRelatorio='JSON', entregaGradual=False):
 # Cria ou um template do arquivo de teste (nenhuma entrada enviada) ou um .yaml preenchido
 # Se o caminho não foi especificado o arquivo é criado na pasta de execução
 # Pode retornar PermissionError
-def criaArquivoTeste(dictInformacoesTeste:dict = None, caminhoArquivo = None):
+def gerarArquivoTeste(dictInformacoesTeste:dict = None, caminhoArquivo = None):
     gerenciadorTestes = GerenciadorTestes.get_instance()
     try:
-        gerenciadorTestes.criaYamlTeste(dictInformacoesTeste, caminhoArquivo)
+        gerenciadorTestes.criaArquivoYamlTeste(dictInformacoesTeste, caminhoArquivo)
     except Exception as e:
         raise(e)
 
 # Retorna ou o conteudo desejado ou uma string vazia (Caso de erro)
-def returnDialogo(dialogoDesejado: str):
+def obterDialogo(dialogoDesejado: str):
     from colorama import Fore, Style, init
     # Variáveis para formatação de texto no terminal
     textoNegrito = Style.BRIGHT
