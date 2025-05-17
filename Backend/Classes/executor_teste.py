@@ -82,12 +82,10 @@ class ExecutorTestes(InicializadorSistema):
             try:
                 # Iniciar testes
                 outputValidacao = gerenciadorValidator.validarArquivoFhir(data['caminho_instancia'], args=argsArquivoFhir)
-            except subprocess.TimeoutExpired as e:
-                pass # Já está registrado no log e não é um erro crítico
             except Exception as e:
                 # print(e) # debug
                 # raise(e)
-                pass # Já está registrado no log (testar)
+                pass # Já está registrado no log 
 
         return {
             'caminho_yaml': arquivoTeste,

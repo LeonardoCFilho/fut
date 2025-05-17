@@ -149,7 +149,11 @@ class GerenciadorValidator(InicializadorSistema):
                 raise FileNotFoundError(f"Arquivo de entrada não foi encontrado: {arquivoValidar}")
         except subprocess.TimeoutExpired as e:
             logger.warning(f"Timeout na verificação de {arquivoValidar}")
-            raise subprocess.TimeoutExpired(f"Timeout na validação de: {arquivoValidar}") from e
+            # Criar o JSON manualmente para registrar o timeout
+            diconario = { 'issue': [{ 'severity': 'fatal', 'code': 'non-existent', 'details' : {'text': f"attempt to validate the file timed out after {tempoTimeout} seconds"}, 'expression':  [] }] }
+            with open(caminhoRelatorio, mode="w", encoding="utf8") as arquivo:
+                dump(diconario, arquivo, indent=4, ensure_ascii=False)
+                return [caminhoRelatorio, tempoTimeout]
         except Exception as e:
             logger.error(f"Erro durante a validação do arquivo FHIR: {e}")
             raise e

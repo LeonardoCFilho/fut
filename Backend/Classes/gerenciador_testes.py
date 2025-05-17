@@ -180,11 +180,14 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
     # Criar o relatório
     logger.info(f"Iniciando a criação do relatório, relatório selecionado é do tipo {versaoRelatorio}")
     geradorRelatorio = GeradorRelatorios(resultadosValidacao)
-    geradorRelatorio.gerarRelatorioJson() # Arquivo .json sempre é criado
-    #if versaoRelatorio.lower() == "json":
-    #  print("Relatório JSON criado!") 
-    #if versaoRelatorio.lower() == "html":
-    #  geradorRelatorio.gerarRelatorioHtml()
+    try:
+      geradorRelatorio.gerarRelatorioJson() # Arquivo .json sempre é criado
+      #if versaoRelatorio.lower() == "json":
+      #  print("Relatório JSON criado!") 
+      #if versaoRelatorio.lower() == "html":
+      #  geradorRelatorio.gerarRelatorioHtml()
+    except Exception as e:
+      logger.error(f"Erro ao criar o relatório: {e}") # Por segurança
 
   # Ideia: Controlar o fluxo para a execução dos testes
   def executarTestesCompleto(self, args:list, versaoRelatorio, entregaGradual = False):
