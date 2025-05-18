@@ -78,21 +78,36 @@ def render():
                                     st.error(f"Erro ao salvar o arquivo: {e}")
                         else:
                             st.warning("Por favor, leia o arquivo antes de editá-lo.")
+                #**********************
                 with col3:
-                    if st.button("Deletar"):
-                        if st.button('Tem certeza que deseja deletar?'):
-                            try:
-                                os.remove(caminho_arquivo)
-                                st.success("Arquivo deletado com sucesso.")
-                                arquivos.remove(arquivo_selecionado)
-                                if 'conteudo_arquivo' in st.session_state:
-                                    del st.session_state['conteudo_arquivo']
-                                if arquivo_selecionado in st.session_state.get('arquivos_recentes', []):
-                                    st.session_state['arquivos_recentes'].remove(arquivo_selecionado)
-                            except Exception as e:
-                                st.error(f"Erro ao deletar o arquivo: {e}")
-                        elif st.button('Cancelar'):
-                            ...
+                    if 'confirmar_delete' not in st.session_state:
+                        st.session_state.confirmar_delete = False
+
+                    if not st.session_state.confirmar_delete:
+                        if st.button("Deletar"):
+                            st.session_state.confirmar_delete = True
+                    else:
+                        st.warning("Tem certeza que deseja deletar?")
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            if st.button("Sim, deletar"):
+                                try:
+                                    os.remove(caminho_arquivo)
+                                    st.success("Arquivo deletado com sucesso.")
+                                    arquivos.remove(arquivo_selecionado)
+                                    if 'conteudo_arquivo' in st.session_state:
+                                        del st.session_state['conteudo_arquivo']
+                                    if arquivo_selecionado in st.session_state.get('arquivos_recentes', []):
+                                        st.session_state['arquivos_recentes'].remove(arquivo_selecionado)
+                                    st.session_state.confirmar_delete = False
+                                except Exception as e:
+                                    st.error(f"Erro ao deletar o arquivo: {e}")
+                        with col_b:
+                            if st.button("Cancelar"):
+                                st.session_state.confirmar_delete = False
+                
+                
+                #***********************
             else:
                 st.warning("Nenhum arquivo corresponde ao filtro fornecido.")
 
