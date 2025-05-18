@@ -121,6 +121,7 @@ def mainMenu(args = None):
                 if 'nenhum arquivo de teste encontrado' in str(e).lower():
                     if len(args) == 0:
                         print("Nenhum arquivo YAML encontrado na pasta atual!")
+                        print("Verifique a pasta atual ou a digitação do endereço dos testes")
                     else:
                         print("Caminhos fornecidos invalidos!")                    
                 else:
