@@ -102,13 +102,17 @@ class ExecutorTestes(InicializadorSistema):
     def gerarListaArquivosTeste(self, argsEntrada):
         arquivosYaml = []
         # Ler todos da pasta atual
-        if len(argsEntrada) == 0:
+        if (isinstance(argsEntrada, list) or isinstance(argsEntrada, str)) and len(argsEntrada) == 0:
             arquivosYaml = list(Path.cwd().glob('*.yaml')) + list(Path.cwd().glob('*.yml'))
         # Arquivos especificados
         else:
             # Garantir que argsEntrada é uma list
             if isinstance(argsEntrada, str):
                 argsEntrada = str(argsEntrada).split()
+            elif isinstance(argsEntrada, (tuple, set)): # Conversão direta
+                argsEntrada = list(argsEntrada) 
+            elif not isinstance(argsEntrada, list): # Colocar em uma lista
+                argsEntrada = [argsEntrada]  
             # Limpar a string
             argsEntrada = [str(file).replace('"','').replace("'","") for file in argsEntrada]
 

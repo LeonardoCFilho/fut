@@ -3,7 +3,6 @@ from utils import *
 from colorama import Style, Fore
 import sys
 import time
-import psutil
 from main import acharCaminhoProjeto
 import logging
 logger = logging.getLogger(__name__)
@@ -16,20 +15,12 @@ flagAnimacaoSpinner = True
 # Animação no terminal e checks do consumo computacional
 def spinner_animation():
     spinner = ['|', '/', '-', '\\']
-    # Obter informações de consumo de poder computacional
-    threshold = 70 # Limite para forçar a saida do programa
-    memory = psutil.virtual_memory()
-    swap_memory = psutil.swap_memory()
-    cpu_percent = psutil.cpu_percent(interval=1)
     while flagAnimacaoSpinner:
         for symbol in spinner:
             # Animação
             sys.stdout.write(f'\r{symbol} Carregando...')
             sys.stdout.flush()
             time.sleep(0.2)
-            # Check para previnir o computador de travar
-            if memory.percent >= threshold or cpu_percent >= threshold or swap_memory.percent >= threshold:
-                sys.exit(f"Memória: {memory.percent}% | Swap: {swap_memory.percent}% | CPU: {cpu_percent}%\nComputador prestes a travar")
 
 # Cria a thread e inicia a animação
 def startSpinnerAnimation():
@@ -110,6 +101,7 @@ def mainMenu(args = None):
                 # Responsivo
                 if entregaGradual:
                     for resultado in iniciarExecucaoTestes(args,entregaGradual=entregaGradual):
+                        # Mantendo o terminal responsivo
                         if (resultado[-1]) >= pctPronto:
                             resultadoLimpo = round(resultado[-1],1)
                             # Limpar o terminal
