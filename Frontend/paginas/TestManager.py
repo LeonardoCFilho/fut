@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import yaml
+from pathlib import Path
 
 def render():
     st.title("Test Manager")
@@ -19,8 +20,13 @@ def render():
 
     st.title("Gerenciador de Testes YAML")
 
+
+    home = Path.home()
+    default_path = home / "Projetos" / "stream" / "meu_app" / "temp"
+
     # o caminho da pasta
-    pasta_destino = st.text_input("Digite o caminho da pasta:", r'C:\Users\DD\Desktop\Projetos\novo_streamlit\meu_app\temp')
+    pasta_destino = st.text_input("Digite o caminho da pasta:", 
+                                  str(default_path))
 
     # verifica se o caminho é valido
     if os.path.isdir(pasta_destino):

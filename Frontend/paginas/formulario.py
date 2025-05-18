@@ -1,6 +1,7 @@
 import streamlit  as st 
 import yaml
 import os 
+from pathlib import Path
 
 def render():
     st.title("Teste Manual")
@@ -11,22 +12,24 @@ def render():
     if "profile_lista" not in st.session_state:
         st.session_state.profile_lista = []
 
-    #cuidado com o endereço, este é o do meu pc, modifique  ****
-    diretorio_destino_temp = r'C:\Users\DD\Desktop\Projetos\novo_streamlit\meu_app\temp'        
+    home = Path.home()
+    default_path = home / "Projetos" / "stream" / "meu_app" / "temp"
+
+    diretorio_destino_temp = str(default_path)    
     os.makedirs(diretorio_destino_temp, exist_ok=True)
 
     st.header("Validação via Formulário Manual")
     with st.form("formulario_manual"):
-            id = (st.text_input('ID*')).strip().lower() ##
-            descricao = st.text_input("Descrição (Opcional)")##
-            contexto = st.text_input("Contexto") ##
-            igs = st.text_input("IGs (Opcional)") ##
-            profiles = st.text_input("Profiles (Opcional)")##
-            resources = st.text_input("Resources (Opcional)")##
-            path_fhir = st.text_input("Path Fhir*")##
-            caminho_instancia = st.text_input("Caminho Instância*")##
+            id = (st.text_input('ID*')).strip().lower()
+            descricao = st.text_input("Descrição (Opcional)")
+            contexto = st.text_input("Contexto") 
+            igs = st.text_input("IGs (Opcional)")
+            profiles = st.text_input("Profiles (Opcional)")
+            resources = st.text_input("Resources (Opcional)")
+            path_fhir = st.text_input("Path Fhir*")
+            caminho_instancia = st.text_input("Caminho Instância*")
             default_validator = "caminho/ou/link/do/validador_padrao"
-            validator_fhir = st.text_input("Validator FHIR (Opcional):", value=default_validator)
+            validator_fhir = st.text_input("Validator FHIR *:", value=default_validator)
             botao_validar = st.form_submit_button("Criar Teste")
 
     if botao_validar:
