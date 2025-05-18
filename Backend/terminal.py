@@ -12,7 +12,7 @@ textoCiano = Fore.CYAN
 fimTextoColorido = Style.RESET_ALL
 flagAnimacaoSpinner = True
 
-# Animação no terminal e checks do consumo computacional
+# Animação no terminal 
 def spinner_animation():
     spinner = ['|', '/', '-', '\\']
     while flagAnimacaoSpinner:
@@ -25,13 +25,13 @@ def spinner_animation():
 # Cria a thread e inicia a animação
 def startSpinnerAnimation():
     import threading
-    spinner_thread = threading.Thread(target=spinner_animation) # Thread so para a animação (e para previnir de crashar)
-    spinner_thread.daemon = True  # Terminar com a main.py
+    spinner_thread = threading.Thread(target=spinner_animation) # Thread so para a animação 
+    spinner_thread.daemon = True  # Terminar com a main.py (Por segurança já que ela é encerrada antes)
     spinner_thread.start() 
 
 # Executável
-def mainMenu(args = None):
-    # Ou le o terminal para receber args, ou recebe antes da execução
+def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
+    # Não recebeu args => Ler do terminal
     if not args:
         args = sys.argv[1:] 
         if len(args) == 1:
@@ -45,6 +45,7 @@ def mainMenu(args = None):
         case "--help":
             logger.info("Usuário solicitou o menu de ajuda")
             print(obterDialogo('help'))
+
         case "gui":
             print("A interface gráfica será implementada em breve!")
             # logger.info("Iniciando a interface gráfica")
@@ -53,6 +54,7 @@ def mainMenu(args = None):
             # frontend()
             # logger.info("Encerrando a interface gráfica")
             # print("Finalizando processo...")
+
         case "template":
             logger.info("Usuário criou um template")
             print("Criando template...")
@@ -60,9 +62,11 @@ def mainMenu(args = None):
                 gerarArquivoTeste(gerenciadorTestes)
             except PermissionError:
                 print("O programa não tem permissão para criar o arquivo!")
+            
         case "configuracoes":
             logger.info("Usuário solicitou o menu de configurações")
             print(obterDialogo('configuracoes'))
+
         case ["configuracoes", configuracaoSerLida]:
             logger.info("Usuário solicitou o valor de uma configuração")
             valorConfiguracao = obterValorConfiguracao(configuracaoSerLida)
@@ -70,6 +74,7 @@ def mainMenu(args = None):
                 print(f"{textoCiano}Configurações:{fimTextoColorido} O valor atual de '{configuracaoSerLida}' é {valorConfiguracao}")
             else: 
                 print("Configuração não reconhecida, verifique a escrita.")
+            
         case ["configuracoes", configuracaoSerAlterada, novoValor]:
             logger.info("Usuário tentou alterar o valor de uma configuração")
             valorConfiguracao = obterValorConfiguracao(configuracaoSerAlterada)
@@ -81,6 +86,7 @@ def mainMenu(args = None):
                     print(f"Valor de '{configuracaoSerAlterada}' foi alterado de {valorConfiguracao} para {obterValorConfiguracao(configuracaoSerAlterada)}")
             else: 
                 print("Configuração não reconhecida, verifique a escrita.")
+            
         case _:
             logger.info("Iniciando testes")
             print("Iniciando testes!")
@@ -95,7 +101,7 @@ def mainMenu(args = None):
                 startTestes = time.time()
                 pctPronto = 0.1
 
-                # Adicionando animação, para mais responsividade....
+                # Adicionando animação, para mais responsividade
                 startSpinnerAnimation()
 
                 # Responsivo
@@ -114,9 +120,11 @@ def mainMenu(args = None):
                     flagAnimacaoSpinner = False # Fim do processo => parar a animação
                     sys.stdout.write('\r')
                     sys.stdout.flush()
+
                 # Entrega de uma vez
                 else: 
                     list(iniciarExecucaoTestes(args,entregaGradual=entregaGradual))
+                    
             except Exception as e:
                 if 'nenhum arquivo de teste encontrado' in str(e).lower():
                     if len(args) == 0:

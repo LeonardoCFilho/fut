@@ -53,6 +53,7 @@ if __name__ == "__main__":
     from terminal import mainMenu
     try:
         mainMenu(args)
+        # ...
         print("\n\nPrograma finalizado!")
         logger.info("Execução do sistema finalizada")
     except Exception as e:
