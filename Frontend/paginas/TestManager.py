@@ -2,7 +2,6 @@ import streamlit as st
 import os
 import yaml
 
-
 def render():
     st.title("Test Manager")
 
@@ -78,7 +77,7 @@ def render():
                                     st.error(f"Erro ao salvar o arquivo: {e}")
                         else:
                             st.warning("Por favor, leia o arquivo antes de editá-lo.")
-                #**********************
+
                 with col3:
                     if 'confirmar_delete' not in st.session_state:
                         st.session_state.confirmar_delete = False
@@ -106,8 +105,6 @@ def render():
                             if st.button("Cancelar"):
                                 st.session_state.confirmar_delete = False
                 
-                
-                #***********************
             else:
                 st.warning("Nenhum arquivo corresponde ao filtro fornecido.")
 
