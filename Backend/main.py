@@ -3,6 +3,12 @@ import sys
 import logging 
 
 def organizarLogs(pathLog: Path):
+    """
+    Organiza arquivos de log numerados, mantendo um histórico rotativo.
+
+    Args:
+        pathLog (Path): Caminho para o arquivo de log principal (ex: `fut.log`).
+    """
     numeroMaximoLogs = 5
     # Apagar o ultimo (se existir)
     ultimoLogPossivel = pathLog.with_name(f'fut_{numeroMaximoLogs}.log')
@@ -14,7 +20,17 @@ def organizarLogs(pathLog: Path):
         if tempOldLog.exists():
             tempOldLog.rename(pathLog.with_name(f'fut_{i+1}.log'))
 
+
 def acharCaminhoProjeto() -> Path:
+    """
+    Encontra o caminho do diretório do projeto onde o nome do diretório contém 'fut'.
+    
+    Returns:
+        Path: O caminho do diretório do projeto.
+
+    Raises:
+        SystemExit: Se o diretório do projeto não for encontrado dentro do número máximo de iterações definidas.
+    """
     maxIteracoes = 10
     numIteracoes = 0
     pathFut = Path(__file__)  # Diretório do arquivo atual
@@ -25,10 +41,10 @@ def acharCaminhoProjeto() -> Path:
             sys.exit("Problemas ao encontrar a pasta do projeto, renomeie-a para 'fut' ou 'fut-main'")
     return pathFut
 
+
 if __name__ == "__main__":
     # Caminhos utilizados no nosso projeto
     pathFut = acharCaminhoProjeto()
-    pathTerminal = pathFut / "Backend" / "terminal.py"
     pathLog  = pathFut / 'Arquivos' / 'fut_1.log'
 
     # Logs

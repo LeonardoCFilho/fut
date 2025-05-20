@@ -4,6 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class InicializadorSistema:
+    # Construtor
     def __init__(self, pathFut):
         # Caminho para o nosso projeto
         if not isinstance(pathFut,Path):
@@ -21,8 +22,17 @@ class InicializadorSistema:
         if not self.pathValidator.exists():
             raise FileNotFoundError("validator_cli.jar")
 
-    # Ideia: Faz a requisição do valor de uma configuração (em settings.ini) e seu valor é retornado como str ou None(caso de erro)
-    def returnValorSettings(self, settingsBuscada):
+
+    def returnValorSettings(self, settingsBuscada:str):
+        """
+        Busca o valor de uma configuração na settings.ini
+
+        Args:
+            settingsBuscada (str): Nome da configuração a ser buscada
+        
+        Returns:
+            Valor da configuração ou None(caso de erro)
+        """
         # Ler o arquivo de configuracoes
         import configparser
         settings = configparser.ConfigParser()
@@ -37,9 +47,22 @@ class InicializadorSistema:
         # Caso de erro (configuração não foi encontrada)
         return None
 
-    # Ideia: Permite o usuário alterar o valor de uma configuração do settings.ini
-    def alterarValorSetting(self, configuracaoSerAlterada, novoValor):
-        # Por segurança, adicionar previsibilidade
+
+    def alterarValorSetting(self, configuracaoSerAlterada:str, novoValor:str):
+        """
+        Altera o valor de uma configuração na settings.ini
+
+        Args:
+            configuracaoSerAlterada (str): Nome da configuração a ser alterada
+            novoValor (str): Novo valor para a configuração
+        
+        Returns:
+            booleano informando se a configuração foi alterada ou não
+        
+        Raises:
+            ValueError: novoValor é incompatível com o tipo de configuracaoSerAlterada
+        """
+        # Por segurança, adicionar previsibilidade extra
         novoValor = str(novoValor).lower()
         configuracaoSerAlterada = configuracaoSerAlterada.lower()
         # Possiveis configurações
@@ -118,9 +141,18 @@ class InicializadorSistema:
         
         return flagAlteracaoValida
 
-    # Ideia: Garantir que o Path do validator seja válido (pode ser o padrão ou o do usuário)
-    # Feita para ser usada apenas por InicializadorSistema
+
     def _resolveValidatorPath(self) -> Path:
+        """
+        Garantir que o Path do validator seja válido (pode ser o padrão ou o do usuário)
+        Feita para ser usada apenas por InicializadorSistema
+
+        Returns:
+            O caminho do validator a ser usado (Path)
+        
+        Raises:
+            SystemExit: Se o validator não existe, não pode ser instalado ou é invalido
+        """
         # Ler e limpar o caminho do validator
         pathValidator = str(self.returnValorSettings('caminho_validator')).split('#')[0].strip()
         pathValidator = Path(pathValidator)

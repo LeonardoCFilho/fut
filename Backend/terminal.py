@@ -1,5 +1,5 @@
 from pathlib import Path
-from utils import *
+from interface import *
 from colorama import Style, Fore
 import sys
 import time
@@ -28,6 +28,12 @@ def startSpinnerAnimation():
     spinner_thread = threading.Thread(target=spinner_animation) # Thread so para a animação 
     spinner_thread.daemon = True  # Terminar com a main.py (Por segurança já que ela é encerrada antes)
     spinner_thread.start() 
+
+def pararSpinnerAnimation():
+    global flagAnimacaoSpinner
+    flagAnimacaoSpinner = False # Fim do processo => parar a animação
+    sys.stdout.write('\r')
+    sys.stdout.flush()
 
 # Executável
 def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
@@ -59,7 +65,7 @@ def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
             logger.info("Usuário criou um template")
             print("Criando template...")
             try:
-                gerarArquivoTeste(gerenciadorTestes)
+                gerarArquivoTeste()
             except PermissionError:
                 print("O programa não tem permissão para criar o arquivo!")
             
@@ -116,16 +122,14 @@ def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
                             # Exibir progresso
                             print(f"{max(resultadoLimpo, (pctPronto))*100:.1f}% dos testes finalizados em {(time.time()-startTestes):.1f}s")
                             pctPronto = max(pctPronto+0.1, resultadoLimpo) # update
-                    global flagAnimacaoSpinner
-                    flagAnimacaoSpinner = False # Fim do processo => parar a animação
-                    sys.stdout.write('\r')
-                    sys.stdout.flush()
+                    pararSpinnerAnimation()
 
                 # Entrega de uma vez
                 else: 
                     list(iniciarExecucaoTestes(args,entregaGradual=entregaGradual))
                     
             except Exception as e:
+                pararSpinnerAnimation()
                 if 'nenhum arquivo de teste encontrado' in str(e).lower():
                     if len(args) == 0:
                         print("Nenhum arquivo YAML encontrado na pasta atual!")

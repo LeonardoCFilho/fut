@@ -3,24 +3,42 @@ import yaml
 import json
 import jsonschema
 from Classes.inicializador_sistema import InicializadorSistema
-import subprocess
 import logging
 logger = logging.getLogger(__name__)
 
 class ExecutorTestes(InicializadorSistema):
+    # Construtor
     def __init__(self, pathFut):
         super().__init__(pathFut)
     
-    # Ideia: Padronizar as informações recebidas do arquivo de teste
-    def limparConteudoEntrada(self, data):
+    
+    def limparConteudoEntrada(self, data:dict):
+        """
+        Padronizar as informações recebidas do arquivo de teste
+
+        Args:
+            data (dict): Entrada a ser tratada
+        
+        Returns:
+            data (dict): Entrada tratada
+        """
         if isinstance(data, dict):
             return {key: self.limparConteudoEntrada(value) for key, value in data.items()}
         elif isinstance(data, list):
             return [self.limparConteudoEntrada(item) if item is not None else "" for item in data]
         return data
 
-    # Ideia: Valida um arquivo YAML usando o schema JSON e, se válido, chama a validação FHIR.
-    def validarArquivoTeste(self, arquivoTeste: Path):
+    
+    def validarArquivoTeste(self, arquivoTeste: Path) -> dict:
+        """
+        Valida um arquivo YAML usando o schema JSON e, se válido, chama a validação FHIR.
+
+        Args:
+            arquivoTeste (Path): Caminho do arquivo de teste .yaml 
+        
+        Returns:
+            Um dict com os dados do teste
+        """
         # Schema para validar o arquivo de teste
         schemaPath = self.pathFut / "Backend" / "schema.json"
         with open(schemaPath, 'r', encoding="utf-8") as jsonSchemaFile:
@@ -95,11 +113,20 @@ class ExecutorTestes(InicializadorSistema):
             'justificativa_arquivo_invalido': justificativaArquivoInvalido,
         }
 
-    # Ideia: Recebe os comandos escritos pelo usuário, verificando os seguintes casos: 
-    # 1. Todos os arquivos .yaml da pasta atual (entrada vazia)
-    # 2. O arquivo em específico
-    # 3. Os arquivos que tenham o mesmo prefixo (uso de '*') 
-    def gerarListaArquivosTeste(self, argsEntrada):
+    
+    def gerarListaArquivosTeste(self, argsEntrada) -> list:
+        """
+        Recebe os comandos escritos pelo usuário, verificando os seguintes casos: 
+        # 1. Todos os arquivos .yaml da pasta atual (entrada vazia)
+        # 2. O arquivo em específico
+        # 3. Os arquivos que tenham o mesmo prefixo (uso de '*') 
+
+        Args: 
+            argsEntrada: Entrada para determinar a lista de arquivos de teste
+        
+        Returns:
+            list de paths para cada yaml encontrado OU list vazia
+        """
         arquivosYaml = []
         # Ler todos da pasta atual
         if (isinstance(argsEntrada, list) or isinstance(argsEntrada, str)) and len(argsEntrada) == 0:
