@@ -65,5 +65,5 @@ def setupAmbienteVirtual(pathFut:Path, pathVenv:Path):
 if __name__ == "__main__":
     from main import acharCaminhoProjeto
     pathFut = acharCaminhoProjeto()
-    pathVenv = pathFut / ".venv-fut"
+    pathVenv = pathFut / "venv-fut"
     setupAmbienteVirtual(pathFut,pathVenv)
