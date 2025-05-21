@@ -158,7 +158,7 @@ class GerenciadorTestes:
                 yield resultado
 
 
-    def iniciarCriacaoRelatorio(self, resultadosValidacao:list, versaoRelatorio:str):
+    def iniciarCriacaoRelatorio(self, resultadosValidacao:list, versaoRelatorio:str, tempo_execucao_total:float):
         """
         Criar o relatório de acordo com a escolha do usuário (JSON ou HTML)
 
@@ -174,7 +174,7 @@ class GerenciadorTestes:
         logger.info(f"Iniciando a criação do relatório, relatório selecionado é do tipo {versaoRelatorio}")
         geradorRelatorio = GeradorRelatorios(resultadosValidacao)
         try:
-            geradorRelatorio.gerarRelatorioJson()  # Arquivo .json sempre é criado
+            geradorRelatorio.gerarRelatorioJson(tempo_execucao_total=tempo_execucao_total)  # Arquivo .json sempre é criado
             # if versaoRelatorio.lower() == "json":
             #     print("Relatório JSON criado!") 
             # if versaoRelatorio.lower() == "html":
@@ -232,7 +232,7 @@ class GerenciadorTestes:
 
                 # print(resultadosValidacao)  # debug
 
-                self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio)  # (endTestes-startTestes) # Eventualmente enviar para o relatório
+                self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio, endTestes-startTestes)  # (endTestes-startTestes) # Eventualmente enviar para o relatório
 
                 # print("Arquivos encontrados:", listArquivosValidar)  # debug
                 # print("Relatório de testes:", resultadosValidacao)  # debug

@@ -7,7 +7,8 @@ from shutil import rmtree
 import logging
 logger = logging.getLogger(__name__)
 
-class GeradorRelatorios:
+#TODO: aprenda a usar o logger e implemente -> info, wanning, error, fatal -> logger.info("{descrição}")
+class GeradorRelatorios: 
     chaves = {
         0: "caminho_yaml", # arquivo .yaml
         1: 'yaml_valido', # True ou False
@@ -106,7 +107,7 @@ class GeradorRelatorios:
         return in_congruencias + [yaml_valido, tempo_de_execucao, status, status_esperado, status_real, caminho_yaml, quantidades, quantidades_totais, motivo_da_invalidez]
 
     # Função que gera os relatórios unitários e o relatório final
-    def gerarRelatorios(self):
+    def gerarRelatorios(self,tempo_execucao_total:float):
 
         relatorios = {}
         relatorio_unitario = {
@@ -164,7 +165,7 @@ class GeradorRelatorios:
 
         issue_correta_soma_parcial = max(sum(issues_corretas.values()),1)
 
-        tempo_total = sum([i['tempo_de_execucao'] for i in relatorios.values() if i['yaml_valido']])
+        tempo_total = tempo_execucao_total
         numero_de_testes_validos = len([0 for i in relatorios.values() if i['yaml_valido']])
 
         for chave in self.erros_esperados.keys():
@@ -183,10 +184,11 @@ class GeradorRelatorios:
         return relatorios
 
     # Função recebe os dados de compararResultados() e cria um relatório .json do caso de teste
-    def gerarRelatorioJson(self):
-        relatorios = self.gerarRelatorios()
+    def gerarRelatorioJson(self, tempo_execucao_total:float,):
+        relatorios = self.gerarRelatorios(tempo_execucao_total=tempo_execucao_total)
         json_valido = json.dumps(relatorios, indent=4, ensure_ascii=False)
 
+        #TODO: erro de persmissão
         with open(pathlib.Path.cwd() / 'relatorio_final_fut.json', mode='w', encoding='utf8') as arquivo:
             arquivo.write(json_valido)
 
