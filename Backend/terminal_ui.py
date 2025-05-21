@@ -1,9 +1,7 @@
-from pathlib import Path
 from interface import *
 from colorama import Style, Fore
 import sys
 import time
-from main import acharCaminhoProjeto
 import logging
 logger = logging.getLogger(__name__)
 
@@ -13,27 +11,27 @@ fimTextoColorido = Style.RESET_ALL
 flagAnimacaoSpinner = True
 
 # Animação no terminal 
-def spinner_animation():
-    spinner = ['|', '/', '-', '\\']
-    while flagAnimacaoSpinner:
-        for symbol in spinner:
-            # Animação
-            sys.stdout.write(f'\r{symbol} Carregando...')
+def controleAnimacao(status='start'):
+    def spinner_animation():
+        spinner = ['|', '/', '-', '\\']
+        while flagAnimacaoSpinner:
+            for symbol in spinner:
+                # Animação
+                sys.stdout.write(f'\r{symbol} Carregando...')
+                sys.stdout.flush()
+                time.sleep(0.2)
+    match status:
+        case 'start':
+            # Cria a thread e inicia a animação
+            import threading
+            spinner_thread = threading.Thread(target=spinner_animation) # Thread so para a animação 
+            spinner_thread.daemon = True  # Terminar com a main.py (Por segurança já que ela é encerrada antes)
+            spinner_thread.start() 
+        case 'end':
+            global flagAnimacaoSpinner
+            flagAnimacaoSpinner = False # Fim do processo => parar a animação
+            sys.stdout.write('\r')
             sys.stdout.flush()
-            time.sleep(0.2)
-
-# Cria a thread e inicia a animação
-def startSpinnerAnimation():
-    import threading
-    spinner_thread = threading.Thread(target=spinner_animation) # Thread so para a animação 
-    spinner_thread.daemon = True  # Terminar com a main.py (Por segurança já que ela é encerrada antes)
-    spinner_thread.start() 
-
-def pararSpinnerAnimation():
-    global flagAnimacaoSpinner
-    flagAnimacaoSpinner = False # Fim do processo => parar a animação
-    sys.stdout.write('\r')
-    sys.stdout.flush()
 
 # Executável
 def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
@@ -42,10 +40,8 @@ def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
         args = sys.argv[1:] 
         if len(args) == 1:
             args = str(args[0])
-
-    # Preparar para execução
-    gerenciadorTestes = GerenciadorTestes.get_instance(acharCaminhoProjeto())
     #print(args) # debug
+
     # Opções a serem selecionadas
     match args:
         case "--help":
@@ -108,7 +104,7 @@ def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
                 pctPronto = 0.1
 
                 # Adicionando animação, para mais responsividade
-                startSpinnerAnimation()
+                controleAnimacao('start')
 
                 # Responsivo
                 if entregaGradual:
@@ -122,20 +118,22 @@ def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
                             # Exibir progresso
                             print(f"{max(resultadoLimpo, (pctPronto))*100:.1f}% dos testes finalizados em {(time.time()-startTestes):.1f}s")
                             pctPronto = max(pctPronto+0.1, resultadoLimpo) # update
-                    pararSpinnerAnimation()
+                    controleAnimacao('end')
 
                 # Entrega de uma vez
                 else: 
                     list(iniciarExecucaoTestes(args,entregaGradual=entregaGradual))
                     
             except Exception as e:
-                pararSpinnerAnimation()
+                controleAnimacao('end')
                 if 'nenhum arquivo de teste encontrado' in str(e).lower():
                     if len(args) == 0:
                         print("Nenhum arquivo YAML encontrado na pasta atual!")
-                        print("Verifique a pasta atual ou a digitação do endereço dos testes")
+                        print("Verifique se o diretório contém arquivos com extensão '.yaml'.")
                     else:
-                        print("Caminhos fornecidos invalidos!")                    
+                        print("Caminhos fornecidos invalidos!")       
+                        print("Confirme se os caminhos digitados existem, se estão corretos e se o uso do caractere '*' para múltiplos arquivos está apropriado.")       
+                    print("Para mais detalhes digite 'fut --help'")      
                 else:
                     print(f"Erro na execução dos testes: {e}")
 

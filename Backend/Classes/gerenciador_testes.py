@@ -1,8 +1,8 @@
 from pathlib import Path
 from Classes.inicializador_sistema import InicializadorSistema
+from Classes.gerenciador_validator import GerenciadorValidator
 from Classes.gerador_relatorio import GeradorRelatorios
 from Classes.executor_teste import ExecutorTestes
-from Classes.gerenciador_validator import GerenciadorValidator
 from Classes.Exceptions import ExcecaoTemplate
 import os
 import threading
@@ -45,7 +45,6 @@ class GerenciadorTestes:
         Raises:
             SystemExit: Algum erro impediu a criação do self.inicializador, o que impediria o programa de funcionar
         """
-        # Check if we already have an initializer instance
         if self.inicializador is None:
             logger.info("Criando instancia de InicializadorSistema para GerenciadorTestes")
             try:
@@ -237,15 +236,11 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
         Returns:
             Entregas graduais do tipo dict
         """
-        # Função para as threads
-        def validarArquivo(arquivoValidar):
-            executorTesteThreads = ExecutorTestes(self.pathFut)
-            return executorTesteThreads.validarArquivoTeste(arquivoValidar)
-
         # Iniciar a validação
         logger.info("Iniciando a execução dos testes requisitados")
+        instanciaExecutorTestes = ExecutorTestes(self.pathFut)
         with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            for resultado in executor.map(validarArquivo, listaArquivosTestar):
+            for resultado in executor.map(instanciaExecutorTestes.validarArquivoTeste, listaArquivosTestar):
                 yield resultado
 
 
@@ -309,23 +304,28 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
             logger.info("Nenhum caso de teste válido encontrado")
             raise ValueError("Nenhum arquivo de teste encontrado.")
         else:
-            # Caso válido de teste
-            startTestes = time.time()
-            resultadosValidacao = []
-            for resultado in self.executarThreadsTeste(listaArquivosTestar, numThreads):
-                resultadosValidacao.append(resultado)
-                # Entregas graduais
-                if entregaGradual:
-                    yield [resultado, round((len(resultadosValidacao) / len(listaArquivosTestar)), 4)]
-            endTestes = time.time()
+            try:
+                # Caso válido de teste
+                startTestes = time.time()
+                resultadosValidacao = []
+                for resultado in self.executarThreadsTeste(listaArquivosTestar, numThreads):
+                    resultadosValidacao.append(resultado)
+                    # Entregas graduais
+                    if entregaGradual:
+                        yield [resultado, round((len(resultadosValidacao) / len(listaArquivosTestar)), 4)]
+                endTestes = time.time()
+            except Exception as e:
+                logger.error(f"Erro ao rodar os testes em threads: {e}")
+                raise e
+            else:
+                # Sucesso na execução dos testes
+                logger.info("Testes listados completos")
+                print("Testes finalizados!")
 
-            logger.info("Testes listados completos")
-            print("Testes finalizados!")
+                # print(resultadosValidacao)  # debug
 
-            # print(resultadosValidacao)  # debug
+                self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio)  # (endTestes-startTestes) # Eventualmente enviar para o relatório
 
-            self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio)  # (endTestes-startTestes) # Eventualmente enviar para o relatório
-
-            # print("Arquivos encontrados:", listArquivosValidar)  # debug
-            # print("Relatório de testes:", resultadosValidacao)  # debug
+                # print("Arquivos encontrados:", listArquivosValidar)  # debug
+                # print("Relatório de testes:", resultadosValidacao)  # debug
 

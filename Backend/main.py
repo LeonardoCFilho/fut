@@ -42,8 +42,15 @@ def acharCaminhoProjeto() -> Path:
     return pathFut
 
 
+def prepararSistema():
+    from Classes.gerenciador_testes import GerenciadorTestes
+    # Preparar para execução
+    gerenciadorTestes = GerenciadorTestes.get_instance(acharCaminhoProjeto())
+    gerenciadorTestes.get_instance().iniciarSistema()
+
 if __name__ == "__main__":
     # Caminhos utilizados no nosso projeto
+    prepararSistema()
     pathFut = acharCaminhoProjeto()
     pathLog  = pathFut / 'Arquivos' / 'fut_1.log'
 
@@ -66,7 +73,7 @@ if __name__ == "__main__":
         args = args[0]
 
     # Começar a execução em si do cli
-    from terminal import mainMenu
+    from terminal_ui import mainMenu
     try:
         mainMenu(args)
         # ...

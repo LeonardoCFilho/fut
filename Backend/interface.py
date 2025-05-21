@@ -2,14 +2,14 @@
 Interface feita para armazenar funções usadas pelo terminal e pela interface gráfica
 """
 from Classes.gerenciador_testes import GerenciadorTestes
-from Classes.inicializador_sistema import InicializadorSistema
 import logging 
 logger = logging.getLogger(__name__)
 
 
+## Configurações
 def obterValorConfiguracao(settingsBuscada:str):
     """
-    Solicita o valor da configuração procurada para InicializadorSistema
+    Solicita o valor da configuração procurada
     
     Args:
         settingsBuscada (str): O nome da configuração buscada
@@ -17,8 +17,7 @@ def obterValorConfiguracao(settingsBuscada:str):
     Returns:
         O valor da configuração OU None(caso de erro)
     """
-    objetoLerConfiguracoes = InicializadorSistema(GerenciadorTestes.get_instance().pathFut)
-    return objetoLerConfiguracoes.returnValorSettings(settingsBuscada)
+    return GerenciadorTestes.get_instance().iniciarSistema().returnValorSettings(settingsBuscada)
 
 
 def atualizarValorConfiguracao(configuracaoSerAlterada:str, novoValor):
@@ -31,14 +30,14 @@ def atualizarValorConfiguracao(configuracaoSerAlterada:str, novoValor):
     
     Returns:
         Mensagem de sucesso OU mensagem de erro com justificativa"""
-    objetoAlterarConfiguracoes = InicializadorSistema(GerenciadorTestes.get_instance().pathFut)
     try:
-        objetoAlterarConfiguracoes.alterarValorSetting(configuracaoSerAlterada, novoValor)
+        GerenciadorTestes.get_instance().iniciarSistema().alterarValorSetting(configuracaoSerAlterada, novoValor)
         return f"Configuração alterada com sucesso!"
     except Exception as e:
         return f"Erro ao alterar a configuração '{configuracaoSerAlterada}': {str(e)}"
 
 
+## Testes
 def iniciarExecucaoTestes(args, tipoRelatorio:str='JSON', entregaGradual:bool=False):
     """
     Recebe os args e tenta fazer o teste com eles
@@ -70,6 +69,7 @@ def iniciarExecucaoTestes(args, tipoRelatorio:str='JSON', entregaGradual:bool=Fa
         raise(e)
 
 
+## Arquivos de teste
 def gerarArquivoTeste(dictInformacoesTeste:dict = None, caminhoArquivo = None):
     """
     Cria um arquivo .yaml seguindo os padrões estabelecidos para o projeto
@@ -89,6 +89,7 @@ def gerarArquivoTeste(dictInformacoesTeste:dict = None, caminhoArquivo = None):
         raise(e)
 
 
+## Dialogos
 def obterDialogo(dialogoDesejado: str):
     """
     Armazena e retorna dialogos estilizados a serem usados
