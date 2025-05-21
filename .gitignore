@@ -8,3 +8,5 @@ venv-fut
 **/OLD*.*
 # Criado a cada iteração do programa
 **/fut*.log
+
+.venv-fut
