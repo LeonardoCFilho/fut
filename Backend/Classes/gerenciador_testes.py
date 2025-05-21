@@ -1,9 +1,9 @@
 from pathlib import Path
-from Classes.inicializador_sistema import InicializadorSistema
-from Classes.gerenciador_validator import GerenciadorValidator
-from Classes.gerador_relatorio import GeradorRelatorios
-from Classes.executor_teste import ExecutorTestes
-from Classes.Exceptions import ExcecaoTemplate
+from Backend.Classes.inicializador_sistema import InicializadorSistema
+from Backend.Classes.gerenciador_validator import GerenciadorValidator
+from Backend.Classes.gerador_relatorio import GeradorRelatorios
+from Backend.Classes.executor_teste import ExecutorTestes
+from Backend.Classes.Exceptions import ExcecaoTemplate
 import os
 import threading
 import concurrent.futures
@@ -19,40 +19,22 @@ class GerenciadorTestes:
     _instance = None
     _lock = threading.Lock()  
     # Construtor
-    def __init__(self, pathFut):
+    def __init__(self, pathFut:Path, inicializador = None, execTestes = None, gerenValidator = None):
         if not GerenciadorTestes._instance:
             GerenciadorTestes._instance = self
             self.pathFut = pathFut
-            self.inicializador = None
+            self.inicializador = inicializador or InicializadorSistema(pathFut)
+            self.execTestes = execTestes or ExecutorTestes(pathFut)
+            self.gerenValidator = gerenValidator or GerenciadorValidator(pathFut)
     # Retorna o objeto singleton da classe
     @staticmethod
-    def get_instance(pathFut=None):
+    def get_instance(pathFut:Path=None, inicializador = None, execTestes = None, gerenValidator = None):
         with GerenciadorTestes._lock:
             if GerenciadorTestes._instance is None:
-                if pathFut is None:
+                if pathFut is None or not (pathFut.exists() and pathFut.is_dir()): # Garantir que existe e é uma pasta
                     raise ValueError("Caminho da pasta do projeto deve ser providenciada na primeira execução")
-                GerenciadorTestes._instance = GerenciadorTestes(pathFut)
+                GerenciadorTestes._instance = GerenciadorTestes(pathFut, inicializador, execTestes, gerenValidator)
         return GerenciadorTestes._instance
-
-
-    def iniciarSistema(self):
-        """
-        Garantir o funcionamento do sistema (e do objeto de InicializadorSistema)
-
-        Returns:
-            self.inicializador (InicializadorSistema): Objeto que será salvo para GerenciadorTestes
-
-        Raises:
-            SystemExit: Algum erro impediu a criação do self.inicializador, o que impediria o programa de funcionar
-        """
-        if self.inicializador is None:
-            logger.info("Criando instancia de InicializadorSistema para GerenciadorTestes")
-            try:
-                self.inicializador = InicializadorSistema(self.pathFut)
-            except FileNotFoundError as e:
-                logger.fatal(e)
-                sys.exit(e)
-        return self.inicializador
 
 
     def baixarArquivoUrl(self, url:str, enderecoArquivo, requestsTimeout:int=None, maxTentativas:int=3):
@@ -73,8 +55,7 @@ class GerenciadorTestes:
         """
         
         if not requestsTimeout:
-            inicializadorSistema = self.iniciarSistema()
-            requestsTimeout = int(inicializadorSistema("requests_timeout"))
+            requestsTimeout = int(self.inicializador("requests_timeout"))
             
         numTentativas = 0
         while numTentativas < maxTentativas:
@@ -104,67 +85,6 @@ class GerenciadorTestes:
                     raise e
 
 
-    def criaArquivoYamlTeste(self, dadosArquivo:dict=None, caminhoArquivo=None):
-        """
-        Cria um arquivo .yaml (preenchido ou não) que segue o nosso template para caso de teste
-        Referência para o template: https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md#padrões-esperados
-        
-        Args:
-            dadosArquivo (dict): dict com os dados a serem inseridos no arquivo (opcional)
-            caminhoArquivo: Caminho onde o arquivo será criado/escrito (opcional)
-        
-        Raises:
-            PermissionError: Programa não tem permissão para a criação/escrita do arquivo
-            ...
-        """
-        if not caminhoArquivo:  # Se o nome não é especificado => template
-            caminhoArquivo = "template.yaml"
-        logger.info(f"Arquivo de teste criado em {caminhoArquivo}")
-        if not dadosArquivo:  # Sem informações especificadas => template
-            logger.info("Template de um arquivo de teste criado") 
-            dadosArquivo = {
-                "test_id": '',
-                "description": '',
-                "igs": '',
-                "profiles": '',
-                "resources": '',
-                "caminho_instancia": '',
-                "status": '',
-                "error": '',
-                "warning": '',
-                "fatal": '',
-                "information": '',
-                "invariantes": '',
-            }
-
-        templateYaml = f"""test_id: {dadosArquivo.get('test_id', '')} # (Obrigatório) Identificador único para cada teste (string).
-description: {dadosArquivo.get('description', '')} # (Recomendado) Descricao (string).
-context: # Definição do contexto de validação.
-    igs: # (Recomendado) Lista dos Guias de Implementação (IGs).
-        - {dadosArquivo.get('igs', '')} # IDs ou url dos IGs (Apenas 1 por linha).
-    profiles:  # (Recomendado) Lista de perfis (StructureDefinitions) aplicados
-        - {dadosArquivo.get('profiles', '')} # IDs ou url dos perfis ou URLs canônicas (Apenas 1 por linha).
-    resources:  # (Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.).
-        - {dadosArquivo.get('resources', '')} # Caminho do arquivo ou o recurso embutido (Apenas 1 por linha).
-caminho_instancia: {dadosArquivo.get('caminho_instancia', '')} #  (Obrigatório) Caminho para o arquivo a ser testado (string)
-# Parâmetros para a comparação
-resultados_esperados:  #  (Obrigatório) Define os resultados esperados de validação.
-    status: {dadosArquivo.get('status', '')}  #  (Obrigatório) Nível geral esperado ('success', 'error', 'warning', 'information').
-    error: [{dadosArquivo.get('error', '')}]  #  (Obrigatório) Lista de erros esperados (lista de string).
-    warning: [{dadosArquivo.get('warning', '')}]  #  (Obrigatório) Lista de avisos esperados (lista de string).
-    fatal: [{dadosArquivo.get('fatal', '')}] #  #  (Obrigatório) Lista de mensagens erros fatais esperados (lista de string).
-    information: [{dadosArquivo.get('information', '')}]  #  (Obrigatório) Lista de mensagens informativas esperadas (lista de string).
-    invariantes: {dadosArquivo.get('invariantes', '')} # (Opcional)"""
-        try:
-            with open(caminhoArquivo, "w", encoding="utf-8") as file:  # Se caminhoArquivo já existia ele é sobrescrito
-                file.write(templateYaml)
-        except PermissionError as e:
-            logger.error("Programa não tem permissão para criar o arquivo de teste requisitado")
-            raise e
-        except Exception as e:
-            raise e  # improvável
-
-
     def definirPastaValidator(self) -> Path:
         """
         Determinar a pasta que os arquivos do validator serão salvos
@@ -172,7 +92,7 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
         Returns:
             O caminho (Path) da pasta para os arquivos do validator
         """
-        iniciadorSistema = self.iniciarSistema()
+        iniciadorSistema = self.inicializador
         flagSalvarOutput = iniciadorSistema.returnValorSettings('armazenar_saida_validator').lower() in ["true", "1", "yes"]
         if flagSalvarOutput:  # Pasta permanente
             pastaRelatorio = Path.cwd() / "resultados-fut"
@@ -182,21 +102,17 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
         return pastaRelatorio
 
 
-    def atualizarExecucaoValidator(self, inicializadorSistema:InicializadorSistema):
+    def atualizarExecucaoValidator(self):
         """
-        Usado em execução, garantir que o validator esteja atualizado
-
-        Args:
-            inicializadorSistema (InicializadorSistema): Objeto de InicializadorSistema que é usado para endereçamento
+        Usado em execução, para garantir que o validator esteja atualizado
         
         Raises:
             SystemExit: Caso que o validator é inválido
             ...
         """
         # Garantir que o validator esteja atualizado
-        atualizarValidator = GerenciadorValidator(self.pathFut)
         try:
-            atualizarValidator.atualizarValidatorCli(inicializadorSistema.pathValidator)
+            self.gerenValidator.atualizarValidatorCli(self.pathValidator)
         except ExcecaoTemplate as e:
             logger.fatal(f"O arquivo do validator_cli é inválido: {e}")
             sys.exit("Arquivo validator_cli é inválido, verifique seu download ou considere utilizar o validator padrão")
@@ -216,13 +132,12 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
         Returns:
             Lista com endereços dos arquivos de testes a serem testados (pode ser vazia)
         """
-        # Fazer a leitura dos argumentos recebidos
-        executorDeTestes = ExecutorTestes(self.pathFut)  
+        # Fazer a leitura dos argumentos recebidos 
         logger.info("Lista de testes a serem examinadas criada")
         if not args:  # Garantir que há uma lista
             args = []
         #print(executorDeTestes.gerarListaArquivosTeste(args))
-        return executorDeTestes.gerarListaArquivosTeste(args)
+        return self.execTestes.gerarListaArquivosTeste(args)
 
 
     def executarThreadsTeste(self, listaArquivosTestar:list, numThreads:int):
@@ -238,9 +153,8 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
         """
         # Iniciar a validação
         logger.info("Iniciando a execução dos testes requisitados")
-        instanciaExecutorTestes = ExecutorTestes(self.pathFut)
         with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            for resultado in executor.map(instanciaExecutorTestes.validarArquivoTeste, listaArquivosTestar):
+            for resultado in executor.map(self.execTestes.validarArquivoTeste, listaArquivosTestar):
                 yield resultado
 
 
@@ -285,16 +199,10 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
             SystemExit: Se arquivos essenciais não foram encontrados/válidos
             ValueError: Quando o args não consegue criar uma lista de testes válida
         """
-        try:
-            inicializadorSistema = self.iniciarSistema()
-        except FileNotFoundError as e:
-            logger.fatal(e)
-            sys.exit(e)  # Sem esses arquivos o sistema não consegue rodar
-
-        self.atualizarExecucaoValidator(inicializadorSistema)
+        self.atualizarExecucaoValidator()
 
         # Determinar número de threads
-        numThreads = int(inicializadorSistema.returnValorSettings('max_threads'))  # Pela settings
+        numThreads = int(self.inicializador.returnValorSettings('max_threads'))  # Pela settings
         numThreads = min(numThreads, max(1, (os.cpu_count() - 2)))  # Não todas as threads
 
         # Criar a lista de testes a serem executados

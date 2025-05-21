@@ -162,7 +162,7 @@ class InicializadorSistema:
             pathValidator = self.pathFut / pathValidator
 
         ## Verificando o validator
-        from Classes.gerenciador_validator import GerenciadorValidator  
+        from Backend.Classes.gerenciador_validator import GerenciadorValidator  
         # Garante que o valitor_cli esteja instalado
         if not pathValidator.exists():
             try:

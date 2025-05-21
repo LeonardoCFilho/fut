@@ -1,7 +1,7 @@
 """
 Interface feita para armazenar funções usadas pelo terminal e pela interface gráfica
 """
-from Classes.gerenciador_testes import GerenciadorTestes
+from Backend.Classes.gerenciador_testes import GerenciadorTestes
 import logging 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ def obterValorConfiguracao(settingsBuscada:str):
     Returns:
         O valor da configuração OU None(caso de erro)
     """
-    return GerenciadorTestes.get_instance().iniciarSistema().returnValorSettings(settingsBuscada)
+    return GerenciadorTestes.get_instance().inicializador.returnValorSettings(settingsBuscada)
 
 
 def atualizarValorConfiguracao(configuracaoSerAlterada:str, novoValor):
@@ -31,7 +31,7 @@ def atualizarValorConfiguracao(configuracaoSerAlterada:str, novoValor):
     Returns:
         Mensagem de sucesso OU mensagem de erro com justificativa"""
     try:
-        GerenciadorTestes.get_instance().iniciarSistema().alterarValorSetting(configuracaoSerAlterada, novoValor)
+        GerenciadorTestes.get_instance().inicializador.alterarValorSetting(configuracaoSerAlterada, novoValor)
         return f"Configuração alterada com sucesso!"
     except Exception as e:
         return f"Erro ao alterar a configuração '{configuracaoSerAlterada}': {str(e)}"
@@ -72,21 +72,64 @@ def iniciarExecucaoTestes(args, tipoRelatorio:str='JSON', entregaGradual:bool=Fa
 ## Arquivos de teste
 def gerarArquivoTeste(dictInformacoesTeste:dict = None, caminhoArquivo = None):
     """
-    Cria um arquivo .yaml seguindo os padrões estabelecidos para o projeto
+    Cria um arquivo .yaml (preenchido ou não) que segue o nosso template para caso de teste
+    Referência para o template: https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md#padrões-esperados
     
     Args:
-        dictInformacoesTeste (dict): As informações a serem inseridas no arquivo (opcional)
-        caminhoArquivo: Caminho onde será salvo o arquivo
+        dictInformacoesTeste (dict): dict com os dados a serem inseridos no arquivo (opcional)
+        caminhoArquivo: Caminho onde o arquivo será criado/escrito (opcional)
     
     Raises:
-        PermissionError: Quando o programa não tem permissão para criar/escrever o arquivo
+        PermissionError: Programa não tem permissão para a criação/escrita do arquivo
         ...
-        """
-    gerenciadorTestes = GerenciadorTestes.get_instance()
+    """
+    if not caminhoArquivo:  # Se o nome não é especificado => template
+        caminhoArquivo = "template.yaml"
+    logger.info(f"Arquivo de teste criado em {caminhoArquivo}")
+    if not dictInformacoesTeste:  # Sem informações especificadas => template
+        logger.info("Template de um arquivo de teste criado") 
+        dictInformacoesTeste = {
+            "test_id": '',
+            "description": '',
+            "igs": '',
+            "profiles": '',
+            "resources": '',
+            "caminho_instancia": '',
+            "status": '',
+            "error": '',
+            "warning": '',
+            "fatal": '',
+            "information": '',
+            "invariantes": '',
+        }
+
+        templateYaml = f"""test_id: {dictInformacoesTeste.get('test_id', '')} # (Obrigatório) Identificador único para cada teste (string).
+description: {dictInformacoesTeste.get('description', '')} # (Recomendado) Descricao (string).
+context: # Definição do contexto de validação.
+    igs: # (Recomendado) Lista dos Guias de Implementação (IGs).
+        - {dictInformacoesTeste.get('igs', '')} # IDs ou url dos IGs (Apenas 1 por linha).
+    profiles:  # (Recomendado) Lista de perfis (StructureDefinitions) aplicados
+        - {dictInformacoesTeste.get('profiles', '')} # IDs ou url dos perfis ou URLs canônicas (Apenas 1 por linha).
+    resources:  # (Opcional) Recursos FHIR adicionais (ValueSet, CodeSystem, etc.).
+        - {dictInformacoesTeste.get('resources', '')} # Caminho do arquivo ou o recurso embutido (Apenas 1 por linha).
+caminho_instancia: {dictInformacoesTeste.get('caminho_instancia', '')} #  (Obrigatório) Caminho para o arquivo a ser testado (string)
+# Parâmetros para a comparação
+resultados_esperados:  #  (Obrigatório) Define os resultados esperados de validação.
+    status: {dictInformacoesTeste.get('status', '')}  #  (Obrigatório) Nível geral esperado ('success', 'error', 'warning', 'information').
+    error: [{dictInformacoesTeste.get('error', '')}]  #  (Obrigatório) Lista de erros esperados (lista de string).
+    warning: [{dictInformacoesTeste.get('warning', '')}]  #  (Obrigatório) Lista de avisos esperados (lista de string).
+    fatal: [{dictInformacoesTeste.get('fatal', '')}] #  #  (Obrigatório) Lista de mensagens erros fatais esperados (lista de string).
+    information: [{dictInformacoesTeste.get('information', '')}]  #  (Obrigatório) Lista de mensagens informativas esperadas (lista de string).
+    invariantes: {dictInformacoesTeste.get('invariantes', '')} # (Opcional)"""
     try:
-        gerenciadorTestes.criaArquivoYamlTeste(dictInformacoesTeste, caminhoArquivo)
+        with open(caminhoArquivo, "w", encoding="utf-8") as file:  # Se caminhoArquivo já existia ele é sobrescrito
+            file.write(templateYaml)
+    except PermissionError as e:
+        logger.error("Programa não tem permissão para criar o arquivo de teste requisitado")
+        raise e
     except Exception as e:
-        raise(e)
+        raise e  # improvável
+
 
 
 ## Dialogos

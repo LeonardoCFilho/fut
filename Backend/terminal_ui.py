@@ -1,4 +1,4 @@
-from interface import *
+from Backend.interface import *
 from colorama import Style, Fore
 import sys
 import time

@@ -43,10 +43,9 @@ def acharCaminhoProjeto() -> Path:
 
 
 def prepararSistema():
-    from Classes.gerenciador_testes import GerenciadorTestes
+    from Backend.Classes.gerenciador_testes import GerenciadorTestes
     # Preparar para execução
-    gerenciadorTestes = GerenciadorTestes.get_instance(acharCaminhoProjeto())
-    gerenciadorTestes.get_instance().iniciarSistema()
+    GerenciadorTestes.get_instance(acharCaminhoProjeto())
 
 if __name__ == "__main__":
     # Caminhos utilizados no nosso projeto
@@ -73,7 +72,7 @@ if __name__ == "__main__":
         args = args[0]
 
     # Começar a execução em si do cli
-    from terminal_ui import mainMenu
+    from Backend.terminal_ui import mainMenu
     try:
         mainMenu(args)
         # ...

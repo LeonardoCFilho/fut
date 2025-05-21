@@ -2,7 +2,7 @@ from pathlib import Path
 import yaml
 import json
 import jsonschema
-from Classes.inicializador_sistema import InicializadorSistema
+from Backend.Classes.inicializador_sistema import InicializadorSistema
 import logging
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class ExecutorTestes(InicializadorSistema):
             argsArquivoFhir += geraArgsValidator(context,'igs', 'ig')
             argsArquivoFhir += geraArgsValidator(context,'profiles', 'profile')
             argsArquivoFhir += geraArgsValidator(context,'resources', 'ig')
-            from Classes.gerenciador_validator import GerenciadorValidator
+            from Backend.Classes.gerenciador_validator import GerenciadorValidator
             gerenciadorValidator = GerenciadorValidator(self.pathFut)
             try:
                 # Iniciar testes

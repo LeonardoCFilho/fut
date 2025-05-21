@@ -16,16 +16,16 @@ O ambiente virtual será criado na pasta fut, e terá o nome 'venv-fut'.
 **Garanta que o ambiente virtual esteja ativado antes da execução**
 - Linux  
   ```bash  
-  python3 Backend/main.py  
+  python3 main.py  
   ```
 - Windows  
   ```bash  
-  python Backend/main.py  
+  python main.py  
   ```
 Adicione '--help' após main.py para mais detalhes quanto o sistema
 Exemplo:  
   ```bash  
-  python Backend/main.py --help
+  python main.py --help
   ```
 
 ### **Importante**

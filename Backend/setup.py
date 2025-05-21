@@ -63,6 +63,7 @@ def setupAmbienteVirtual(pathFut:Path, pathVenv:Path):
     print("Ambiente virtual preparado!\n")
 
 if __name__ == "__main__":
+    sys.path.append(str(Path(__file__).resolve().parent.parent)) # Achar a main.py
     from main import acharCaminhoProjeto
     pathFut = acharCaminhoProjeto()
     pathVenv = pathFut / "venv-fut"

@@ -36,7 +36,6 @@ class Classes.GerenciadorTestes {
   get_instance(pathFut)
   iniciarSistema()
   baixarArquivoUrl(url, enderecoArquivo, requestsTimeout, maxTentativas)
-  criaArquivoYamlTeste(dadosArquivo, caminhoArquivo)
   definirPastaValidator()
   atualizarExecucaoValidator(inicializadorSistema)
   prepararExecucaoTestes(args)

@@ -1,7 +1,7 @@
 from pathlib import Path
 from json import dump
-from Classes.inicializador_sistema import InicializadorSistema
-from Classes.Exceptions import ExcecaoTemplate
+from Backend.Classes.inicializador_sistema import InicializadorSistema
+from Backend.Classes.Exceptions import ExcecaoTemplate
 import time
 import subprocess
 import requests
@@ -29,7 +29,7 @@ class GerenciadorValidator(InicializadorSistema):
             requests.exceptions.ConnectionError: Erro de conexão com o site
             ...
         """
-        from Classes.gerenciador_testes import GerenciadorTestes
+        from Backend.Classes.gerenciador_testes import GerenciadorTestes
         if not pathValidator.exists(): # Evitar sobrescrita
             try:
                 logger.info("Fazendo download do validator_cli")
@@ -83,7 +83,7 @@ class GerenciadorValidator(InicializadorSistema):
         # Ver o tempo máximo para buscas
         requestsTimeout = int(self.returnValorSettings("requests_timeout"))
 
-        from Classes.gerenciador_testes import GerenciadorTestes
+        from Backend.Classes.gerenciador_testes import GerenciadorTestes
         # Verificando se o validator já existe
         if pathValidator.exists(): 
             # 1º Verifica a versão do arquivo baixado
@@ -161,7 +161,7 @@ class GerenciadorValidator(InicializadorSistema):
             arquivoValidar = Path.cwd() / arquivoValidar
 
         tempoTimeout = int(self.returnValorSettings('timeout'))
-        from Classes.gerenciador_testes import GerenciadorTestes # Evitar import cíclico, não mover esse import
+        from Backend.Classes.gerenciador_testes import GerenciadorTestes # Evitar import cíclico, não mover esse import
         pastaRelatorio = GerenciadorTestes.get_instance().definirPastaValidator()
 
         try:
