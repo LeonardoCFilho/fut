@@ -112,7 +112,7 @@ class GerenciadorTestes:
         """
         # Garantir que o validator esteja atualizado
         try:
-            self.gerenValidator.atualizarValidatorCli(self.pathValidator)
+            self.gerenValidator.atualizarValidatorCli(self.inicializador.pathValidator)
         except ExcecaoTemplate as e:
             logger.fatal(f"O arquivo do validator_cli é inválido: {e}")
             sys.exit("Arquivo validator_cli é inválido, verifique seu download ou considere utilizar o validator padrão")
