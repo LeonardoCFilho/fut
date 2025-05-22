@@ -122,7 +122,7 @@ class GerenciadorTestes:
             logger.error(f"Erro ao atualizar o validator: {e}")  # Programa continua executando, mas não usar a versão mais recente do validator
 
 
-    def prepararExecucaoTestes(self, args):
+    def prepararExecucaoTestes(self, args=None):
         """
         Limpeza e preparo da entrada para os testes serem feitos
 
@@ -134,7 +134,7 @@ class GerenciadorTestes:
         """
         # Fazer a leitura dos argumentos recebidos 
         logger.info("Lista de testes a serem examinadas criada")
-        if not args:  # Garantir que há uma lista
+        if not args or not isinstance(args, list):  # Garantir que há uma lista
             args = []
         #print(executorDeTestes.gerarListaArquivosTeste(args))
         return self.execTestes.gerarListaArquivosTeste(args)

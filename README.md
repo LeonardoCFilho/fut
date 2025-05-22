@@ -9,7 +9,7 @@ Caso esteja em outro diretório, utilize **endereçamento relativo ou absoluto**
 ### Ambiente virtual
 O ambiente virtual é necessário para execução até a criação do executável.  
 Para evitar problemas de compatibilidade entre sistema operacionais, é necessário que o ambiente virtual seja criado na máquina de execução.  
-Para fazer isso basta executar o código setup.py (encontrado na pasta Backend) e as bibliotecas serão instaladas.  
+Para fazer isso basta executar o código setup.py e as bibliotecas serão instaladas.  
 O ambiente virtual será criado na pasta fut, e terá o nome 'venv-fut'.  
 
 ### Execução do programa

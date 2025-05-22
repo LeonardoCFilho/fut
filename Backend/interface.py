@@ -30,6 +30,19 @@ def acharCaminhoProjeto() -> Path:
     return pathFut
 
 
+def listarArquivosYaml(args=None):
+    """
+    Lista arquivos yaml ou na pasta atual ou de acrodo com args
+
+    Args: 
+        args: Argumentos de entrada para a criação a lista de testes a serem validados
+        
+    Returns:
+        Lista com endereços dos arquivos de testes a serem testados (pode ser vazia)
+    """
+    return GerenciadorTestes.get_instance().prepararExecucaoTestes(args)
+
+
 ## Configurações
 def obterValorConfiguracao(settingsBuscada:str):
     """
