@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 import logging 
+from Backend.interface import acharCaminhoProjeto
 
 def organizarLogs(pathLog: Path):
     """
@@ -19,27 +20,6 @@ def organizarLogs(pathLog: Path):
         tempOldLog = pathLog.with_name(f'fut_{i}.log')
         if tempOldLog.exists():
             tempOldLog.rename(pathLog.with_name(f'fut_{i+1}.log'))
-
-
-def acharCaminhoProjeto() -> Path:
-    """
-    Encontra o caminho do diretório do projeto onde o nome do diretório contém 'fut'.
-    
-    Returns:
-        Path: O caminho do diretório do projeto.
-
-    Raises:
-        SystemExit: Se o diretório do projeto não for encontrado dentro do número máximo de iterações definidas.
-    """
-    maxIteracoes = 10
-    numIteracoes = 0
-    pathFut = Path(__file__)  # Diretório do arquivo atual
-    while "fut" not in pathFut.name:  # Subir um nível se o diretório atual não for 'fut'
-        pathFut = pathFut.parent
-        numIteracoes +=1 
-        if numIteracoes >= maxIteracoes:
-            sys.exit("Problemas ao encontrar a pasta do projeto, renomeie-a para 'fut' ou 'fut-main'")
-    return pathFut
 
 
 def prepararSistema():

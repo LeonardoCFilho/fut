@@ -115,8 +115,9 @@ A aplicação será dividida em três grandes componentes, responsáveis pelo fl
 ### 3.1 Diagramas de Arquitetura
 Diagramas C4:  
 - [Diagrama de Contexto](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.png)  
-- [Diagrama de Container](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.png)
-Diagrama de classe UML
+- [Diagrama de Container](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.png)  
+
+Diagrama de classe UML  
 - [Diagrama de classe](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaClasse.png)  
 
 ### 3.2 Tecnologias Utilizadas
