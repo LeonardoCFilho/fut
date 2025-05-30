@@ -12,7 +12,7 @@ class ExecutorTestes(InicializadorSistema):
         super().__init__(pathFut)
     
     
-    def limparConteudoEntrada(self, data:dict):
+    def limparConteudoYaml(self, data:dict):
         """
         Padronizar as informações recebidas do arquivo de teste
 
@@ -23,9 +23,9 @@ class ExecutorTestes(InicializadorSistema):
             data (dict): Entrada tratada
         """
         if isinstance(data, dict):
-            return {key: self.limparConteudoEntrada(value) for key, value in data.items()}
+            return {key: self.limparConteudoYaml(value) for key, value in data.items()}
         elif isinstance(data, list):
-            return [self.limparConteudoEntrada(item) if item is not None else "" for item in data]
+            return [self.limparConteudoYaml(item) if item is not None else "" for item in data]
         return data
 
     
@@ -49,7 +49,7 @@ class ExecutorTestes(InicializadorSistema):
                 data = yaml.safe_load(file)  
 
         # Limpar a entrada
-        data = self.limparConteudoEntrada(data)
+        data = self.limparConteudoYaml(data)
 
         # Inicializar variaveis
         flagYamlValido = True
@@ -114,6 +114,19 @@ class ExecutorTestes(InicializadorSistema):
         }
 
     
+    def limparArgsEntrada(self, args) -> list:
+        if isinstance(args, str):
+            args = str(args).split()
+        elif isinstance(args, (tuple, set)): # Conversão direta
+            args = list(args) 
+        elif not isinstance(args, list): # Colocar em uma lista
+            args = [args]  
+        # Limpar a string
+        args = [str(file).replace('"','').replace("'","") for file in args]
+        
+        return args
+
+
     def gerarListaArquivosTeste(self, argsEntrada) -> list:
         """
         Recebe os comandos escritos pelo usuário, verificando os seguintes casos: 
@@ -134,14 +147,7 @@ class ExecutorTestes(InicializadorSistema):
         # Arquivos especificados
         else:
             # Garantir que argsEntrada é uma list
-            if isinstance(argsEntrada, str):
-                argsEntrada = str(argsEntrada).split()
-            elif isinstance(argsEntrada, (tuple, set)): # Conversão direta
-                argsEntrada = list(argsEntrada) 
-            elif not isinstance(argsEntrada, list): # Colocar em uma lista
-                argsEntrada = [argsEntrada]  
-            # Limpar a string
-            argsEntrada = [str(file).replace('"','').replace("'","") for file in argsEntrada]
+            argsEntrada = self.limparArgsEntrada(argsEntrada)
 
             # Iterar pela list
             for pathArquivo in argsEntrada:

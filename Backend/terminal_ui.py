@@ -33,6 +33,81 @@ def controleAnimacao(status='start'):
             sys.stdout.write('\r')
             sys.stdout.flush()
 
+def testesTerminal(args:str|list):
+    """
+    Executa os testes no terminal com diferentes modos de entrega e exibe o progresso de forma interativa.
+
+    Args:
+        args (str | list): Caminho(s) dos arquivos de teste
+    """
+    try:
+        entregaGradual = True
+        startTestes = time.time()
+        pctPronto = 0.1
+
+        # Adicionando animação, para mais responsividade
+        controleAnimacao('start')
+
+        # Responsivo
+        if entregaGradual:
+            for resultado in iniciarExecucaoTestes(args,entregaGradual=entregaGradual):
+                # Mantendo o terminal responsivo
+                if (resultado[-1]) >= pctPronto:
+                    resultadoLimpo = round(resultado[-1],1)
+                    # Limpar o terminal
+                    sys.stdout.write('\r')
+                    sys.stdout.flush()
+                    # Exibir progresso
+                    print(f"{max(resultadoLimpo, (pctPronto))*100:.1f}% dos testes finalizados em {(time.time()-startTestes):.1f}s")
+                    pctPronto = max(pctPronto+0.1, resultadoLimpo) # update
+            controleAnimacao('end')
+
+        # Entrega de uma vez
+        else: 
+            list(iniciarExecucaoTestes(args,entregaGradual=entregaGradual))
+                    
+    except Exception as e:
+        controleAnimacao('end')
+        if 'nenhum arquivo de teste encontrado' in str(e).lower():
+            if len(args) == 0:
+                print("Nenhum arquivo YAML encontrado na pasta atual!")
+                print("Verifique se o diretório contém arquivos com extensão '.yaml'.")
+            else:
+                print("Caminhos fornecidos invalidos!")       
+                print("Confirme se os caminhos digitados existem, se estão corretos e se o uso do caractere '*' para múltiplos arquivos está apropriado.")       
+            print("Para mais detalhes digite 'fut --help'")      
+        else:
+            print(f"Erro na execução dos testes: {e}")
+
+
+def terminalConfiguracoes(nomeConfiguracao:str, novoValor:str = None):
+    """ 
+    Exibe ou altera o valor de uma configuração especificada no terminal.
+
+    Args:
+        nomeConfiguracao (str): O nome da configuração relevante para a query
+        novoValor (str): O novo valor, se mencionado, da configuração
+    """
+    if not novoValor: # Ler configuração
+        logger.info("Usuário solicitou o valor de uma configuração")
+        valorConfiguracao = obterValorConfiguracao(nomeConfiguracao)
+        if valorConfiguracao:
+            print(f"{textoCiano}Configurações:{fimTextoColorido} O valor atual de '{nomeConfiguracao}' é {valorConfiguracao}")
+        else: 
+            print("Configuração não reconhecida, verifique a escrita.")
+    else: # Editar configuração
+        logger.info("Usuário tentou alterar o valor de uma configuração")
+        valorConfiguracao = obterValorConfiguracao(nomeConfiguracao)
+        if valorConfiguracao:
+            print("Alterando a configuração....")
+            resultadoAlteracao = atualizarValorConfiguracao(nomeConfiguracao, novoValor)
+            print(resultadoAlteracao)
+            if "Erro" not in resultadoAlteracao:
+                print(f"Valor de '{nomeConfiguracao}' foi alterado de {valorConfiguracao} para {obterValorConfiguracao(novoValor)}")
+        else: 
+            print("Configuração não reconhecida, verifique a escrita.")
+
+
 # Executável
 def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
     # Não recebeu args => Ler do terminal
@@ -70,24 +145,10 @@ def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
             print(obterDialogo('configuracoes'))
 
         case ["configuracoes", configuracaoSerLida]:
-            logger.info("Usuário solicitou o valor de uma configuração")
-            valorConfiguracao = obterValorConfiguracao(configuracaoSerLida)
-            if valorConfiguracao:
-                print(f"{textoCiano}Configurações:{fimTextoColorido} O valor atual de '{configuracaoSerLida}' é {valorConfiguracao}")
-            else: 
-                print("Configuração não reconhecida, verifique a escrita.")
+            terminalConfiguracoes(configuracaoSerLida)
             
         case ["configuracoes", configuracaoSerAlterada, novoValor]:
-            logger.info("Usuário tentou alterar o valor de uma configuração")
-            valorConfiguracao = obterValorConfiguracao(configuracaoSerAlterada)
-            if valorConfiguracao:
-                print("Alterando a configuração....")
-                resultadoAlteracao = atualizarValorConfiguracao(configuracaoSerAlterada, novoValor)
-                print(resultadoAlteracao)
-                if "Erro" not in resultadoAlteracao:
-                    print(f"Valor de '{configuracaoSerAlterada}' foi alterado de {valorConfiguracao} para {obterValorConfiguracao(configuracaoSerAlterada)}")
-            else: 
-                print("Configuração não reconhecida, verifique a escrita.")
+            terminalConfiguracoes(configuracaoSerAlterada, novoValor)
             
         case _:
             logger.info("Iniciando testes")
@@ -98,45 +159,7 @@ def mainMenu(args = None): # Quando não for executar pelo terminal mandar args
                 print("Caso você estivesse procurando ajuda, digite 'fut --help'")
 
             # Iniciar testes em si
-            try:
-                entregaGradual = True
-                startTestes = time.time()
-                pctPronto = 0.1
-
-                # Adicionando animação, para mais responsividade
-                controleAnimacao('start')
-
-                # Responsivo
-                if entregaGradual:
-                    for resultado in iniciarExecucaoTestes(args,entregaGradual=entregaGradual):
-                        # Mantendo o terminal responsivo
-                        if (resultado[-1]) >= pctPronto:
-                            resultadoLimpo = round(resultado[-1],1)
-                            # Limpar o terminal
-                            sys.stdout.write('\r')
-                            sys.stdout.flush()
-                            # Exibir progresso
-                            print(f"{max(resultadoLimpo, (pctPronto))*100:.1f}% dos testes finalizados em {(time.time()-startTestes):.1f}s")
-                            pctPronto = max(pctPronto+0.1, resultadoLimpo) # update
-                    controleAnimacao('end')
-
-                # Entrega de uma vez
-                else: 
-                    list(iniciarExecucaoTestes(args,entregaGradual=entregaGradual))
-                    
-            except Exception as e:
-                controleAnimacao('end')
-                if 'nenhum arquivo de teste encontrado' in str(e).lower():
-                    if len(args) == 0:
-                        print("Nenhum arquivo YAML encontrado na pasta atual!")
-                        print("Verifique se o diretório contém arquivos com extensão '.yaml'.")
-                    else:
-                        print("Caminhos fornecidos invalidos!")       
-                        print("Confirme se os caminhos digitados existem, se estão corretos e se o uso do caractere '*' para múltiplos arquivos está apropriado.")       
-                    print("Para mais detalhes digite 'fut --help'")      
-                else:
-                    print(f"Erro na execução dos testes: {e}")
-
+            testesTerminal(args)
 
 if __name__ == "__main__":
     mainMenu()
