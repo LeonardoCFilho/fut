@@ -3,6 +3,7 @@ import os
 import yaml
 from pathlib import Path
 
+
 def render():
     st.title("Test Manager")
 
@@ -18,18 +19,13 @@ def render():
         recentes.insert(0, nome_arquivo)
         st.session_state['arquivos_recentes'] = recentes[:7]  #7 arquivos recentes
 
-    st.title("Gerenciador de Testes YAML")
-
-
+    st.subheader("Gerenciador de Testes YAML")
     home = Path.home()
     default_path = home / "Projetos" / "stream" / "meu_app" / "temp"
-
-    # o caminho da pasta
-    pasta_destino = st.text_input("Digite o caminho da pasta:", 
-                                  str(default_path))
+    pasta_destino = st.file_uploader('Selecione seus arquivos: ')
 
     # verifica se o caminho é valido
-    if os.path.isdir(pasta_destino):
+    if pasta_destino:
         
         arquivos = [arq for arq in os.listdir(pasta_destino) if arq.endswith('.yaml') and os.path.isfile(os.path.join(pasta_destino, arq))]
         
@@ -83,7 +79,7 @@ def render():
                                     st.error(f"Erro ao salvar o arquivo: {e}")
                         else:
                             st.warning("Por favor, leia o arquivo antes de editá-lo.")
-
+                #**********************
                 with col3:
                     if 'confirmar_delete' not in st.session_state:
                         st.session_state.confirmar_delete = False
@@ -111,6 +107,8 @@ def render():
                             if st.button("Cancelar"):
                                 st.session_state.confirmar_delete = False
                 
+                
+                #***********************
             else:
                 st.warning("Nenhum arquivo corresponde ao filtro fornecido.")
 
@@ -122,5 +120,3 @@ def render():
                     st.write(f"- {arq}")
         else:
             st.warning("A pasta selecionada não contém arquivos YAML.")
-    else:
-        st.error("O caminho fornecido não é um diretório válido.")

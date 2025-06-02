@@ -3,6 +3,7 @@ Backend/validator_cli.jar
 # Ambiente virtual é criado na máquina do usuário (garantir compatibilidade)
 .venv-fut
 venv-fut
+venv
 # Arquivos de upload desnecessário (Criados durante execução)
 **/__pycache__
 # Arquivo de backup

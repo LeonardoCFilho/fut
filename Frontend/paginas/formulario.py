@@ -14,33 +14,33 @@ def render():
 
     home = Path.home()
     default_path = home / "Projetos" / "stream" / "meu_app" / "temp"
-
-    diretorio_destino_temp = str(default_path)    
+    validator_fhir = 'receberDeUmaFuncao'
+    #cuidado com o endereço, este é o do meu pc, modifique  ****
+    diretorio_destino_temp = str(default_path)
+            
     os.makedirs(diretorio_destino_temp, exist_ok=True)
 
     st.header("Validação via Formulário Manual")
     with st.form("formulario_manual"):
-            id = (st.text_input('ID*')).strip().lower()
-            descricao = st.text_input("Descrição (Opcional)")
-            contexto = st.text_input("Contexto") 
-            igs = st.text_input("IGs (Opcional)")
-            profiles = st.text_input("Profiles (Opcional)")
-            resources = st.text_input("Resources (Opcional)")
-            path_fhir = st.text_input("Path Fhir*")
-            caminho_instancia = st.text_input("Caminho Instância*")
+            id = (st.text_input('ID*')).strip().lower() ##
+            descricao = st.text_input("Descrição (Opcional)")##
+            #contexto = st.text_input("Contexto") ##
+            igs = st.text_input("IGs (Opcional)") ##
+            profiles = st.text_input("Profiles (Opcional)")##
+            resources = st.text_input("Resources (Opcional)")##
+            caminho_instancia = st.text_input("Caminho Instância*")##
             default_validator = "caminho/ou/link/do/validador_padrao"
-            validator_fhir = st.text_input("Validator FHIR *:", value=default_validator)
             botao_validar = st.form_submit_button("Criar Teste")
 
     if botao_validar:
-        if not id or not path_fhir or not caminho_instancia or not validator_fhir:
+        if not id or not caminho_instancia:
             st.error("Por favor, preencha ambos os campos obrigatórios.")
         else:
             if igs:
                 st.session_state.ig_lista.extend([ig.strip() for ig in igs.split(",") if ig.strip()])
             if profiles:
                 st.session_state.profile_lista.extend([profile.strip() for profile in profiles.split(",") if profile.strip()])
-            
+            contexto = ''
             dados_teste = {
             "test_id": id,
             "description": descricao,
@@ -48,7 +48,6 @@ def render():
             "igs": st.session_state.ig_lista,
             "profiles": st.session_state.profile_lista,
             "resources": [item.strip() for item in resources.split(",")] if resources else [],
-            "path_fhir": path_fhir,
             "instance_path": caminho_instancia,
             "validator": validator_fhir
         }
