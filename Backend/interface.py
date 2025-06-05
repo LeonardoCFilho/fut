@@ -1,7 +1,7 @@
 """
 Interface feita para armazenar funções usadas pelo terminal e pela interface gráfica
 """
-from Backend.Classes.gerenciador_testes import GerenciadorTestes
+from Backend.Classes.gerenciador_teste import GerenciadorTeste
 from pathlib import Path
 import logging 
 import sys
@@ -40,7 +40,7 @@ def listarArquivosYaml(args=None):
     Returns:
         Lista com endereços dos arquivos de testes a serem testados (pode ser vazia)
     """
-    return GerenciadorTestes.get_instance().prepararExecucaoTestes(args)
+    return GerenciadorTeste.get_instance().prepararExecucaoTestes(args)
 
 
 ## Configurações
@@ -54,7 +54,7 @@ def obterValorConfiguracao(settingsBuscada:str):
     Returns:
         O valor da configuração OU None(caso de erro)
     """
-    return GerenciadorTestes.get_instance().inicializador.returnValorSettings(settingsBuscada)
+    return GerenciadorTeste.get_instance().controladorConfiguracoes.returnValorSettings(settingsBuscada)
 
 
 def atualizarValorConfiguracao(configuracaoSerAlterada:str, novoValor):
@@ -68,7 +68,7 @@ def atualizarValorConfiguracao(configuracaoSerAlterada:str, novoValor):
     Returns:
         Mensagem de sucesso OU mensagem de erro com justificativa"""
     try:
-        GerenciadorTestes.get_instance().inicializador.alterarValorSetting(configuracaoSerAlterada, novoValor)
+        GerenciadorTeste.get_instance().controladorConfiguracoes.alterarValorSetting(configuracaoSerAlterada, novoValor)
         return f"Configuração alterada com sucesso!"
     except Exception as e:
         return f"Erro ao alterar a configuração '{configuracaoSerAlterada}': {str(e)}"
@@ -95,7 +95,7 @@ def iniciarExecucaoTestes(args, tipoRelatorio:str='JSON', entregaGradual:bool=Fa
     """
     try: 
         logger.info("Teste de arquivos inicializado")
-        gerenciadorTestes = GerenciadorTestes.get_instance()
+        gerenciadorTestes = GerenciadorTeste.get_instance()
         if entregaGradual: # Lidar com as entregas no frontend
             for resultado in gerenciadorTestes.executarTestesCompleto(args, tipoRelatorio, entregaGradual):
                 yield resultado # é uma list, contém: dict com os dados do teste, % de testes finalizados

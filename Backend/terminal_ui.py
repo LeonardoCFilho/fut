@@ -33,6 +33,7 @@ def controleAnimacao(status='start'):
             sys.stdout.write('\r')
             sys.stdout.flush()
 
+
 def testesTerminal(args:str|list):
     """
     Executa os testes no terminal com diferentes modos de entrega e exibe o progresso de forma interativa.

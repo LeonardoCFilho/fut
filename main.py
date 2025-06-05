@@ -23,9 +23,11 @@ def organizarLogs(pathLog: Path):
 
 
 def prepararSistema():
-    from Backend.Classes.gerenciador_testes import GerenciadorTestes
+    from Backend.Classes.gerenciador_teste import GerenciadorTeste
+    from Backend.Classes.gestor_caminho import GestorCaminho
     # Preparar para execução
-    GerenciadorTestes.get_instance(acharCaminhoProjeto())
+    GerenciadorTeste.get_instance(GestorCaminho(acharCaminhoProjeto()))
+
 
 if __name__ == "__main__":
     # Caminhos utilizados no nosso projeto

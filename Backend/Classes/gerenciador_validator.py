@@ -1,6 +1,5 @@
 from pathlib import Path
 from json import dump
-from Backend.Classes.inicializador_sistema import InicializadorSistema
 from Backend.Classes.Exceptions import ExcecaoTemplate
 import time
 import subprocess
@@ -11,14 +10,14 @@ logger = logging.getLogger(__name__)
 
 linkDownloadValidator = "https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar"
 
-class GerenciadorValidator(InicializadorSistema):
+
+class GerenciadorValidator():
     # Construtor
-    def __init__(self, pathFut):
-        super().__init__(pathFut)
+    def __init__(self, pathValidator:Path):
+        self.pathValidator = pathValidator
 
 
-    @classmethod
-    def instalaValidatorCli(cls, pathValidator:Path):
+    def instalaValidatorCli(self):
         """
         Faz a instalação inicial do validator_cli
 
@@ -29,19 +28,18 @@ class GerenciadorValidator(InicializadorSistema):
             requests.exceptions.ConnectionError: Erro de conexão com o site
             ...
         """
-        from Backend.Classes.gerenciador_testes import GerenciadorTestes
-        if not pathValidator.exists(): # Evitar sobrescrita
+        from Backend.Classes.gerenciador_teste import GerenciadorTeste # Evitar import cíclico, não mover esse import
+        if not self.pathValidator.exists(): # Evitar sobrescrita
             try:
                 logger.info("Fazendo download do validator_cli")
                 # Dando 10 minutos para terminar o download (~.25mb/s)
-                GerenciadorTestes.get_instance().baixarArquivoUrl(linkDownloadValidator, pathValidator, requestsTimeout=600) 
+                GerenciadorTeste.get_instance().baixarArquivoUrl(linkDownloadValidator, self.pathValidator, requestsTimeout=600) 
             except Exception as e:
                 logger.fatal(f"Erro ao instalar o validator_cli: {e}")
                 raise e
     
 
-    @classmethod
-    def verificaVersaoValidator(cls, pathValidator:Path):
+    def verificaVersaoValidator(self) -> str|None:
         """
         Retorna a versão do validator
         
@@ -52,7 +50,7 @@ class GerenciadorValidator(InicializadorSistema):
             Versão do validator OU None(caso de erro)
         """
         try:
-            with zipfile.ZipFile(pathValidator, 'r') as jar:
+            with zipfile.ZipFile(self.pathValidator, 'r') as jar:
                 with jar.open('fhir-build.properties') as manifest:
                     for linha in manifest:
                         linhaLegivel = linha.decode(errors="ignore").strip()
@@ -63,7 +61,7 @@ class GerenciadorValidator(InicializadorSistema):
             return None
 
 
-    def atualizarValidatorCli(self, pathValidator:Path = None):
+    def atualizarValidatorCli(self, requestsTimeout:int):
         """
         Tenta atualizar o validator (baixa ele se não for encontrado)
 
@@ -75,20 +73,13 @@ class GerenciadorValidator(InicializadorSistema):
             requests.exceptions.ConnectionError: Erro de conexão com o site
             ...
         """
-        # Não foi especificado, usar nosso validator_cli
-        if not pathValidator:
-            pathValidator = self.pathValidator
         logger.info("Buscando atualizações do validator_cli")
 
-        # Ver o tempo máximo para buscas
-        requestsTimeout = int(self.returnValorSettings("requests_timeout"))
-
-        from Backend.Classes.gerenciador_testes import GerenciadorTestes
         # Verificando se o validator já existe
-        if pathValidator.exists(): 
+        if self.pathValidator.exists(): 
             # 1º Verifica a versão do arquivo baixado
             try:
-                versaoBaixada = self.verificaVersaoValidator(pathValidator)
+                versaoBaixada = self.verificaVersaoValidator(self.pathValidator)
             except Exception as e:
                 raise ExcecaoTemplate("Arquivo validator_cli inválido", e)
              
@@ -105,6 +96,7 @@ class GerenciadorValidator(InicializadorSistema):
                         dadosGit = response.json()
                         versaoGit = dadosGit.get('tag_name')
                     else:
+                        logger.debug(f"Download incompleto, codigo {response.status_code}")
                         return response.status_code
                 except Exception as e:
                     numTentativas += 1 # Contabilizar tentativa
@@ -122,7 +114,7 @@ class GerenciadorValidator(InicializadorSistema):
             print(versaoBaixada, versaoGit)
             if (versaoBaixada and versaoGit) and (versaoBaixada != versaoGit):
                 try:
-                    caminhoValidatorTemp = pathValidator.with_name("temp_validator_cli.jar")
+                    caminhoValidatorTemp = self.pathValidator.with_name("temp_validator_cli.jar")
                     self.instalaValidatorCli(caminhoValidatorTemp)
                     logger.info("Download da versão mais recente do validator_cli feita")
                 except Exception as e:
@@ -131,22 +123,21 @@ class GerenciadorValidator(InicializadorSistema):
 
                 if caminhoValidatorTemp.exists(): # Por segurança
                     logger.info("Atualizando o validator_cli")
-                    pathValidator.unlink()  # Remove o arquivo antigo
-                    caminhoValidatorTemp.rename(pathValidator)
+                    self.pathValidator.unlink()  # Remove o arquivo antigo
+                    caminhoValidatorTemp.rename(self.pathValidator)
             else:
                 logger.info("Verificação de atualização finalizada")
         else:
             logger.info("Nenhuma instancia de validator_cli encontrada, iniciando o download")
             # Se o validator não estiver instalado, faz a instalação inicial
-            self.instalaValidatorCli(pathValidator)
+            self.instalaValidatorCli(self.pathValidator)
 
 
-    def validarArquivoFhir(self, arquivoValidar: Path, args:list=None):  
+    def validarArquivoFhir(self, arquivoValidar:Path, pastaRelatorio:Path, tempoTimeout:int, args:str=None):  
         """
         Executa a validação do arquivo FHIR usando o validator_cli.jar.
 
         Args:
-            arquivoValidar (Path): Arquivo que será validado pelo validator_cli (definido em settings.ini)
             args (list): Define argumentos extras a serem usados na validação (opcional)
         
         Returns:
@@ -159,11 +150,8 @@ class GerenciadorValidator(InicializadorSistema):
         arquivoValidar = arquivoValidar.expanduser()
         if not arquivoValidar.is_absolute():
             arquivoValidar = Path.cwd() / arquivoValidar
-
-        tempoTimeout = int(self.returnValorSettings('timeout'))
-        from Backend.Classes.gerenciador_testes import GerenciadorTestes # Evitar import cíclico, não mover esse import
-        pastaRelatorio = GerenciadorTestes.get_instance().definirPastaValidator()
-
+        
+        
         try:
             if arquivoValidar.exists():
                 nomeRelatorio = arquivoValidar.with_suffix(".json").name

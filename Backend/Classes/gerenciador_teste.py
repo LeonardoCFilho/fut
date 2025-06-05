@@ -1,12 +1,14 @@
 from pathlib import Path
-from Backend.Classes.inicializador_sistema import InicializadorSistema
+from Backend.Classes.controlador_configuracao import ControladorConfiguracao
+from Backend.Classes.gestor_caminho import GestorCaminho
 from Backend.Classes.gerenciador_validator import GerenciadorValidator
 from Backend.Classes.gerador_relatorio import GeradorRelatorios
-from Backend.Classes.executor_teste import ExecutorTestes
+from Backend.Classes.executor_teste import ExecutorTeste
 from Backend.Classes.Exceptions import ExcecaoTemplate
 import os
 import threading
 import concurrent.futures
+from functools import partial
 import requests
 import sys
 import time
@@ -15,26 +17,25 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Singleton
-class GerenciadorTestes:
+class GerenciadorTeste:
     _instance = None
     _lock = threading.Lock()  
     # Construtor
-    def __init__(self, pathFut:Path, inicializador = None, execTestes = None, gerenValidator = None):
-        if not GerenciadorTestes._instance:
-            GerenciadorTestes._instance = self
-            self.pathFut = pathFut
-            self.inicializador = inicializador or InicializadorSistema(pathFut)
-            self.execTestes = execTestes or ExecutorTestes(pathFut)
-            self.gerenValidator = gerenValidator or GerenciadorValidator(pathFut)
+    def __init__(self, gestorCaminho:GestorCaminho):
+        if not GerenciadorTeste._instance:
+            GerenciadorTeste._instance = self
+            self.gestorCaminho = gestorCaminho
+            self.controladorConfiguracoes = ControladorConfiguracao(self.gestorCaminho.pathSettings)
+            
     # Retorna o objeto singleton da classe
     @staticmethod
-    def get_instance(pathFut:Path=None, inicializador = None, execTestes = None, gerenValidator = None):
-        with GerenciadorTestes._lock:
-            if GerenciadorTestes._instance is None:
-                if pathFut is None or not (pathFut.exists() and pathFut.is_dir()): # Garantir que existe e é uma pasta
+    def get_instance(gestorCaminho:GestorCaminho = None):
+        with GerenciadorTeste._lock:
+            if GerenciadorTeste._instance is None: # Ainda não foi instanciado
+                if gestorCaminho is None:
                     raise ValueError("Caminho da pasta do projeto deve ser providenciada na primeira execução")
-                GerenciadorTestes._instance = GerenciadorTestes(pathFut, inicializador, execTestes, gerenValidator)
-        return GerenciadorTestes._instance
+                GerenciadorTeste._instance = GerenciadorTeste(gestorCaminho)
+        return GerenciadorTeste._instance
 
 
     def baixarArquivoUrl(self, url:str, enderecoArquivo, requestsTimeout:int=None, maxTentativas:int=3):
@@ -85,23 +86,6 @@ class GerenciadorTestes:
                     raise e
 
 
-    def definirPastaValidator(self) -> Path:
-        """
-        Determinar a pasta que os arquivos do validator serão salvos
-
-        Returns:
-            O caminho (Path) da pasta para os arquivos do validator
-        """
-        iniciadorSistema = self.inicializador
-        flagSalvarOutput = iniciadorSistema.returnValorSettings('armazenar_saida_validator').lower() in ["true", "1", "yes"]
-        if flagSalvarOutput:  # Pasta permanente
-            pastaRelatorio = Path.cwd() / "resultados-fut"
-        else:  # Pasta temporária (Apagada após a criação do relatório final)
-            pastaRelatorio = Path.cwd() / ".temp-fut"
-        pastaRelatorio.mkdir(exist_ok=True)  # Garantir que a pasta existe
-        return pastaRelatorio
-
-
     def atualizarExecucaoValidator(self):
         """
         Usado em execução, para garantir que o validator esteja atualizado
@@ -112,7 +96,8 @@ class GerenciadorTestes:
         """
         # Garantir que o validator esteja atualizado
         try:
-            self.gerenValidator.atualizarValidatorCli(self.inicializador.pathValidator)
+            _gerenciadorValidator = GerenciadorValidator(self.gestorCaminho.pathFut)
+            _gerenciadorValidator.atualizarValidatorCli(int(self.controladorConfiguracoes("requests_timeout")))
         except ExcecaoTemplate as e:
             logger.fatal(f"O arquivo do validator_cli é inválido: {e}")
             sys.exit("Arquivo validator_cli é inválido, verifique seu download ou considere utilizar o validator padrão")
@@ -135,9 +120,10 @@ class GerenciadorTestes:
         # Fazer a leitura dos argumentos recebidos 
         logger.info("Lista de testes a serem examinadas criada")
         if not args or not isinstance(args, list):  # Garantir que há uma lista
+            logger.debug("Argumentos inválidos para a execução dos testes, lista vazia.")
             args = []
         #print(executorDeTestes.gerarListaArquivosTeste(args))
-        return self.execTestes.gerarListaArquivosTeste(args)
+        return ExecutorTeste(self.gestorCaminho.pathSchema, self.gestorCaminho.pathValidator).gerarListaArquivosTeste(args)
 
 
     def executarThreadsTeste(self, listaArquivosTestar:list, numThreads:int):
@@ -153,9 +139,14 @@ class GerenciadorTestes:
         """
         # Iniciar a validação
         logger.info("Iniciando a execução dos testes requisitados")
+        _instanciaExecutorTeste = ExecutorTeste(self.gestorCaminho.pathSchema, self.gestorCaminho.pathValidator)
+        validar_completado = partial(_instanciaExecutorTeste.validarArquivoTeste, pathPastaValidator=self.gestorCaminho.pathPastaValidator, tempoTimeout=int(self.controladorConfiguracoes.returnValorSettings('timeout')))
         with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
-            for resultado in executor.map(self.execTestes.validarArquivoTeste, listaArquivosTestar):
-                yield resultado
+            for resultado in executor.map(validar_completado, listaArquivosTestar):
+                try:
+                    yield resultado
+                except Exception as e:
+                    logger.error(f"Erro ao executar thread de teste: {e}")
 
 
     def iniciarCriacaoRelatorio(self, resultadosValidacao:list, versaoRelatorio:str, tempo_execucao_total:float):
@@ -202,7 +193,7 @@ class GerenciadorTestes:
         self.atualizarExecucaoValidator()
 
         # Determinar número de threads
-        numThreads = int(self.inicializador.returnValorSettings('max_threads'))  # Pela settings
+        numThreads = int(self.controladorConfiguracoes.returnValorSettings('max_threads'))  # Pela settings
         numThreads = min(numThreads, max(1, (os.cpu_count() - 2)))  # Não todas as threads
 
         # Criar a lista de testes a serem executados
@@ -210,7 +201,7 @@ class GerenciadorTestes:
 
         if len(listaArquivosTestar) == 0:
             logger.info("Nenhum caso de teste válido encontrado")
-            raise ValueError("Nenhum arquivo de teste encontrado.")
+            raise ValueError("Nenhum arquivo de teste encontrado. Verifique os argumentos e endereços.")
         else:
             try:
                 # Caso válido de teste

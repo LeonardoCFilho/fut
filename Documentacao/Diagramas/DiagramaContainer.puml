@@ -17,8 +17,7 @@ Container_Boundary(FUT, "FUT") {
     Container(test_manager, "Gerenciador de Testes", "Python", "Gerencia casos de teste, configurações e interações com o executor.")
     Container(test_executor, "Executor de Testes", "Python", "Executa testes FHIR utilizando validator_cli.")
     Container(result_compiler, "Compilador de Resultados", "Python", "Gera relatórios comparando saídas esperadas e reais.")
-    Container(exception_handler, "Gerenciamento de Exceções", "Python", "Captura e trata erros no sistema.")
-    Container(data_storage, "Armazenamento de Dados", "", "Guarda resultados de testes e configurações.")
+    ContainerDb(data_storage, "Banco de dados", "", "Guarda resultados de testes e configurações.")
 }
 
 ' Sistemas externos
@@ -30,9 +29,8 @@ Rel(user, cli, "Executa testes diretamente via terminal")
 Rel(gui, interface_layer, "Interage com backend")
 Rel(cli, interface_layer, "Executa comandos via backend")
 Rel(interface_layer, test_manager, "Gerencia e organiza casos de teste")
-Rel(interface_layer, result_compiler, "Compila relatórios e processa saídas")
-Rel(interface_layer, exception_handler, "Captura e trata erros")
+Rel(test_manager, result_compiler, "Compila relatórios e processa saídas")
 Rel(test_executor, fhir_validator, "Executa validações FHIR via validator_cli")
-Rel(result_compiler, data_storage, "Salva e consulta resultados")
+Rel(test_manager, data_storage, "Salva e consulta resultados")
 Rel(test_manager, test_executor, "Orquestra e inicia execução de testes")
 @enduml

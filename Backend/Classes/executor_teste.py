@@ -2,15 +2,16 @@ from pathlib import Path
 import yaml
 import json
 import jsonschema
-from Backend.Classes.inicializador_sistema import InicializadorSistema
 import logging
 logger = logging.getLogger(__name__)
 
-class ExecutorTestes(InicializadorSistema):
+class ExecutorTeste():
     # Construtor
-    def __init__(self, pathFut):
-        super().__init__(pathFut)
-    
+    def __init__(self, pathSchema:Path, pathValidator:Path):
+        self.pathValidator = pathValidator
+        self.pathSchema = pathSchema
+        if not self.pathSchema.exists():
+            raise FileNotFoundError("Arquivo schema.json não encontrado")
     
     def limparConteudoYaml(self, data:dict):
         """
@@ -29,7 +30,7 @@ class ExecutorTestes(InicializadorSistema):
         return data
 
     
-    def validarArquivoTeste(self, arquivoTeste: Path) -> dict:
+    def validarArquivoTeste(self, arquivoTeste: Path, pathPastaValidator:Path, tempoTimeout:int) -> dict:
         """
         Valida um arquivo YAML usando o schema JSON e, se válido, chama a validação FHIR.
 
@@ -40,8 +41,7 @@ class ExecutorTestes(InicializadorSistema):
             Um dict com os dados do teste
         """
         # Schema para validar o arquivo de teste
-        schemaPath = self.pathFut / "Backend" / "schema.json"
-        with open(schemaPath, 'r', encoding="utf-8") as jsonSchemaFile:
+        with open(self.pathSchema, 'r', encoding="utf-8") as jsonSchemaFile:
             schema = json.load(jsonSchemaFile)
         # Arquivo de teste
         if arquivoTeste.suffix == ".yaml" or arquivoTeste.suffix == ".yml": # por segurança
@@ -96,10 +96,10 @@ class ExecutorTestes(InicializadorSistema):
             argsArquivoFhir += geraArgsValidator(context,'profiles', 'profile')
             argsArquivoFhir += geraArgsValidator(context,'resources', 'ig')
             from Backend.Classes.gerenciador_validator import GerenciadorValidator
-            gerenciadorValidator = GerenciadorValidator(self.pathFut)
+            gerenciadorValidator = GerenciadorValidator(self.pathValidator)
             try:
                 # Iniciar testes
-                outputValidacao = gerenciadorValidator.validarArquivoFhir(data['caminho_instancia'], args=argsArquivoFhir)
+                outputValidacao = gerenciadorValidator.validarArquivoFhir(data['caminho_instancia'], pathPastaValidator, tempoTimeout, args=argsArquivoFhir)
             except Exception as e:
                 # print(e) # debug
                 # raise(e)
