@@ -17,6 +17,13 @@ class ControladorConfiguracao:
             pathSettings (Path): Caminho para o arquivo de configurações.
         """
         self.pathSettings = pathSettings
+        self.dictConfiguracoes = {
+            "timeout": int,
+            "max_threads": int,
+            "caminho_validator": str,
+            "requests_timeout": int,
+            "armazenar_saida_validator": bool,
+        }
 
 
     def returnValorSettings(self, settingsBuscada: str) -> str|None:
@@ -59,15 +66,6 @@ class ControladorConfiguracao:
         configuracaoSerAlterada = configuracaoSerAlterada.lower()
         novoValor = str(novoValor).lower()
 
-        dictConfiguracoes = {
-            "timeout": int,
-            "max_threads": int,
-            "caminho_validator": str,
-        }
-        listaConfiguracoesBool = [
-            "armazenar_saida_validator",
-        ]
-
         flagAlteracaoValida = False
 
 
@@ -84,27 +82,29 @@ class ControladorConfiguracao:
             flagAlteracaoValida = True
 
 
+        ### Configuração de bool
+        def _configuraçãoBoolAlterar(novoValor: str) -> bool:
+            if novoValor in ["true", "1", "yes", "sim"]:
+                return "True"
+            else:
+                return "False"
+
+
         ## Configuração com tipo simples (int, str, ...)
-        if configuracaoSerAlterada in dictConfiguracoes:
-            tipoConfiguracao = dictConfiguracoes[configuracaoSerAlterada]
+        if not flagAlteracaoValida and configuracaoSerAlterada in self.dictConfiguracoes:
+            tipoConfiguracao = self.dictConfiguracoes[configuracaoSerAlterada]
             try:
-                novoValor = tipoConfiguracao(novoValor)
+                if tipoConfiguracao is bool:
+                    novoValor = _configuraçãoBoolAlterar(novoValor)
+                else:
+                    novoValor = tipoConfiguracao(novoValor)
                 flagAlteracaoValida = True
             except ValueError:
                 raise ValueError(f"Novo valor para configuração inválido! Essa configuração é do tipo {tipoConfiguracao.__name__}.")
 
 
-        ## Configuração de bool
-        if configuracaoSerAlterada in listaConfiguracoesBool:
-            if novoValor in ["true", "1", "yes", "sim"]:
-                novoValor = "True"
-            else:
-                novoValor = "False"
-            flagAlteracaoValida = True
-
-
         ## Rail guard contra valores baixos demais das configuraçãoes
-        if configuracaoSerAlterada == 'timeout' and novoValor < 15:
+        if (configuracaoSerAlterada == 'timeout' or configuracaoSerAlterada == 'requests_timeout') and novoValor < 15:
             raise ValueError("A configuração de timeout necessita de pelo menos 15 segundos para garantir execução.")
         if configuracaoSerAlterada == "max_threads" and novoValor < 1:
             raise ValueError("O número de máximo de threads tem que ser maior que 0!")

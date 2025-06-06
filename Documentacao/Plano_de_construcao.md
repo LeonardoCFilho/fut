@@ -113,12 +113,14 @@ A aplicação será dividida em três grandes componentes, responsáveis pelo fl
    - Gera relatórios detalhados em HTML (usando Jinja2 e, quando necessário, Plotly para gráficos interativos) ou JSON, resumindo a análise dos diagnósticos e a severidade dos problemas encontrados.
 
 ### 3.1 Diagramas de Arquitetura
-Diagramas C4:  
-- [Diagrama de Contexto](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.png)  
-- [Diagrama de Container](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.png)  
+Diagramas de alto nível
+  - Diagramas C4:  
+    - [Diagrama de Contexto](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContexto.png)  
+    - [Diagrama de Container](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaContainer.png)  
 
-Diagrama de classe UML  
-- [Diagrama de classe](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaClasse.png)  
+Diagramas de baixo nível
+  - Diagrama de classe UML  
+    - [Diagrama de classe](https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Diagramas/DiagramaClasse.png)  
 
 ### 3.2 Tecnologias Utilizadas
 - **Linguagem de Programação:** Python  

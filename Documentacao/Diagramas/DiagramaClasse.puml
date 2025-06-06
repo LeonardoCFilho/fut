@@ -6,6 +6,7 @@ top to bottom direction
 ' Classes
 class ControladorConfiguracao {
     pathSettings: Path
+    dictConfiguracoes : dict
     returnValorSettings(settingsBuscada: str) : str | None
     alterarValorSetting(configuracaoSerAlterada: str, novoValor: str) : bool
 }

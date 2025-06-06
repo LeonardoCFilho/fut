@@ -62,7 +62,7 @@ class FachadaSistema:
         Returns:
             O valor da configuração OU None(caso de erro)
         """
-        return self.gerenciador_teste.controladorConfiguracoes.returnValorSettings(settingsBuscada)
+        return self.gerenciador_teste.gestorCaminho.controladorConfiguracao.returnValorSettings(settingsBuscada)
 
 
     def atualizarValorConfiguracao(self, configuracaoSerAlterada:str, novoValor) -> str:
@@ -76,7 +76,7 @@ class FachadaSistema:
         Returns:
             Mensagem de sucesso OU mensagem de erro com justificativa"""
         try:
-            self.gerenciador_teste.controladorConfiguracoes.alterarValorSetting(configuracaoSerAlterada, novoValor)
+            self.gerenciador_teste.gestorCaminho.controladorConfiguracao.alterarValorSetting(configuracaoSerAlterada, novoValor)
             return f"Configuração alterada com sucesso!"
         except Exception as e:
             return f"Erro ao alterar a configuração '{configuracaoSerAlterada}': {str(e)}"
@@ -224,6 +224,7 @@ class FachadaSistema:
     1. {textoSublinhado}[hardware]{fimTextoColorido}
      - {coresTerminal['ciano']}timeout (int):{fimTextoColorido} Define o tempo limite, em segundos, para a execução de cada teste. Exemplo de valor: `600` (10 minutos).
      - {coresTerminal['ciano']}max_threads (int):{fimTextoColorido} Especifica o número máximo de threads a serem usadas para executar os testes paralelamente. Exemplo de valor: `4`.
+     - {coresTerminal['ciano']}requests_timeout (int):{fimTextoColorido} Define o tempo limite, em segundos, que o programa aguarda para downloads finalizar. Exemplo de valor: `600` (10 minutos).
 
     2. {textoSublinhado}[enderecamento]{fimTextoColorido}
      - {coresTerminal['ciano']}caminho_validator (str):{fimTextoColorido} Caminho personalizado para o arquivo `validator_cli.jar`, caso seja necessário sobrescrever o caminho padrão. Exemplo de valor: `~/Downloads/validator_cli.jar`.
