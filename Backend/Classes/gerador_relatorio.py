@@ -188,9 +188,12 @@ class GeradorRelatorios:
         relatorios = self.gerarRelatorios(tempo_execucao_total=tempo_execucao_total)
         json_valido = json.dumps(relatorios, indent=4, ensure_ascii=False)
 
-        #TODO: erro de persmissão
-        with open(pathlib.Path.cwd() / 'relatorio_final_fut.json', mode='w', encoding='utf8') as arquivo:
-            arquivo.write(json_valido)
+        try:
+            with open(pathlib.Path.cwd() / 'relatorio_final_fut.json', mode='w', encoding='utf8') as arquivo:
+                arquivo.write(json_valido)
+        except Exception as e:
+            logger.error(f"Erro ao gerar o relatório: {e}")
+            raise e
 
         rmtree(pathlib.Path().cwd() / '.temp-fut', ignore_errors=True)
 
