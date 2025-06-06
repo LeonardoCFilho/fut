@@ -1,17 +1,16 @@
-from pathlib import Path
-from Backend.Classes.controlador_configuracao import ControladorConfiguracao
-from Backend.Classes.gestor_caminho import GestorCaminho
 from Backend.Classes.gerenciador_validator import GerenciadorValidator
 from Backend.Classes.gerador_relatorio import GeradorRelatorios
+from Backend.Classes.gestor_caminho import GestorCaminho
 from Backend.Classes.executor_teste import ExecutorTeste
 from Backend.Classes.Exceptions import ExcecaoTemplate
-import os
-import threading
-import concurrent.futures
 from functools import partial
+from pathlib import Path
+import concurrent.futures
+import threading
 import requests
-import sys
 import time
+import sys
+import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,7 +24,6 @@ class GerenciadorTeste:
         if not GerenciadorTeste._instance:
             GerenciadorTeste._instance = self
             self.gestorCaminho = gestorCaminho
-            self.controladorConfiguracoes = ControladorConfiguracao(self.gestorCaminho.pathSettings)
             
     # Retorna o objeto singleton da classe
     @staticmethod
@@ -97,7 +95,7 @@ class GerenciadorTeste:
         # Garantir que o validator esteja atualizado
         try:
             _gerenciadorValidator = GerenciadorValidator(self.gestorCaminho.pathFut)
-            _gerenciadorValidator.atualizarValidatorCli(int(self.controladorConfiguracoes("requests_timeout")))
+            _gerenciadorValidator.atualizarValidatorCli(int(self.gestorCaminho.controladorConfiguracao("requests_timeout")))
         except ExcecaoTemplate as e:
             logger.fatal(f"O arquivo do validator_cli é inválido: {e}")
             sys.exit("Arquivo validator_cli é inválido, verifique seu download ou considere utilizar o validator padrão")
@@ -107,7 +105,7 @@ class GerenciadorTeste:
             logger.error(f"Erro ao atualizar o validator: {e}")  # Programa continua executando, mas não usar a versão mais recente do validator
 
 
-    def prepararExecucaoTestes(self, args=None):
+    def prepararExecucaoTestes(self, args=None) -> list:
         """
         Limpeza e preparo da entrada para os testes serem feitos
 
@@ -140,7 +138,7 @@ class GerenciadorTeste:
         # Iniciar a validação
         logger.info("Iniciando a execução dos testes requisitados")
         _instanciaExecutorTeste = ExecutorTeste(self.gestorCaminho.pathSchema, self.gestorCaminho.pathValidator)
-        validar_completado = partial(_instanciaExecutorTeste.validarArquivoTeste, pathPastaValidator=self.gestorCaminho.pathPastaValidator, tempoTimeout=int(self.controladorConfiguracoes.returnValorSettings('timeout')))
+        validar_completado = partial(_instanciaExecutorTeste.validarArquivoTeste, pathPastaValidator=self.gestorCaminho.pathPastaValidator, tempoTimeout=int(self.gestorCaminho.controladorConfiguracao.returnValorSettings('timeout')))
         with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
             for resultado in executor.map(validar_completado, listaArquivosTestar):
                 try:
@@ -193,7 +191,7 @@ class GerenciadorTeste:
         self.atualizarExecucaoValidator()
 
         # Determinar número de threads
-        numThreads = int(self.controladorConfiguracoes.returnValorSettings('max_threads'))  # Pela settings
+        numThreads = int(self.gestorCaminho.controladorConfiguracao.returnValorSettings('max_threads'))  # Pela settings
         numThreads = min(numThreads, max(1, (os.cpu_count() - 2)))  # Não todas as threads
 
         # Criar a lista de testes a serem executados

@@ -26,6 +26,9 @@ class GestorCaminho:
         if not self.pathSettings.exists():
             sys.exit("Arquivo de configuraões não encontrado, verifique se ele não foi renomeado ou movido!")
         
+        ### Usado para as funções
+        self.controladorConfiguracao = ControladorConfiguracao(self.pathSettings)
+
         self.pathValidator = self._resolveValidatorPath()
 
         self.pathSchema = pathFut / "Backend" / "schema.json"
@@ -33,10 +36,8 @@ class GestorCaminho:
         ## Pastas
         self.pathDirTestes = pathFut / "Arquivos" / "Testes"
 
-        self.pathPastaValidator = self.definirPastaValidator()
+        self.pathPastaValidator = self._definirPastaValidator()
 
-        ## Usado para as funções
-        self.controladorConfiguracao = ControladorConfiguracao(self.pathSettings)
         
 
     def _resolveValidatorPath(self) -> Path:
@@ -50,7 +51,7 @@ class GestorCaminho:
         Raises:
             SystemExit: Se não for possível instalar ou validar o validator_cli.jar.
         """
-        logger.debug(f"Resolvendo caminho do validator: {pathValidator}")
+        logger.debug(f"Resolvendo caminho do validator: pathValidator")
         pathValidatorStr = str(self.controladorConfiguracao.returnValorSettings('caminho_validator')).split('#')[0].strip()
         pathValidator = Path(pathValidatorStr)
 
@@ -72,7 +73,7 @@ class GestorCaminho:
         return pathValidator
 
 
-    def definirPastaValidator(self) -> Path:
+    def _definirPastaValidator(self) -> Path:
         """
         Determinar a pasta que os arquivos do validator serão salvos
 

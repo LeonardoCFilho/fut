@@ -12,8 +12,9 @@ class ExecutorTeste():
         self.pathSchema = pathSchema
         if not self.pathSchema.exists():
             raise FileNotFoundError("Arquivo schema.json não encontrado")
-    
-    def limparConteudoYaml(self, data:dict):
+
+
+    def _limparConteudoYaml(self, data:dict) -> dict:
         """
         Padronizar as informações recebidas do arquivo de teste
 
@@ -24,9 +25,9 @@ class ExecutorTeste():
             data (dict): Entrada tratada
         """
         if isinstance(data, dict):
-            return {key: self.limparConteudoYaml(value) for key, value in data.items()}
+            return {key: self._limparConteudoYaml(value) for key, value in data.items()}
         elif isinstance(data, list):
-            return [self.limparConteudoYaml(item) if item is not None else "" for item in data]
+            return [self._limparConteudoYaml(item) if item is not None else "" for item in data]
         return data
 
     
@@ -49,7 +50,7 @@ class ExecutorTeste():
                 data = yaml.safe_load(file)  
 
         # Limpar a entrada
-        data = self.limparConteudoYaml(data)
+        data = self._limparConteudoYaml(data)
 
         # Inicializar variaveis
         flagYamlValido = True
@@ -114,7 +115,16 @@ class ExecutorTeste():
         }
 
     
-    def limparArgsEntrada(self, args) -> list:
+    def _padronizarArgsEntrada(self, args) -> list:
+        """
+        Passo de precaução, garante que args segue um padrão pre-definido
+        
+        Args: 
+            args: Os argumentos de entrada
+        
+        Returns:
+            list de formato padronizado com os valores armazenados em args
+        """
         if isinstance(args, str):
             args = str(args).split()
         elif isinstance(args, (tuple, set)): # Conversão direta
@@ -141,14 +151,13 @@ class ExecutorTeste():
             list de paths para cada yaml encontrado OU list vazia
         """
         arquivosYaml = []
+        # Garantir que argsEntrada é uma list
+        argsEntrada = self._padronizarArgsEntrada(argsEntrada)
         # Ler todos da pasta atual
-        if (isinstance(argsEntrada, list) or isinstance(argsEntrada, str)) and len(argsEntrada) == 0:
+        if len(argsEntrada) == 0:
             arquivosYaml = list(Path.cwd().glob('*.yaml')) + list(Path.cwd().glob('*.yml'))
         # Arquivos especificados
         else:
-            # Garantir que argsEntrada é uma list
-            argsEntrada = self.limparArgsEntrada(argsEntrada)
-
             # Iterar pela list
             for pathArquivo in argsEntrada:
                 arquivoAtual = Path(pathArquivo)

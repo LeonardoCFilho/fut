@@ -133,7 +133,7 @@ class GerenciadorValidator():
             self.instalaValidatorCli(self.pathValidator)
 
 
-    def validarArquivoFhir(self, arquivoValidar:Path, pastaRelatorio:Path, tempoTimeout:int, args:str=None):  
+    def validarArquivoFhir(self, arquivoValidar:Path, pastaRelatorio:Path, tempoTimeout:int, args:str=None) -> list:  
         """
         Executa a validação do arquivo FHIR usando o validator_cli.jar.
 

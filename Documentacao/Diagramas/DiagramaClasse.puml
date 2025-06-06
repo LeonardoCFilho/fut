@@ -2,80 +2,118 @@
 
 ' Título do diagrama
 title Diagrama de Classes
-
+top to bottom direction
 ' Classes
-class Classes.ExcecaoTemplate {
-  message: str
-  original_exception: Exception
+class ControladorConfiguracao {
+    pathSettings: Path
+    returnValorSettings(settingsBuscada: str) : str | None
+    alterarValorSetting(configuracaoSerAlterada: str, novoValor: str) : bool
 }
-class Classes.ExecutorTeste {
-  limparConteudoEntrada(data)
-  validarArquivoTeste(arquivoTeste)
-  gerarListaArquivosTeste(argsEntrada)
+class ExcecaoTemplate {
+    message: str
+    original_exception: Exception
 }
-class Classes.SetupSistema {
-  pathFut: Path
-  pathSettings: Path
-  pathValidator: Path
-  returnValorSettings(settingsBuscada)
-  alterarValorSetting(configuracaoSerAlterada, novoValor)
-  _resolveValidatorPath()
+class ExecutorTeste {
+    pathSchema: Path
+    pathValidator: Path
+    _limparConteudoYaml(data: dict) : dict
+    validarArquivoTeste(arquivoTeste: Path, pathPastaValidator: Path, tempoTimeout: int) : dict
+    _padronizarArgsEntrada(args) : list
+    gerarListaArquivosTeste(argsEntrada) : list
+
 }
-class Classes.GeradorRelatorios {
-  casos_de_teste_: list
-  processarSaidas(caminho_saida_esperada, caminho_saida_real, yaml_valido)
-  compararResultados(tupla_dados)
-  gerarRelatorios()
-  gerarRelatorioJson()
-  {static} +modificarChaves(novas_chaves)
-  {static} +modificarErrosEsperados(novos_erros_esperados)
+class GeradorRelatorios {
+    casos_de_teste_: list
+    processarSaidas(caminho_saida_esperada: : str|Path, caminho_saida_real: str|Path, yaml_valido: bool) -> list
+    compararResultados(tupla_dados: tuple)
+    gerarRelatorios(tempo_execucao_total: float)
+    gerarRelatorioJson(tempo_execucao_total: float)
+    {static} +modificarChaves(novas_chaves: dict)
+    {static} +modificarErrosEsperados(novos_erros_esperados: dict)
 }
-class Classes.GerenciadorTeste {
-  pathFut: Path
-  inicializador: SetupSistema
-  get_instance(pathFut)
-  iniciarSistema()
-  baixarArquivoUrl(url, enderecoArquivo, requestsTimeout, maxTentativas)
-  definirPastaValidator()
-  atualizarExecucaoValidator(inicializadorSistema)
-  prepararExecucaoTestes(args)
-  executarThreadsTeste(listaArquivosTestar, numThreads)
-  iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio)
-  executarTestesCompleto(args, versaoRelatorio, entregaGradual)
+class GerenciadorTeste {
+    gestorCaminho: GestorCaminho
+    get_instance(gestorCaminho: GestorCaminho) : GerenciadorTeste
+    iniciarSistema()
+    baixarArquivoUrl(url: str, enderecoArquivo, requestsTimeout:int, maxTentativas:int)
+    prepararExecucaoTestes(args) : list
+    executarThreadsTeste(listaArquivosTestar: list, numThreads: int)
+    iniciarCriacaoRelatorio(resultadosValidacao: list, versaoRelatorio: str, tempo_execucao_total: float)
+    executarTestesCompleto(args: list, versaoRelatorio: str, entregaGradual: bool)
 }
-class Classes.GerenciadorValidator {
-  {static} +instalaValidatorCli(pathValidator)
-  {static} +verificaVersaoValidator(pathValidator)
-  atualizarValidatorCli(pathValidator)
-  validarArquivoFhir(arquivoValidar, args)
+class GerenciadorValidator {
+    pathValidator: Path
+    instalaValidatorCli()
+    verificaVersaoValidator() : str|None
+    atualizarValidatorCli(requestsTimeout:int)
+    validarArquivoFhir(arquivoValidar: Path, pastaRelatorio: Path, tempoTimeout: int, args: str) : list
 }
-interface Interface {
-  obterValorConfiguracao(settingsBuscada)
-  atualizarValorConfiguracao(configuracaoSerAlterada, novoValor)
-  iniciarExecucaoTestes(args, tipoRelatorio, entregaGradual)
-  gerarArquivoTeste(dictInformacoesTeste, caminhoArquivo)
-  obterDialogo(dialogoDesejado)
+class GestorCaminho {
+    pathFut: Path
+    pathSettings: Path
+    controladorConfiguracao: ControladorConfiguracao
+    pathValidator: Path 
+    pathSchema: Path  
+    pathDirTestes: Path
+    pathPastaValidator: Path
+    _resolveValidatorPath() : Path   
+    _definirPastaValidator() :  Path  
+
 }
-protocol Terminal_ui {
-  controleAnimacao(status)
-  mainMenu(args)
+class FachadaSistema {
+    gerenciador_teste: GerenciadorTeste
+    acharCaminhoProjeto() : Path   
+    listarArquivosYaml(args) : list[Path]
+    obterValorConfiguracao(settingsBuscada: str) : str|None
+    atualizarValorConfiguracao(configuracaoSerAlterada: str, novoValor) : str 
+    iniciarExecucaoTestes(args, tipoRelatorio: str, entregaGradual: bool)
+    gerarArquivoTeste(dictInformacoesTeste: dict, caminhoArquivo)
+    obterDialogo(dialogoDesejado: str) : str
+}
+class TerminalUI {
+    fachada: FachadaSistema
+    textoCiano: str 
+    fimTextoColorido: str
+    flagAnimacaoSpinner: bool
+    threadAnimacaoSpinner: threading.Thread
+    controleAnimacao(status: str, timeout: float)
+    mainMenu(args: list|str|None)
+    _testesTerminal(args: str | list)
+    _terminalConfiguracoes(nomeConfiguracao: str, novoValor: str)
 }
 package GUI {
+    component configuracao{
 
+    }
+    component dashboard{
+
+    }
+    component dashboardGeral{
+
+    }
+    component formulario{
+
+    }
+    component TestManager{
+
+    }
 }
 
 ' Relacoes
-Classes.SetupSistema <|-- Classes.ExecutorTeste : Herda
-Classes.SetupSistema <|-- Classes.GerenciadorValidator : Herda
-Classes.ExecutorTeste --> Classes.GerenciadorValidator : Validar
-Classes.GerenciadorTeste ..> Classes.ExcecaoTemplate : Lida 
-Classes.GerenciadorValidator ..> Classes.ExcecaoTemplate : Levanta 
-Classes.GerenciadorTeste --> Classes.ExecutorTeste : Usa 
-Classes.GerenciadorTeste --> Classes.GeradorRelatorios : Usa 
-Classes.GerenciadorTeste *--> Classes.SetupSistema : Contém e utiliza
-Interface ..> GerenciadorTeste : Usa
-Interface --> SetupSistema : Chama via GerenciadorTeste
-Terminal_ui ..> Interface : Usa
-GUI ..> Interface : Usa
-footer Generated by //py2puml//
+GUI --> FachadaSistema : usa
+GerenciadorTeste --> GeradorRelatorios : depende de
+GerenciadorTeste --> ExecutorTeste : depende de
+ExecutorTeste --> GerenciadorValidator : depende de
+GerenciadorTeste --> GerenciadorValidator : usa e atualiza validator
+
+'' Excecao template
+GerenciadorValidator --> ExcecaoTemplate : lança
+GerenciadorTeste --> ExcecaoTemplate : captura
+
+'' Composições
+GerenciadorTeste *-- GestorCaminho : faz parte de
+GestorCaminho *-- ControladorConfiguracao : faz parte de
+FachadaSistema *-- GerenciadorTeste : faz parte de
+TerminalUI *-- FachadaSistema : faz parte de
+
 @enduml

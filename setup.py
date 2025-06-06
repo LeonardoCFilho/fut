@@ -63,7 +63,7 @@ def setupAmbienteVirtual(pathFut:Path, pathVenv:Path):
     print("Ambiente virtual preparado!\n")
 
 if __name__ == "__main__":
-    from Backend.interface import acharCaminhoProjeto
-    pathFut = acharCaminhoProjeto()
+    from Backend.fachada_sistema import FachadaSistema
+    pathFut = FachadaSistema().acharCaminhoProjeto()
     pathVenv = pathFut / "venv-fut"
     setupAmbienteVirtual(pathFut,pathVenv)
