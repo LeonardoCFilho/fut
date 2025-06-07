@@ -152,14 +152,14 @@ class TerminalUI:
         if not novoValor:  # Leitura da configuração
             logger.info("Usuário solicitou o valor de uma configuração")
             valorConfiguracao = self.fachada.obterValorConfiguracao(nomeConfiguracao)
-            if valorConfiguracao:
+            if valorConfiguracao is not None:
                 print(f"{self.fachada._returnCodigoANSI("ciano")}Configurações:{self.fachada._returnCodigoANSI("fimTextoColorido")} O valor atual de '{nomeConfiguracao}' é {valorConfiguracao}")
             else:
                 print("Configuração não reconhecida, verifique a escrita.")
         else:  # Atualização da configuração
             logger.info("Usuário tentou alterar o valor de uma configuração")
             valorConfiguracao = self.fachada.obterValorConfiguracao(nomeConfiguracao)
-            if valorConfiguracao:
+            if valorConfiguracao is not None:
                 print("Alterando a configuração....")
                 resultadoAlteracao = self.fachada.atualizarValorConfiguracao(nomeConfiguracao, novoValor)
                 print(resultadoAlteracao)

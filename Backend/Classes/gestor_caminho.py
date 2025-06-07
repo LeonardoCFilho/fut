@@ -11,7 +11,7 @@ class GestorCaminho:
     Classe que gerencia os endereços usados no projeto e garante a existencia de arquivos vitais
     """
 
-    # Contantes
+    # Constantes
     SETTINGS_FILE = "settings.ini"
     VALIDATOR_FILE = "validator_cli.jar"
     SCHEMA_FILE_YAML = "schema_arquivo_de_teste.json"
@@ -129,14 +129,17 @@ class GestorCaminho:
         Raises:
             SystemExit: Se não for possível instalar ou validar o validator_cli.jar.
         """
-        logger.debug(f"Resolvendo caminho do validator: path_validator")
-        path_validator_str = self.controlador_configuracao.returnValorSettings('caminho_validator')
+        logger.debug("Resolvendo caminho do validator")
+        
+        path_validator_str = self.controlador_configuracao.obter_configuracao_segura('caminho_validator', "default")
 
-        if path_validator_str == "reset": # Validator padrão
+        if path_validator_str == "default":  # Validator padrão
             path_validator = self.path_arquivos / self.VALIDATOR_FILE
-        else: # Validator customizado
-            # Caminho salvo no arquivo é sempre absoluto
+        else:  # Validator customizado
             path_validator = Path(path_validator_str)
+            # Converter para caminho absoluto se for relativo
+            if not path_validator.is_absolute():
+                path_validator = Path.cwd() / path_validator
         
         return self._setup_validator(path_validator)
 
@@ -157,6 +160,7 @@ class GestorCaminho:
         gerenciador_validator = GerenciadorValidator(path_validator)
         if not path_validator.exists():
             try:
+                logger.info(f"Validator não encontrado em {path_validator}, tentando instalar...")
                 gerenciador_validator.instalaValidatorCli()
             except Exception as e:
                 logger.fatal(f"Erro ao instalar o validator_cli padrão: {e}")
@@ -177,10 +181,14 @@ class GestorCaminho:
         Returns:
             Path: O caminho (Path) da pasta para os arquivos do validator
         """
-        flag_salvar_output = self.controlador_configuracao.returnValorSettings('armazenar_saida_validator').lower() in ["true", "1", "yes"]
+        flag_salvar_output = self.controlador_configuracao.obter_configuracao_segura('armazenar_saida_validator', False)
+
         if flag_salvar_output:  # Pasta permanente
-            pasta_relatorio = Path.cwd() / "resultados-fut"
+            pasta_relatorio = Path.cwd() / self.RESULTS_DIR
+            logger.debug("Usando pasta permanente para resultados do validator")
         else:  # Pasta temporária (Apagada após a criação do relatório final)
-            pasta_relatorio = Path.cwd() / ".temp-fut"
+            pasta_relatorio = Path.cwd() / self.TEMP_DIR
+            logger.debug("Usando pasta temporária para resultados do validator")
+            
         pasta_relatorio.mkdir(exist_ok=True)  # Garantir que a pasta existe
         return pasta_relatorio

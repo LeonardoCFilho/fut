@@ -62,7 +62,7 @@ class FachadaSistema:
         Returns:
             O valor da configuração OU None(caso de erro)
         """
-        return self.gerenciador_teste.gestorCaminho.controlador_configuracao.returnValorSettings(settingsBuscada)
+        return self.gerenciador_teste.gestorCaminho.controlador_configuracao.obter_configuracao_segura(settingsBuscada)
 
 
     def atualizarValorConfiguracao(self, configuracaoSerAlterada:str, novoValor) -> str:
@@ -76,7 +76,7 @@ class FachadaSistema:
         Returns:
             Mensagem de sucesso OU mensagem de erro com justificativa"""
         try:
-            self.gerenciador_teste.gestorCaminho.controlador_configuracao.alterarValorSetting(configuracaoSerAlterada, novoValor)
+            self.gerenciador_teste.gestorCaminho.controlador_configuracao.alterar_valor_configuracao(configuracaoSerAlterada, str(novoValor))
             return f"Configuração alterada com sucesso!"
         except Exception as e:
             return f"Erro ao alterar a configuração '{configuracaoSerAlterada}': {str(e)}"
@@ -117,22 +117,22 @@ class FachadaSistema:
 
 
     ## Arquivos de teste
-    def gerarArquivoTeste(self, dictInformacoesTeste:dict = None, caminhoArquivo = None):
+    def gerarArquivoTeste(self, dictInformacoesTeste:dict = None, caminho_arquivo = None):
         """
         Cria um arquivo .yaml (preenchido ou não) que segue o nosso template para caso de teste
         Referência para o template: https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md#padrões-esperados
 
         Args:
             dictInformacoesTeste (dict): dict com os dados a serem inseridos no arquivo (opcional)
-            caminhoArquivo: Caminho onde o arquivo será criado/escrito (opcional)
+            caminho_arquivo: Caminho onde o arquivo será criado/escrito (opcional)
 
         Raises:
             PermissionError: Programa não tem permissão para a criação/escrita do arquivo
             ...
         """
-        if not caminhoArquivo:  # Se o nome não é especificado => template
-            caminhoArquivo = "template.yaml"
-        logger.info(f"Arquivo de teste criado em {caminhoArquivo}")
+        if not caminho_arquivo:  # Se o nome não é especificado => template
+            caminho_arquivo = "template.yaml"
+        logger.info(f"Arquivo de teste criado em {caminho_arquivo}")
         if not dictInformacoesTeste:  # Sem informações especificadas => template
             logger.info("Template de um arquivo de teste criado") 
             dictInformacoesTeste = {
@@ -169,7 +169,7 @@ class FachadaSistema:
         information: [{dictInformacoesTeste.get('information', '')}]  #  (Obrigatório) Lista de mensagens informativas esperadas (lista de string).
         invariantes: {dictInformacoesTeste.get('invariantes', '')} # (Opcional)"""
         try:
-            with open(caminhoArquivo, "w", encoding="utf-8") as file:  # Se caminhoArquivo já existia ele é sobrescrito
+            with open(caminho_arquivo, "w", encoding="utf-8") as file:  # Se caminho_arquivo já existia ele é sobrescrito
                 file.write(templateYaml)
         except PermissionError as e:
             logger.error("Programa não tem permissão para criar o arquivo de teste requisitado")

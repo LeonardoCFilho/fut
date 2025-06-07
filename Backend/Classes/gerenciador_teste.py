@@ -24,7 +24,6 @@ class GerenciadorTeste:
         if not GerenciadorTeste._instance:
             GerenciadorTeste._instance = self
             self.gestorCaminho = gestorCaminho
-            print(gestorCaminho.controlador_configuracao)
     # Retorna o objeto singleton da classe
     @staticmethod
     def get_instance(gestorCaminho:GestorCaminho = None):
@@ -95,7 +94,7 @@ class GerenciadorTeste:
         # Garantir que o validator esteja atualizado
         try:
             _gerenciadorValidator = GerenciadorValidator(self.gestorCaminho.return_path('raiz'))
-            _gerenciadorValidator.atualizarValidatorCli(int(self.gestorCaminho.controlador_configuracao("requests_timeout")))
+            _gerenciadorValidator.atualizarValidatorCli(int(self.gestorCaminho.controlador_configuracao.obter_configuracao_segura("requests_timeout")))
         except ExcecaoTemplate as e:
             logger.fatal(f"O arquivo do validator_cli é inválido: {e}")
             sys.exit("Arquivo validator_cli é inválido, verifique seu download ou considere utilizar o validator padrão")
@@ -138,7 +137,7 @@ class GerenciadorTeste:
         # Iniciar a validação
         logger.info("Iniciando a execução dos testes requisitados")
         _instanciaExecutorTeste = ExecutorTeste(self.gestorCaminho.return_path('schema_yaml'), self.gestorCaminho.return_path('raiz'))
-        validar_completado = partial(_instanciaExecutorTeste.validarArquivoTeste, pathPastaValidator=self.gestorCaminho.return_path('pasta_validator'), tempoTimeout=int(self.gestorCaminho.controlador_configuracao.returnValorSettings('timeout')))
+        validar_completado = partial(_instanciaExecutorTeste.validarArquivoTeste, pathPastaValidator=self.gestorCaminho.return_path('pasta_validator'), tempoTimeout=int(self.gestorCaminho.controlador_configuracao.obter_configuracao_segura('timeout')))
         with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
             for resultado in executor.map(validar_completado, listaArquivosTestar):
                 try:
@@ -193,7 +192,7 @@ class GerenciadorTeste:
         self.atualizarExecucaoValidator()
 
         # Determinar número de threads
-        numThreads = int(self.gestorCaminho.controlador_configuracao.returnValorSettings('max_threads'))  # Pela settings
+        numThreads = int(self.gestorCaminho.controlador_configuracao.obter_configuracao_segura('max_threads'))  # Pela settings
         numThreads = min(numThreads, max(1, (os.cpu_count() - 2)))  # Não todas as threads
 
         # Criar a lista de testes a serem executados

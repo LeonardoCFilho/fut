@@ -7,8 +7,8 @@ top to bottom direction
 class ControladorConfiguracao {
     pathSettings: Path
     dictConfiguracoes : dict
-    returnValorSettings(settingsBuscada: str) : str | None
-    alterarValorSetting(configuracaoSerAlterada: str, novoValor: str) : bool
+    return_valor_configuracao(settingsBuscada: str) : str | None
+    alterar_valor_configuracao(configuracaoSerAlterada: str, novoValor: str) : bool
 }
 class ExcecaoTemplate {
     message: str
@@ -68,7 +68,7 @@ class FachadaSistema {
     obterValorConfiguracao(settingsBuscada: str) : str|None
     atualizarValorConfiguracao(configuracaoSerAlterada: str, novoValor) : str 
     iniciarExecucaoTestes(args, tipoRelatorio: str, entregaGradual: bool)
-    gerarArquivoTeste(dictInformacoesTeste: dict, caminhoArquivo)
+    gerarArquivoTeste(dictInformacoesTeste: dict, caminho_arquivo)
     _returnCodigoANSI(codigoDesejado: str) : str
     obterDialogo(dialogoDesejado: str) : str
 }

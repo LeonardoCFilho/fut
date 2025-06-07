@@ -28,7 +28,7 @@
     },
     "caminho_validator": {
       "type": "path",
-      "default": "reset",
+      "default": "default",
       "description": "Path do validator_cli",
       "category": "enderecamento",
       "validation": {
