@@ -157,12 +157,12 @@ class GestorCaminho:
         gerenciador_validator = GerenciadorValidator(path_validator)
         if not path_validator.exists():
             try:
-                gerenciador_validator.instala_validator_cli()
+                gerenciador_validator.instalaValidatorCli()
             except Exception as e:
                 logger.fatal(f"Erro ao instalar o validator_cli padrão: {e}")
                 sys.exit("Erro ao instalar o validator_cli padrão")
 
-        if not gerenciador_validator.verifica_versao_validator():
+        if not gerenciador_validator.verificaVersaoValidator():
             logger.fatal("Validator_cli utilizado não é válido")
             sys.exit("Validator_cli utilizado não é válido")
 

@@ -62,7 +62,7 @@ class FachadaSistema:
         Returns:
             O valor da configuração OU None(caso de erro)
         """
-        return self.gerenciador_teste.gestorCaminho.controladorConfiguracao.returnValorSettings(settingsBuscada)
+        return self.gerenciador_teste.gestorCaminho.controlador_configuracao.returnValorSettings(settingsBuscada)
 
 
     def atualizarValorConfiguracao(self, configuracaoSerAlterada:str, novoValor) -> str:
@@ -76,7 +76,7 @@ class FachadaSistema:
         Returns:
             Mensagem de sucesso OU mensagem de erro com justificativa"""
         try:
-            self.gerenciador_teste.gestorCaminho.controladorConfiguracao.alterarValorSetting(configuracaoSerAlterada, novoValor)
+            self.gerenciador_teste.gestorCaminho.controlador_configuracao.alterarValorSetting(configuracaoSerAlterada, novoValor)
             return f"Configuração alterada com sucesso!"
         except Exception as e:
             return f"Erro ao alterar a configuração '{configuracaoSerAlterada}': {str(e)}"
