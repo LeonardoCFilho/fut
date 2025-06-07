@@ -1,5 +1,5 @@
 # Não enviar o validator_cli (grande demais)
-Backend/validator_cli.jar
+**/validator_cli.jar
 # Ambiente virtual é criado na máquina do usuário (garantir compatibilidade)
 .venv-fut
 venv-fut

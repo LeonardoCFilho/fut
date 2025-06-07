@@ -71,14 +71,12 @@ class ControladorConfiguracao:
 
         ## Configuração do caminho do validator (Path)
         if configuracaoSerAlterada == "caminho_validator":
-            if novoValor != "reset":
+            if novoValor != "reset": # Vulgo, não é o valor padrão
                 caminhoArquivo = Path(novoValor)
                 if not caminhoArquivo.is_absolute():
                     caminhoArquivo = Path.cwd() / caminhoArquivo
                 if not caminhoArquivo.exists():
                     raise FileNotFoundError(f"Novo validator_cli não foi encontrado, endereço usado: {caminhoArquivo.resolve()}")
-            else:
-                novoValor = Path("Backend/validator_cli.jar").as_posix()
             flagAlteracaoValida = True
 
 

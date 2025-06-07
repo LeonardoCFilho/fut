@@ -2,7 +2,7 @@ from Backend.Classes.gerenciador_validator import GerenciadorValidator
 from Backend.Classes.gerador_relatorio import GeradorRelatorios
 from Backend.Classes.gestor_caminho import GestorCaminho
 from Backend.Classes.executor_teste import ExecutorTeste
-from Backend.Classes.Exceptions import ExcecaoTemplate
+from Backend.Classes.exceptions import ExcecaoTemplate
 from functools import partial
 from pathlib import Path
 import concurrent.futures

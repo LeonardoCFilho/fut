@@ -41,54 +41,69 @@ class ExecutorTeste():
         Returns:
             Um dict com os dados do teste
         """
-        # Schema para validar o arquivo de teste
-        with open(self.pathSchema, 'r', encoding="utf-8") as jsonSchemaFile:
-            schema = json.load(jsonSchemaFile)
-        # Arquivo de teste
-        if arquivoTeste.suffix == ".yaml" or arquivoTeste.suffix == ".yml": # por segurança
-            with open(arquivoTeste, "r", encoding="utf-8") as file:
-                data = yaml.safe_load(file)  
-
-        # Limpar a entrada
-        data = self._limparConteudoYaml(data)
-
         # Inicializar variaveis
         flagYamlValido = True
         outputValidacao = [None, None]
         justificativaArquivoInvalido = None
+
         try:
-            # Validar
-            jsonschema.validate(instance=data, schema=schema)
-            #print("Sucesso")
-        except jsonschema.exceptions.ValidationError as e:
-            logger.warning(f"Arquivo de teste invalido: {e}")
-            print(f"Arquivo {arquivoTeste} invalido")
-            #print(e) # temp
-            # justificativaArquivoInvalido = ...
-            flagYamlValido = False
-        
-        # Ideia: Formata os argumentos do contexto para comandos usados pelo validator_cli
-        def geraArgsValidator(dictContext, secaoInteresse, prefixo):
-            strArgsFormatados = ''
-            if dictContext.get(secaoInteresse):
-                if dictContext[secaoInteresse] not in [None, "", [""]]:
-                    strArgsFormatados = f" -{prefixo} " + f" -{prefixo} ".join(dictContext[secaoInteresse])
-            return strArgsFormatados
-        
-        # Antes de tentar validar o arquivo verificar se existe:
-        # Preparar arquivo
-        data['caminho_instancia'] = Path(data['caminho_instancia'])
-        if not data['caminho_instancia'].is_absolute(): # Para garantir consistencia
-            data['caminho_instancia'] = arquivoTeste.parent / data['caminho_instancia']
-        # Tentar mais duas maneiras de achar o arquivo
-        if not data['caminho_instancia'].exists(): # Arquivo escrito no teste não existe
-            if arquivoTeste.with_suffix('.json').exists(): # Ver se versão com mesmo nome (mas .json) existe
-                data['caminho_instancia'] = arquivoTeste.with_suffix('.json')
-            elif Path(arquivoTeste.parent / f"{data['test_id']}.json").exists(): # Ver se existe pelo id
-                data['caminho_instancia'] = Path(arquivoTeste.parent / f"{data['test_id']}.json")
-            else: # Simplesmente não existe
+            # Schema para validar o arquivo de teste
+            with open(self.pathSchema, 'r', encoding="utf-8") as jsonSchemaFile:
+                schema = json.load(jsonSchemaFile)
+            # Arquivo de teste
+            if arquivoTeste.suffix == ".yaml" or arquivoTeste.suffix == ".yml": # por segurança
+                with open(arquivoTeste, "r", encoding="utf-8") as file:
+                    data = yaml.safe_load(file)  
+        except yaml.YAMLError as e:
+            logger.warning(f"O arquivo {arquivoTeste} é um arquivo YAML invalido")
+            justificativaArquivoInvalido = "O arquivo de teste YAML não é válido, verifique as aspas e indentação"
+            flagYamlValido  = False
+        except Exception as e:
+            logger.error(f"Erro no executor de teste: {e}")
+
+        if flagYamlValido:
+            # Limpar a entrada
+            data = self._limparConteudoYaml(data)
+
+            try:
+                # Validar
+                jsonschema.validate(instance=data, schema=schema)
+                #print("Sucesso")
+            except jsonschema.exceptions.ValidationError as e:
+                logger.warning(f"Arquivo de teste invalido: {e}")
+                if " is a required property" in e.message:
+                    justificativaArquivoInvalido = f"O campo {e.message.split(' is a required property')[0]} é obrigatório"
+                elif " is not of type " in e.message:
+                    secaoMessage = " is not of type "
+                    justificativaArquivoInvalido = f"O valor da variavel '{e.message.split(secaoMessage)[0]}' tem que ser {e.message.split(secaoMessage)[1]}"
+                elif " is not one of ":
+                    secaoMessage = " is not one of "
+                    justificativaArquivoInvalido = f"O valor da variavel {e.message.split(secaoMessage)[0]} deveria ser uma entre {e.message.split(secaoMessage)[1]}"
                 flagYamlValido = False
-                justificativaArquivoInvalido = "Não foi possível encontrar o arquivo a ser testado"
+
+
+            # Ideia: Formata os argumentos do contexto para comandos usados pelo validator_cli
+            def geraArgsValidator(dictContext, secaoInteresse, prefixo):
+                strArgsFormatados = ''
+                if dictContext.get(secaoInteresse):
+                    if dictContext[secaoInteresse] not in [None, "", [""]]:
+                        strArgsFormatados = f" -{prefixo} " + f" -{prefixo} ".join(dictContext[secaoInteresse])
+                return strArgsFormatados
+        
+            # Antes de tentar validar o arquivo verificar se existe:
+            # Preparar arquivo
+            data['caminho_instancia'] = Path(data['caminho_instancia'])
+            if not data['caminho_instancia'].is_absolute(): # Para garantir consistencia
+                data['caminho_instancia'] = arquivoTeste.parent / data['caminho_instancia']
+            # Tentar mais duas maneiras de achar o arquivo
+            if not data['caminho_instancia'].exists(): # Arquivo escrito no teste não existe
+                if arquivoTeste.with_suffix('.json').exists(): # Ver se versão com mesmo nome (mas .json) existe
+                    data['caminho_instancia'] = arquivoTeste.with_suffix('.json')
+                elif Path(arquivoTeste.parent / f"{data['test_id']}.json").exists(): # Ver se existe pelo id
+                    data['caminho_instancia'] = Path(arquivoTeste.parent / f"{data['test_id']}.json")
+                else: # Simplesmente não existe
+                    flagYamlValido = False
+                    justificativaArquivoInvalido = "Não foi possível encontrar o arquivo a ser testado"
 
         if flagYamlValido:
             argsArquivoFhir = ''

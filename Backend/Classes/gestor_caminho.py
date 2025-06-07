@@ -31,7 +31,7 @@ class GestorCaminho:
 
         self.pathValidator = self._resolveValidatorPath()
 
-        self.pathSchema = pathFut / "Backend" / "schema.json"
+        self.pathSchema = pathFut / "Arquivos" / "schema_arquivo_de_teste.json"
 
         ## Pastas
         self.pathDirTestes = pathFut / "Arquivos" / "Testes"
@@ -53,10 +53,12 @@ class GestorCaminho:
         """
         logger.debug(f"Resolvendo caminho do validator: pathValidator")
         pathValidatorStr = str(self.controladorConfiguracao.returnValorSettings('caminho_validator')).split('#')[0].strip()
-        pathValidator = Path(pathValidatorStr)
 
-        if not pathValidator.is_absolute():
-            pathValidator = self.pathFut / pathValidator
+        if pathValidatorStr == "reset": # Validator padrão
+            pathValidator = self.pathFut / "Arquivos" / "validator_cli.jar"
+        else: # Validator customizado
+            # Caminho salvo no arquivo é sempre absoluto
+            pathValidator = Path(pathValidatorStr)
 
         _instanciaGerenciadorValidator = GerenciadorValidator(pathValidator)
         if not pathValidator.exists():

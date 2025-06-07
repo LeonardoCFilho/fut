@@ -1,6 +1,6 @@
 from pathlib import Path
 from json import dump
-from Backend.Classes.Exceptions import ExcecaoTemplate
+from Backend.Classes.exceptions import ExcecaoTemplate
 import time
 import subprocess
 import requests

@@ -44,6 +44,8 @@ class TerminalUI:
                 self.flagAnimacaoSpinner = False
                 if self.threadAnimacaoSpinner is not None:
                     self.threadAnimacaoSpinner.join(timeout=timeout) # Garantir sincronia
+                sys.stdout.write('\r')
+                sys.stdout.flush()
 
 
     # Executável
