@@ -145,6 +145,7 @@ class GerenciadorTeste:
                     yield resultado
                 except Exception as e:
                     logger.error(f"Erro ao executar thread de teste: {e}")
+                    raise e
 
 
     def iniciarCriacaoRelatorio(self, resultadosValidacao:list, versaoRelatorio:str, tempo_execucao_total:float):
@@ -170,6 +171,7 @@ class GerenciadorTeste:
             #     geradorRelatorio.gerarRelatorioHtml()
         except Exception as e:
             logger.error(f"Erro ao criar o relatório: {e}")  # Por segurança
+            raise e
 
 
     def executarTestesCompleto(self, args: list, versaoRelatorio:str, entregaGradual:bool=False):
@@ -220,9 +222,11 @@ class GerenciadorTeste:
                 print("Testes finalizados!")
 
                 # print(resultadosValidacao)  # debug
-
-                self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio, endTestes-startTestes)  # (endTestes-startTestes) # Eventualmente enviar para o relatório
-
+                try:
+                    self.iniciarCriacaoRelatorio(resultadosValidacao, versaoRelatorio, endTestes-startTestes)  # (endTestes-startTestes) # Eventualmente enviar para o relatório
+                except PermissionError as e:
+                    # Já está no log
+                    raise e
                 # print("Arquivos encontrados:", listArquivosValidar)  # debug
                 # print("Relatório de testes:", resultadosValidacao)  # debug
 

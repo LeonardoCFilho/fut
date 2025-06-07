@@ -122,6 +122,10 @@ class TerminalUI:
                 self.controleAnimacao('end')
             else: 
                 list(self.fachada.iniciarExecucaoTestes(args, entregaGradual=entregaGradual))
+        except FileNotFoundError as e:
+            print("Programa não conseguiu encontrar schema_arquivo_de_teste.json!\nVerifique se ele não foi renomenado ou movido")
+        except PermissionError as e:
+            print("Programa não tem permissão para a criação do relatório!\nPor favor verifique as permissões na pasta atual")
         except Exception as e:
             self.controleAnimacao('end')
             # Tratamento simplificado de erros para exibição no terminal:

@@ -99,6 +99,8 @@ class FachadaSistema:
 
         Raises:
             ValueError: Quando a lista de testes criada com o 'args' é vazia
+            FileNotFoundError: O ExecutorTeste não conseguiu encontrar o seu schema
+            PermissionError: Quando não há permissão para escrever o relatório
             ...
         """
         try: 
