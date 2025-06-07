@@ -1,5 +1,4 @@
 from Backend.fachada_sistema import FachadaSistema
-from colorama import Style, Fore
 import sys
 import time
 import threading
@@ -11,8 +10,6 @@ class TerminalUI:
         # Instancia da fachada que centraliza as operações do sistema
         self.fachada = FachadaSistema()
         # Variaveis para a aparencia e responsividade do terminal
-        self.textoCiano = Fore.CYAN
-        self.fimTextoColorido = Style.RESET_ALL
         self.flagAnimacaoSpinner = True
         self.threadAnimacaoSpinner = None
 
@@ -152,7 +149,7 @@ class TerminalUI:
             logger.info("Usuário solicitou o valor de uma configuração")
             valorConfiguracao = self.fachada.obterValorConfiguracao(nomeConfiguracao)
             if valorConfiguracao:
-                print(f"{self.textoCiano}Configurações:{self.fimTextoColorido} O valor atual de '{nomeConfiguracao}' é {valorConfiguracao}")
+                print(f"{self.fachada._returnCodigoANSI("ciano")}Configurações:{self.fachada._returnCodigoANSI("fimTextoColorido")} O valor atual de '{nomeConfiguracao}' é {valorConfiguracao}")
             else:
                 print("Configuração não reconhecida, verifique a escrita.")
         else:  # Atualização da configuração
@@ -163,7 +160,7 @@ class TerminalUI:
                 resultadoAlteracao = self.fachada.atualizarValorConfiguracao(nomeConfiguracao, novoValor)
                 print(resultadoAlteracao)
                 if "Erro" not in resultadoAlteracao:
-                    novo_valor_atualizado = self.fachada.obterValorConfiguracao(nomeConfiguracao)
-                    print(f"Valor de '{nomeConfiguracao}' foi alterado de {valorConfiguracao} para {novo_valor_atualizado}")
+                    valorConfiguracaoAtualizado = self.fachada.obterValorConfiguracao(nomeConfiguracao)
+                    print(f"Valor de '{nomeConfiguracao}' foi alterado de {valorConfiguracao} para {valorConfiguracaoAtualizado}")
             else:
                 print("Configuração não reconhecida, verifique a escrita.")

@@ -69,12 +69,11 @@ class FachadaSistema {
     atualizarValorConfiguracao(configuracaoSerAlterada: str, novoValor) : str 
     iniciarExecucaoTestes(args, tipoRelatorio: str, entregaGradual: bool)
     gerarArquivoTeste(dictInformacoesTeste: dict, caminhoArquivo)
+    _returnCodigoANSI(codigoDesejado: str) : str
     obterDialogo(dialogoDesejado: str) : str
 }
 class TerminalUI {
     fachada: FachadaSistema
-    textoCiano: str 
-    fimTextoColorido: str
     flagAnimacaoSpinner: bool
     threadAnimacaoSpinner: threading.Thread
     controleAnimacao(status: str, timeout: float)

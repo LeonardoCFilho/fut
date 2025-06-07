@@ -82,7 +82,7 @@ class ControladorConfiguracao:
 
         ### Configuração de bool
         def _configuraçãoBoolAlterar(novoValor: str) -> bool:
-            if novoValor in ["true", "1", "yes", "sim"]:
+            if novoValor in ["true", "verdade", "1", "yes", "sim"]:
                 return "True"
             else:
                 return "False"

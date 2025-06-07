@@ -176,6 +176,30 @@ class FachadaSistema:
             raise e  # improvável
 
 
+    def _returnCodigoANSI(self, codigoDesejado: str) -> str:
+        """
+        Retornar o valor ANSI para um determinado codigo
+        
+        Args: 
+            codigoDesejado (str): O nome do codigo desejado
+            
+        Returns:
+            str com o valor solicitado ou uma string vazia (caso de erro)
+        """
+        from colorama import Fore, Style
+        dictANSI = {
+            "textoNegrito": Style.BRIGHT,
+            "textoSublinhado": "\033[4m",
+            "textoHyperlink": "\033[4;34m",
+            'vermelho': Fore.RED,
+            'azul': Fore.BLUE,
+            'ciano': Fore.CYAN,
+            'magenta': Fore.MAGENTA,
+            "fimTextoColorido": Style.RESET_ALL,
+        }
+        return dictANSI.get(codigoDesejado, '')
+
+
     # TODO implementar gettext ou similar (json?)
     ## Dialogos
     def obterDialogo(self, dialogoDesejado: str) -> str:
@@ -188,47 +212,34 @@ class FachadaSistema:
         Returns:
             str do dialogo ou None(caso de erro)
         """
-        from colorama import Fore, Style, init
-        # Variáveis para formatação de texto no terminal
-        textoNegrito = Style.BRIGHT
-        textoSublinhado = "\033[4m"
-        textoHyperlink = "\033[4;34m"
-        coresTerminal = {
-            'vermelho': Fore.RED,
-            'azul': Fore.BLUE,
-            'ciano': Fore.CYAN,
-            'magenta': Fore.MAGENTA,
-        }
-        fimTextoColorido = Style.RESET_ALL
-
         # Criando o dict com os dialogos
         dialogos = {}
-        dialogos['help'] = f"""\n\n{textoNegrito}Ajuda:{fimTextoColorido}
+        dialogos['help'] = f"""\n\n{self._returnCodigoANSI("textoNegrito")}Ajuda:{self._returnCodigoANSI("fimTextoColorido")}
     Sistema de teste unitário para arquivos FHIR (versão 4.0.1)
 
-    {textoSublinhado}Leitura de casos de teste{fimTextoColorido}:
+    {self._returnCodigoANSI("textoSublinhado")}Leitura de casos de teste{self._returnCodigoANSI("fimTextoColorido")}:
     Sem argumentos, o comando fut executa todos os testes definidos por arquivos .yaml no diretório corrente.
     Indicando arquivos específicos como fut teste/x.yml y.yml, ele executa o teste do arquivo em teste/x.yml e o teste do arquivo y.yml no diretório atual.
     Usando curingas, por exemplo, fut patient-*.yml, ele executa todos os testes cujos nomes iniciam com patient- e terminam com .yml.
 
-    {textoSublinhado}Comandos{fimTextoColorido}:
-    {coresTerminal['ciano']}--help       {fimTextoColorido}\t\tAbri o menu atual e exibe mais informações sobre o programa
-    {coresTerminal['ciano']}gui          {fimTextoColorido}\t\tInicializa a interface gráfica (Ainda não foi implementada)
-    {coresTerminal['ciano']}template     {fimTextoColorido}\t\tGera um arquivo .yaml que segue o template de arquivos de teste
-    {coresTerminal['ciano']}configuracoes{fimTextoColorido}\t\tPermite a edição de configurações globais do sistema
+    {self._returnCodigoANSI("textoSublinhado")}Comandos{self._returnCodigoANSI("fimTextoColorido")}:
+    {self._returnCodigoANSI("ciano")}--help       {self._returnCodigoANSI("fimTextoColorido")}\t\tAbri o menu atual e exibe mais informações sobre o programa
+    {self._returnCodigoANSI("ciano")}gui          {self._returnCodigoANSI("fimTextoColorido")}\t\tInicializa a interface gráfica (Ainda não foi implementada)
+    {self._returnCodigoANSI("ciano")}template     {self._returnCodigoANSI("fimTextoColorido")}\t\tGera um arquivo .yaml que segue o template de arquivos de teste
+    {self._returnCodigoANSI("ciano")}configuracoes{self._returnCodigoANSI("fimTextoColorido")}\t\tPermite a edição de configurações globais do sistema
 
-    Mais detalhes em: {textoHyperlink}https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md{fimTextoColorido}"""
+    Mais detalhes em: {self._returnCodigoANSI("textoHyperlink")}https://github.com/LeonardoCFilho/fut/blob/main/Documentacao/Plano_de_construcao.md{self._returnCodigoANSI("fimTextoColorido")}"""
 
         dialogos['configuracoes'] = f"""As configurações disponíveis para o Sistema de teste unitário para arquivos FHIR são as seguintes:
 
-    1. {textoSublinhado}[hardware]{fimTextoColorido}
-     - {coresTerminal['ciano']}timeout (int):{fimTextoColorido} Define o tempo limite, em segundos, para a execução de cada teste. Exemplo de valor: `600` (10 minutos).
-     - {coresTerminal['ciano']}max_threads (int):{fimTextoColorido} Especifica o número máximo de threads a serem usadas para executar os testes paralelamente. Exemplo de valor: `4`.
-     - {coresTerminal['ciano']}requests_timeout (int):{fimTextoColorido} Define o tempo limite, em segundos, que o programa aguarda para downloads finalizar. Exemplo de valor: `600` (10 minutos).
+    1. {self._returnCodigoANSI("textoSublinhado")}[hardware]{self._returnCodigoANSI("fimTextoColorido")}
+     - {self._returnCodigoANSI("ciano")}timeout (int):{self._returnCodigoANSI("fimTextoColorido")} Define o tempo limite, em segundos, para a execução de cada teste. Exemplo de valor: `600` (10 minutos).
+     - {self._returnCodigoANSI("ciano")}max_threads (int):{self._returnCodigoANSI("fimTextoColorido")} Especifica o número máximo de threads a serem usadas para executar os testes paralelamente. Exemplo de valor: `4`.
+     - {self._returnCodigoANSI("ciano")}requests_timeout (int):{self._returnCodigoANSI("fimTextoColorido")} Define o tempo limite, em segundos, que o programa aguarda para downloads finalizar. Exemplo de valor: `600` (10 minutos).
 
-    2. {textoSublinhado}[enderecamento]{fimTextoColorido}
-     - {coresTerminal['ciano']}caminho_validator (str):{fimTextoColorido} Caminho personalizado para o arquivo `validator_cli.jar`, caso seja necessário sobrescrever o caminho padrão. Exemplo de valor: `~/Downloads/validator_cli.jar`.
-     - {coresTerminal['ciano']}armazenar_saida_validator (bool):{fimTextoColorido} Indica se a saída do validador deve ser armazenada. Valores aceitos: `True` (armazenar saída) ou `False` (não armazenar). Exemplo de valor: `False`.
+    2. {self._returnCodigoANSI("textoSublinhado")}[enderecamento]{self._returnCodigoANSI("fimTextoColorido")}
+     - {self._returnCodigoANSI("ciano")}caminho_validator (str):{self._returnCodigoANSI("fimTextoColorido")} Caminho personalizado para o arquivo `validator_cli.jar`, caso seja necessário sobrescrever o caminho padrão. Exemplo de valor: `~/Downloads/validator_cli.jar`.
+     - {self._returnCodigoANSI("ciano")}armazenar_saida_validator (bool):{self._returnCodigoANSI("fimTextoColorido")} Indica se a saída do validador deve ser armazenada. Valores aceitos: `True` (armazenar saída) ou `False` (não armazenar). Exemplo de valor: `False`.
 
     Essas configurações podem ser editadas com o comando `fut configuracoes <nome da configuração> <novo valor>`, permitindo ajustar o comportamento global do sistema conforme suas necessidades. Certifique-se de que os valores correspondam aos tipos esperados para garantir a atualização da configuração."""   
 
