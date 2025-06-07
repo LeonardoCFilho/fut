@@ -1,0 +1,46 @@
+{
+  "version": "1.0",
+  "description": "Schema para os valores de configurações",
+  "configurations": {
+    "timeout": {
+      "type": "integer",
+      "default": 30,
+      "minimum": 15,
+      "maximum": 300,
+      "description": "Tempo máximo para a execução do validator_cli",
+      "category": "desempenho"
+    },
+    "max_threads": {
+      "type": "integer", 
+      "default": 4,
+      "minimum": 1,
+      "maximum": 32,
+      "description": "Número máximo de threads",
+      "category": "desempenho"
+    },
+    "requests_timeout": {
+        "type": "integer",
+        "default": 60,
+        "minimum": 30,
+        "maximum": 600,
+        "description": "Tempo máximo para as HTTP requests",
+        "category": "desempenho"
+    },
+    "caminho_validator": {
+      "type": "path",
+      "default": "reset",
+      "description": "Path do validator_cli",
+      "category": "enderecamento",
+      "validation": {
+        "must_exist": true,
+        "file_extensions": [".jar", ".exe"]
+      }
+    },
+    "armazenar_saida_validator": {
+      "type": "oolean",
+      "default": true,
+      "description": "Determina se os arquivos do validator_cli serão armazendados ou não",
+      "category": "enderecamento"
+    }
+  }
+}
