@@ -14,6 +14,7 @@ class GestorCaminho:
     # Constantes
     SETTINGS_FILE = "settings.ini"
     VALIDATOR_FILE = "validator_cli.jar"
+    SCHEMA_CONFIGURACOES = "schema_configuracoes.json"
     SCHEMA_FILE_YAML = "schema_arquivo_de_teste.json"
     ARQUIVOS_DIR = "Arquivos"
     TEMP_DIR = ".temp-fut"
@@ -63,7 +64,8 @@ class GestorCaminho:
         """
         self.path_arquivos = self.path_fut / self.ARQUIVOS_DIR
         self.path_settings = self.path_arquivos / self.SETTINGS_FILE
-        self.path_schema = self.path_arquivos / self.SCHEMA_FILE_YAML
+        self.path_schema_configuracoes = self.path_arquivos / self.SCHEMA_CONFIGURACOES
+        self.path_schema_yaml = self.path_arquivos / self.SCHEMA_FILE_YAML
         self._validar_arquivos_essenciais()
 
 
@@ -92,7 +94,7 @@ class GestorCaminho:
             if controlador_configuracao is not None:
                 self.controlador_configuracao = controlador_configuracao
             else:
-                self.controlador_configuracao = ControladorConfiguracao(self.path_settings)
+                self.controlador_configuracao = ControladorConfiguracao(self.path_settings, self.path_schema_configuracoes)
                 
             self.path_validator = self._resolve_validator_path()
             self.path_pasta_validator = self._definir_pasta_validator()
@@ -110,7 +112,8 @@ class GestorCaminho:
         """
         return {
             'validator': self.path_validator,
-            'schema_yaml': self.path_schema,
+            'schema_configuracoes': self.path_schema_configuracoes,
+            'schema_yaml': self.path_schema_yaml,
             'pasta_validator': self.path_pasta_validator,
             'raiz': self.path_fut,
             'settings': self.path_settings,

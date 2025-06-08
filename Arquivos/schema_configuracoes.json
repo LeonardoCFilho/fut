@@ -1,12 +1,12 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "description": "Schema para os valores de configurações",
-  "configurations": {
+  "configuracoes": {
     "timeout": {
       "type": "integer",
       "default": 30,
       "minimum": 15,
-      "maximum": 300,
+      "maximum": 3000, 
       "description": "Tempo máximo para a execução do validator_cli",
       "category": "desempenho"
     },
@@ -22,7 +22,7 @@
         "type": "integer",
         "default": 60,
         "minimum": 30,
-        "maximum": 600,
+        "maximum": 1200,
         "description": "Tempo máximo para as HTTP requests",
         "category": "desempenho"
     },
@@ -32,12 +32,11 @@
       "description": "Path do validator_cli",
       "category": "enderecamento",
       "validation": {
-        "must_exist": true,
         "file_extensions": [".jar", ".exe"]
       }
     },
     "armazenar_saida_validator": {
-      "type": "oolean",
+      "type": "boolean",
       "default": true,
       "description": "Determina se os arquivos do validator_cli serão armazendados ou não",
       "category": "enderecamento"
