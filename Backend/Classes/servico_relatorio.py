@@ -7,6 +7,7 @@ class ServicoRelatorio:
     """
     Responsável por coordenar a criação de relatórios
     """
+    
     # Construtor
     def __init__(self):
         pass

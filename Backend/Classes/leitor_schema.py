@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 class LeitorSchema:
     """Classe unificada para ler e validar schemas de teste e configuração"""
     
-
     # Construtor
     def __init__(self, arquivo_schema: Path):
         """Inicializa com o caminho do arquivo de schema.

@@ -2,7 +2,6 @@ from Backend.Classes.gerenciador_validator import GerenciadorValidator
 from Backend.Classes.leitor_schema import LeitorSchema
 from pathlib import Path
 import yaml
-import json
 import jsonschema
 import logging
 

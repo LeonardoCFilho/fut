@@ -20,7 +20,6 @@ class GerenciadorValidator:
     MAXIMO_TENTATIVAS_PADRAO = 3
     TEMPO_ESPERA_TENTATIVA = 3  # segundos
 
-
     # Construtor
     def __init__(self, caminho_validador: Path):
         """

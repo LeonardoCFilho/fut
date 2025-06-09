@@ -8,9 +8,11 @@ logger = logging.getLogger(__name__)
 class ArquivoDownloader:
     """Responsável por fazer download de arquivos via URL"""
     
+    # Construtor
     def __init__(self, timeout_default: int = 30):
         self.timeout_default = timeout_default
     
+
     def baixar_arquivo(self, url: str, endereco_arquivo: str, timeout: int = None, max_tentativas: int = 3):
         """
         Faz download de um arquivo a partir de uma URL

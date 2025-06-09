@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 
 class GeradorTemplateTeste:
     """Responsável pela geração de templates de arquivos de teste YAML"""
+    
     # Construtor
     def __init__(self):
         pass

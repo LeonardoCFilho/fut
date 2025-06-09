@@ -8,6 +8,7 @@ class ConfiguradorExecucao:
     """
     Responsável por configurar parâmetros de execução dos testes
     """
+    
     # Construtor
     def __init__(self, controlador_configuracao: ControladorConfiguracao):
         self.controlador_configuracao = controlador_configuracao

@@ -47,7 +47,7 @@ if __name__ == "__main__":
     from Backend.terminal_ui import TerminalUI
     try:
         terminalUI = TerminalUI()
-        terminalUI.main_menu(args)
+        terminalUI.menu_principal(args)
         # ...
         print("\n\nPrograma finalizado!")
         logger.info("Execução do sistema finalizada")

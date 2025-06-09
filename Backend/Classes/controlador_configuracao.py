@@ -11,6 +11,7 @@ class ControladorConfiguracao:
     Gerencia a leitura e alteração de configurações do sistema
     a partir do arquivo settings.ini usando um schema JSON.
     """
+    
     # Construtor
     def __init__(self, path_configuracoes: Path, path_schema: Path):
         """

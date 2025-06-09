@@ -1,119 +1,301 @@
-@startuml Classes
+@startuml classes
+set namespaceSeparator none
+scale 3
+' === CONFIGURAÇÕES DE APARÊNCIA ===
+!theme plain
+skinparam ArrowThickness 1.5
+skinparam backgroundColor #FEFEFE
+skinparam packageStyle rectangle
+skinparam packageBorderColor #2D3748
+skinparam packageBackgroundColor #F7FAFC
+skinparam classBorderColor #4A5568
+skinparam classBackgroundColor #FFFFFF
+skinparam arrowColor #2D3748
+skinparam noteBackgroundColor #FFF3CD
+skinparam noteBorderColor #D69E2E
 
-' Título do diagrama
+' === TÍTULO E DIREÇÃO ===
 title Diagrama de Classes
 top to bottom direction
-' Classes
-class ControladorConfiguracao {
-    pathSettings: Path
-    dictConfiguracoes : dict
-    return_valor_configuracao(settingsBuscada: str) : str | None
-    alterar_valor_configuracao(configuracaoSerAlterada: str, novoValor: str) : bool
-}
-class ExcecaoTemplate {
-    message: str
-    original_exception: Exception
-}
-class ExecutorTeste {
-    pathSchema: Path
-    pathValidator: Path
-    _limparConteudoYaml(data: dict) : dict
-    validarArquivoTeste(arquivoTeste: Path, pathPastaValidator: Path, tempoTimeout: int) : dict
-    _padronizarArgsEntrada(args) : list
-    gerarListaArquivosTeste(argsEntrada) : list
 
-}
-class GeradorRelatorios {
-    casos_de_teste_: list
-    processarSaidas(caminho_saida_esperada: : str|Path, caminho_saida_real: str|Path, yaml_valido: bool) -> list
-    compararResultados(tupla_dados: tuple)
-    gerarRelatorios(tempo_execucao_total: float)
-    gerarRelatorioJson(tempo_execucao_total: float)
-    {static} +modificarChaves(novas_chaves: dict)
-    {static} +modificarErrosEsperados(novos_erros_esperados: dict)
-}
-class CoordenadorTestes {
-    gestorCaminho: GestorCaminho
-    get_instance(gestorCaminho: GestorCaminho) : CoordenadorTestes
-    iniciarSistema()
-    baixarArquivoUrl(url: str, enderecoArquivo, requestsTimeout:int, maxTentativas:int)
-    prepararExecucaoTestes(args) : list
-    executarThreadsTeste(listaArquivosTestar: list, numThreads: int)
-    iniciarCriacaoRelatorio(resultadosValidacao: list, versaoRelatorio: str, tempo_execucao_total: float)
-    executarTestesCompleto(args: list, versaoRelatorio: str, entregaGradual: bool)
-}
-class GerenciadorValidator {
-    pathValidator: Path
-    instalaValidatorCli()
-    verificar_versao_validator() : str|None
-    atualizar_validator_cli(requestsTimeout:int)
-    validar_arquivo_fhir(arquivoValidar: Path, pastaRelatorio: Path, tempoTimeout: int, args: str) : list
-}
-class GestorCaminho {
-    pathFut: Path
-    pathSettings: Path
-    controladorConfiguracao: ControladorConfiguracao
-    pathValidator: Path 
-    pathSchema: Path  
-    pathDirTestes: Path
-    pathPastaValidator: Path
-    _resolveValidatorPath() : Path   
-    _definirPastaValidator() :  Path  
+' === LEGENDA DE RELAÇÕES ===
+legend top
+  Legenda de Relações:
+  → Dependência/Uso
+  ◆ Composição (parte integral)
+  ○ Agregação (usa instância)
+end legend
 
-}
-class FachadaSistema {
-    gerenciador_teste: CoordenadorTestes
-    acharCaminhoProjeto() : Path   
-    listarArquivosYaml(args) : list[Path]
-    obterValorConfiguracao(settingsBuscada: str) : str|None
-    atualizarValorConfiguracao(configuracaoSerAlterada: str, novoValor) : str 
-    iniciarExecucaoTestes(args, tipoRelatorio: str, entregaGradual: bool)
-    gerarArquivoTeste(dictInformacoesTeste: dict, caminho_arquivo)
-    _returnCodigoANSI(codigoDesejado: str) : str
-    obterDialogo(dialogoDesejado: str) : str
-}
-class TerminalUI {
-    fachada: FachadaSistema
-    flagAnimacaoSpinner: bool
-    threadAnimacaoSpinner: threading.Thread
-    controleAnimacao(status: str, timeout: float)
-    mainMenu(args: list|str|None)
-    _testesTerminal(args: str | list)
-    _terminalConfiguracoes(nomeConfiguracao: str, novoValor: str)
-}
-package GUI {
-    component configuracao{
-
-    }
-    component dashboard{
-
-    }
-    component dashboardGeral{
-
-    }
-    component formulario{
-
-    }
-    component TestManager{
-
-    }
+' === CAMADA DE INTERFACE ===
+package "Interface" #LightBlue {
+  ' Interface de linha de comando
+  class InterfaceTerminal {
+    - fachada: FachadaSistema
+    --
+    + iniciar_spinner(): void
+    + menu_principal(argumentos: list[str]): void
+    + parar_spinner(tempo_espera: float): void
+  }
 }
 
-' Relacoes
-GUI --> FachadaSistema : usa
-CoordenadorTestes --> GeradorRelatorios : depende de
-CoordenadorTestes --> ExecutorTeste : depende de
-ExecutorTeste --> GerenciadorValidator : depende de
-CoordenadorTestes --> GerenciadorValidator : usa e atualiza validator
+' Interface gráfica do usuário
+package "GUI (Streamlit)" #LightCyan {
+  component configuracao {
+    ' Componente para configurações do sistema
+  }
+    
+  component dashboard {
+    ' Dashboard principal com visão geral
+  }
+    
+  component dashboardGeral {
+    ' Dashboard com estatísticas gerais
+  }
+    
+  component formulario {
+    ' Formulários de entrada de dados
+  }
+    
+  component TestManager {
+    ' Gerenciador de testes
+  }
+}
 
-'' Excecao template
-GerenciadorValidator --> ExcecaoTemplate : lança
-CoordenadorTestes --> ExcecaoTemplate : captura
+' === CAMADA DE FACHADA ===
+package "Fachada" #LightGreen {
+  ' Ponto de entrada principal do sistema
+  class FachadaSistema {
+    - coordenador_testes: CoordenadorTestes
+    - path_fut: Path
+    --
+    + acharCaminhoProjeto(): Path
+    + atualizar_configuracao(nome_configuracao: str, novo_valor): bool
+    + executar_testes_com_entrega_gradual(args, tipo_relatorio: str): void
+    + executar_testes_com_resultado_completo(args, tipo_relatorio: str): list[dict]
+    + gerar_arquivo_teste(dados_teste: dict, caminho_arquivo: Path | str): None
+    + listar_arquivos_yaml(args): list[Path]
+    + obter_configuracao(nome_configuracao: str): Any
+    + obter_dialogo(chave_dialogo: str): str
+  }
+  
+  ' Gerenciador de mensagens e diálogos do sistema
+  class DialogosSistema {
+    + get_ansi_code(codigo_desejado: str): str
+    + obter_dialogo(dialogo_desejado: str): str
+  }
+}
 
-'' Composições
-CoordenadorTestes *-- GestorCaminho : faz parte de
-GestorCaminho *-- ControladorConfiguracao : faz parte de
-FachadaSistema *-- CoordenadorTestes : faz parte de
-TerminalUI *-- FachadaSistema : faz parte de
+' === CAMADA DE COORDENAÇÃO ===
+package "Coordenação" #LightCoral {
+  ' Coordena a execução dos testes
+  class CoordenadorTestes {
+    - configurador: ConfiguradorExecucao
+    - executor_service: ServicoExecucaoTeste
+    - gestor_caminho: GestorCaminho
+    - servico_relatorio: ServicoRelatorio
+    --
+    + executar_testes_completo(args: list, versao_relatorio: str, entrega_gradual: bool): void
+    + {static} get_instance(gestor_caminho: GestorCaminho): CoordenadorTestes
+  }
+  
+  ' Gerencia os caminhos e diretórios do sistema
+  class GestorCaminho {
+    + {static} ARQUIVOS_DIR: str
+    + {static} SCHEMA_CONFIGURACOES: str
+    + {static} SCHEMA_FILE_YAML: str
+    + {static} SETTINGS_FILE: str
+    --
+    - controlador_configuracao: ControladorConfiguracao
+    - path_arquivos: Path
+    - path_fut: Path
+    - path_pasta_validator: Path
+    - path_schema_configuracoes: Path
+    - path_schema_yaml: Path
+    - path_settings: Path
+    - path_validator: Path
+    --
+    + return_path(path_desejado: str): Path
+  }
+}
+
+' === CAMADA DE CONFIGURAÇÃO ===
+package "Configuração" #LightSalmon {
+  ' Controlador principal de configurações
+  class ControladorConfiguracao {
+    - path_configuracoes: Path
+    - path_schema: Path
+    - schema: dict
+    --
+    + alterar_valor_configuracao(configuracao_ser_alterada: str, novo_valor: str): bool
+    + converter_string_para_bool(valor_str: str): bool
+    + listar_configuracoes(): dict
+    + obter_categoria_configuracao(nome_configuracao: str): str
+    + obter_configuracao_segura(nome_configuracao: str, valor_padrao): Any
+    + obter_valor_padrao(nome_configuracao: str): Any
+    + return_valor_configuracao(configuracao_buscada: str): str | int | bool | None
+  }
+  
+  ' Configurações específicas para execução
+  class ConfiguradorExecucao {
+    - controlador_configuracao: ControladorConfiguracao
+    --
+    + calcular_threads_otimas(): int
+    + obter_timeout(): int
+  }
+  
+  ' Configurações do validador FHIR
+  class ConfiguradorValidator {
+    + {static} RESULTS_DIR: str
+    + {static} TEMP_DIR: str
+    + {static} VALIDATOR_FILE: str
+    --
+    - controlador_configuracao: ControladorConfiguracao
+    - path_arquivos: Path
+    --
+    + definir_pasta_validator(): Path
+    + resolver_caminho_validator(): Path
+  }
+}
+
+' === CAMADA DE EXECUÇÃO DE TESTES ===
+package "Execução de Testes" #LightPink {
+  ' Serviço principal de execução
+  class ServicoExecucaoTeste {
+    - gestor_caminho: GestorCaminho
+    --
+    + executar_testes_paralelos(lista_arquivos: list, num_threads: int, timeout: float): void
+    + garantir_atualizacao_validator(): bool
+    + preparar_lista_testes(args): list
+  }
+  
+  ' Executor individual de testes
+  class ExecutorTeste {
+    - path_schema: Path
+    - path_validator: Path
+    --
+    + gerar_lista_arquivos_teste(argumentos_entrada): list
+    + validar_arquivo_teste(arquivo_teste: Path, path_pasta_validator: Path, tempo_timeout: int): dict
+  }
+  
+  ' Gerencia o validador FHIR CLI
+  class GerenciadorValidator {
+    + {static} MAXIMO_TENTATIVAS_PADRAO: int
+    + {static} TEMPO_ESPERA_TENTATIVA: int
+    + {static} URL_API_GITHUB: str
+    + {static} URL_DOWNLOAD_VALIDADOR: str
+    --
+    - caminho_validador: Path
+    --
+    + atualizar_validator_cli(tempo_timeout_requests: int, downloader_callback: ArquivoDownloader): void
+    + atualizar_validator_cli_seguro(tempo_timeout_requests: int, downloader_callback: ArquivoDownloader): bool
+    + instalar_validator_cli(downloader_callback: ArquivoDownloader): None
+    + validar_arquivo_fhir(arquivo_validar: Path, pasta_relatorio: Path, tempo_timeout: int, argumentos_extras: str): list
+    + verificar_versao_validator(caminho_validador: Path): str | None
+  }
+}
+
+' === CAMADA DE RELATÓRIOS ===
+package "Relatórios" #Lavender {
+  ' Serviço de criação de relatórios
+  class ServicoRelatorio {
+    + criar_relatorio_completo(resultados_validacao: list, versao_relatorio: str, tempo_execucao: float): void
+  }
+  
+  ' Gerador de relatórios detalhados
+  class GeradorRelatorios {
+    - casos_de_teste_: list[dict]
+    - chaves: dict
+    - erros_esperados: dict
+    --
+    + compararResultados(tupla_dados: tuple): Any
+    + gerarRelatorioJson(tempo_execucao_total: float): void
+    + gerarRelatorios(tempo_execucao_total: float): void
+    + modificarChaves(novas_chaves: dict): void
+    + modificarErrosEsperados(novos_erros_esperados: dict): void
+    + processarSaidas(caminho_saida_esperada: str | pathlib.Path, caminho_saida_real: str | pathlib.Path, yaml_valido: bool): list
+  }
+  
+  ' Gerador de templates de teste
+  class GeradorTemplateTeste {
+    + {static} gerar_arquivo_template(caminho_arquivo: str | Path, dados_teste: dict): None
+  }
+}
+
+' === CAMADA DE UTILITÁRIOS ===
+package "Utilitários" #LightGray {
+  ' Download de arquivos
+  class ArquivoDownloader {
+    - timeout_default: int
+    --
+    + baixar_arquivo(url: str, endereco_arquivo: str, timeout: int, max_tentativas: int): void
+  }
+  
+  ' Leitor de schemas JSON/YAML
+  class LeitorSchema {
+    - arquivo_schema: Path
+    - dados_schema: dict
+    - tipo_schema: str
+    --
+    + return_dados_schema(): dict
+    + return_tipo_schema(): str
+  }
+  
+  ' Validador de arquivos essenciais
+  class ValidadorArquivo {
+    + {static} validar_arquivos_essenciais(path_settings: Path, path_schema_configuracoes: Path, path_schema_yaml: Path): void
+  }
+  
+  ' Exceção customizada para templates
+  class ExcecaoTemplate {
+    + message: str
+    + original_exception: NoneType
+  }
+}
+
+' === RELAÇÕES ENTRE COMPONENTES ===
+
+' Relações da Interface
+InterfaceTerminal *-- FachadaSistema : cria e mantém
+
+' Relações da GUI
+"GUI (Streamlit)" --> FachadaSistema : utiliza serviços
+
+' Relações da Fachada
+FachadaSistema *-- CoordenadorTestes : instancia (lazy loading)
+FachadaSistema *-- GestorCaminho : obtém via coordenador
+FachadaSistema ..> ServicoExecucaoTeste : cria temporariamente
+FachadaSistema ..> GeradorTemplateTeste : usa método estático
+FachadaSistema ..> DialogosSistema : usa método estático
+
+' Relações de Coordenação
+CoordenadorTestes o-- GestorCaminho : recebe como dependência
+CoordenadorTestes *-- ServicoExecucaoTeste : compõe
+CoordenadorTestes *-- ConfiguradorExecucao : compõe
+CoordenadorTestes *-- ServicoRelatorio : compõe
+
+GestorCaminho o-- ControladorConfiguracao : agrega ou cria
+GestorCaminho ..> ValidadorArquivo : usa temporariamente
+GestorCaminho ..> ConfiguradorValidator : cria temporariamente
+
+' Relações de Configuração
+ConfiguradorExecucao o-- ControladorConfiguracao : depende de
+ConfiguradorValidator o-- ControladorConfiguracao : depende de
+ConfiguradorValidator ..> GerenciadorValidator : cria e usa
+ConfiguradorValidator ..> ArquivoDownloader : cria e usa
+ControladorConfiguracao *-- LeitorSchema : compõe
+
+' Relações de Execução
+ServicoExecucaoTeste o-- GestorCaminho : usa instância
+ServicoExecucaoTeste ..> ExecutorTeste : cria temporariamente
+ServicoExecucaoTeste ..> GerenciadorValidator : cria temporariamente
+
+ExecutorTeste ..> LeitorSchema : instancia temporariamente
+ExecutorTeste ..> GerenciadorValidator : instancia temporariamente
+
+GerenciadorValidator o-- ArquivoDownloader : usa ou cria instância
+GerenciadorValidator ..> ExcecaoTemplate : lança quando necessário
+
+' Relações de Relatórios
+ServicoRelatorio ..> GeradorRelatorios : cria temporariamente
 
 @enduml

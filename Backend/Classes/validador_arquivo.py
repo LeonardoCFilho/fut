@@ -8,6 +8,7 @@ class ValidadorArquivo:
     """
     Responsável por validar a existência de arquivos essenciais do sistema
     """
+    
     # Construtor
     def __init__(self):
         pass

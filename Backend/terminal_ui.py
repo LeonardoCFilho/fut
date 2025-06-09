@@ -8,9 +8,9 @@ import sys
 logger = logging.getLogger(__name__)
 
 
-class InterfaceTerminal:
+class TerminalUI:
     """Interface de linha de comando para interação com o sistema."""
-
+    
     # Construtor
     def __init__(self):
         """Inicializa a interface do terminal e os componentes necessários."""
