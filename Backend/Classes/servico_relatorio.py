@@ -2,7 +2,7 @@ from Backend.Classes.gerador_relatorio import GeradorRelatorios
 import logging
 
 logger = logging.getLogger(__name__)
-
+# TODO implementar relatorio HTML
 class ServicoRelatorio:
     """
     Responsável por coordenar a criação de relatórios
