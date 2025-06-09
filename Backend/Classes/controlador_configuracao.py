@@ -1,3 +1,4 @@
+from Backend.Classes.leitor_schema import LeitorSchema
 from pathlib import Path
 import configparser
 import logging
@@ -21,29 +22,7 @@ class ControladorConfiguracao:
         """
         self.path_configuracoes = path_configuracoes
         self.path_schema = path_schema
-        self.schema = self._carregar_schema()
-
-
-    def _carregar_schema(self) -> dict:
-        """
-        Carrega o schema JSON do arquivo.
-        
-        Returns:
-            Dict: Schema das configurações.
-            
-        Raises:
-            FileNotFoundError: Se o arquivo de schema não for encontrado.
-            json.JSONDecodeError: Se o JSON for inválido.
-        """
-        try:
-            with open(self.path_schema, 'r', encoding='utf-8') as file:
-                return json.load(file)
-        except FileNotFoundError:
-            logger.error(f"Arquivo de schema não encontrado: {self.path_schema}")
-            raise
-        except json.JSONDecodeError as e:
-            logger.error(f"Erro ao decodificar JSON do schema: {e}")
-            raise
+        self.schema = LeitorSchema(self.path_schema).return_dados_schema()
 
 
     def _obter_tipo_configuracao(self, nome_configuracao: str) -> type:

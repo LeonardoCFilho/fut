@@ -1,3 +1,5 @@
+from Backend.Classes.gerenciador_validator import GerenciadorValidator
+from Backend.Classes.leitor_schema import LeitorSchema
 from pathlib import Path
 import yaml
 import json
@@ -113,8 +115,7 @@ class ExecutorTeste:
         ## Carregando arquivos
         try:
             # Carregar schema para validar o arquivo de teste
-            with open(self.path_schema, 'r', encoding="utf-8") as arquivo_schema:
-                schema = json.load(arquivo_schema)
+            schema = LeitorSchema(self.path_schema).return_dados_schema()
             
             # Carregar arquivo de teste
             if arquivo_teste.suffix in [".yaml", ".yml"]:
@@ -177,7 +178,6 @@ class ExecutorTeste:
                 argumentos_fhir += self._gerar_argumentos_validator(contexto, 'profiles', 'profile')
                 argumentos_fhir += self._gerar_argumentos_validator(contexto, 'resources', 'ig')
                 
-                from Backend.Classes.gerenciador_validator import GerenciadorValidator
                 gerenciador_validator = GerenciadorValidator(self.path_validator)
                 
                 output_validacao = gerenciador_validator.validar_arquivo_fhir(
