@@ -25,8 +25,8 @@ def organizarLogs(pathLog: Path):
 
 if __name__ == "__main__":
     # Caminhos utilizados no nosso projeto
-    pathFut = FachadaSistema.acharCaminhoProjeto()
-    pathLog  = pathFut / 'Arquivos' / 'fut_1.log'
+    path_fut = FachadaSistema.acharCaminhoProjeto()
+    pathLog  = path_fut / 'Arquivos' / 'fut_1.log'
 
     # Logs
     organizarLogs(pathLog) # Garantir que a execução atual terá log próprio
@@ -43,12 +43,11 @@ if __name__ == "__main__":
     args = sys.argv[1:]  # Ler args
     if not args: # Nada foi escrito => enviar string vazia
         args = []
-
     # Começar a execução em si do cli
     from Backend.terminal_ui import TerminalUI
     try:
         terminalUI = TerminalUI()
-        terminalUI.mainMenu(args)
+        terminalUI.main_menu(args)
         # ...
         print("\n\nPrograma finalizado!")
         logger.info("Execução do sistema finalizada")
