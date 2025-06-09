@@ -45,9 +45,9 @@ class GerenciadorTeste {
 class GerenciadorValidator {
     pathValidator: Path
     instalaValidatorCli()
-    verificaVersaoValidator() : str|None
-    atualizarValidatorCli(requestsTimeout:int)
-    validarArquivoFhir(arquivoValidar: Path, pastaRelatorio: Path, tempoTimeout: int, args: str) : list
+    verificar_versao_validator() : str|None
+    atualizar_validator_cli(requestsTimeout:int)
+    validar_arquivo_fhir(arquivoValidar: Path, pastaRelatorio: Path, tempoTimeout: int, args: str) : list
 }
 class GestorCaminho {
     pathFut: Path

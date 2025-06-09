@@ -15,7 +15,7 @@ class TerminalUI:
 
 
     # Animação no terminal 
-    def controleAnimacao(self, status:str='start', timeout: float = 1.0):
+    def controleAnimacao(self, status:str='start', timeout: float = 0.1):
         """
         Controla a animação do spinner no terminal.
         
@@ -24,7 +24,12 @@ class TerminalUI:
             spinner = ['|', '/', '-', '\\']
             while self.flagAnimacaoSpinner:
                 for symbol in spinner:
-                    sys.stdout.write(f'\r{symbol} Carregando...')
+                    if not self.flagAnimacaoSpinner:
+                        sys.stdout.write('\r')
+                        sys.stdout.flush()
+                        break
+                    sys.stdout.write('\r')
+                    sys.stdout.write(f'{symbol} Carregando...')
                     sys.stdout.flush()
                     time.sleep(0.2)
             # Terminou a animação => limpar o terminal
@@ -41,8 +46,8 @@ class TerminalUI:
                 self.flagAnimacaoSpinner = False
                 if self.threadAnimacaoSpinner is not None:
                     self.threadAnimacaoSpinner.join(timeout=timeout) # Garantir sincronia
-                sys.stdout.write('\r')
-                sys.stdout.flush()
+        sys.stdout.write('\r')
+        sys.stdout.flush()
 
 
     # Executável

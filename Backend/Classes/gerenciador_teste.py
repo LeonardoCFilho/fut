@@ -65,7 +65,7 @@ class GerenciadorTeste:
 
                 # Iniciando download
                 enderecoArquivo = Path(enderecoArquivo)
-                with enderecoArquivo.open("wb", encoding="utf-8") as arquivo_baixado:
+                with enderecoArquivo.open("wb") as arquivo_baixado:
                     for chunk in response.iter_content(chunk_size=8192):
                         arquivo_baixado.write(chunk)
                 logger.info("Download feito com sucesso")
@@ -93,8 +93,8 @@ class GerenciadorTeste:
         """
         # Garantir que o validator esteja atualizado
         try:
-            _gerenciadorValidator = GerenciadorValidator(self.gestorCaminho.return_path('raiz'))
-            _gerenciadorValidator.atualizarValidatorCli(int(self.gestorCaminho.controlador_configuracao.obter_configuracao_segura("requests_timeout")))
+            _gerenciadorValidator = GerenciadorValidator(self.gestorCaminho.return_path('validator'))
+            _gerenciadorValidator.atualizar_validator_cli(int(self.gestorCaminho.controlador_configuracao.obter_configuracao_segura("requests_timeout")))
         except ExcecaoTemplate as e:
             logger.fatal(f"O arquivo do validator_cli é inválido: {e}")
             sys.exit("Arquivo validator_cli é inválido, verifique seu download ou considere utilizar o validator padrão")
@@ -136,7 +136,7 @@ class GerenciadorTeste:
         """
         # Iniciar a validação
         logger.info("Iniciando a execução dos testes requisitados")
-        _instanciaExecutorTeste = ExecutorTeste(self.gestorCaminho.return_path('schema_yaml'), self.gestorCaminho.return_path('raiz'))
+        _instanciaExecutorTeste = ExecutorTeste(self.gestorCaminho.return_path('schema_yaml'), self.gestorCaminho.return_path('validator'))
         validar_completado = partial(_instanciaExecutorTeste.validarArquivoTeste, pathPastaValidator=self.gestorCaminho.return_path('pasta_validator'), tempoTimeout=int(self.gestorCaminho.controlador_configuracao.obter_configuracao_segura('timeout')))
         with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
             for resultado in executor.map(validar_completado, listaArquivosTestar):

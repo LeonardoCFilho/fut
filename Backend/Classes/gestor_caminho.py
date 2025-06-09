@@ -169,7 +169,7 @@ class GestorCaminho:
                 logger.fatal(f"Erro ao instalar o validator_cli padrão: {e}")
                 sys.exit("Erro ao instalar o validator_cli padrão")
 
-        if not gerenciador_validator.verificaVersaoValidator():
+        if not gerenciador_validator.verificar_versao_validator(path_validator):
             logger.fatal("Validator_cli utilizado não é válido")
             sys.exit("Validator_cli utilizado não é válido")
 

@@ -115,9 +115,9 @@ class ExecutorTeste():
             gerenciadorValidator = GerenciadorValidator(self.pathValidator)
             try:
                 # Iniciar testes
-                outputValidacao = gerenciadorValidator.validarArquivoFhir(data['caminho_instancia'], pathPastaValidator, tempoTimeout, args=argsArquivoFhir)
+                outputValidacao = gerenciadorValidator.validar_arquivo_fhir(data['caminho_instancia'], pathPastaValidator, tempoTimeout, argumentos_extras=argsArquivoFhir)
             except Exception as e:
-                # print(e) # debug
+                logger.info(f"Erro ao usar o validator: {e}")
                 # raise(e)
                 pass # Já está registrado no log 
 
