@@ -3,195 +3,267 @@ import yaml
 import json
 import jsonschema
 import logging
+
 logger = logging.getLogger(__name__)
 
-class ExecutorTeste():
+
+class ExecutorTeste:
     # Construtor
-    def __init__(self, pathSchema:Path, pathValidator:Path):
-        self.pathValidator = pathValidator
-        self.pathSchema = pathSchema
-        if not self.pathSchema.exists():
+    def __init__(self, path_schema: Path, path_validator: Path):
+        """
+        Inicializa o executor de testes.
+        
+        Args:
+            path_schema (Path): Caminho para o arquivo de schema JSON
+            path_validator (Path): Caminho para o validador
+        """
+        self.path_validator = path_validator
+        self.path_schema = path_schema
+        if not self.path_schema.exists():
             raise FileNotFoundError("Arquivo schema.json não encontrado")
 
 
-    def _limparConteudoYaml(self, data:dict) -> dict:
+    def _limpar_conteudo_yaml(self, dados: dict) -> dict:
         """
-        Padronizar as informações recebidas do arquivo de teste
+        Padroniza as informações recebidas do arquivo de teste.
 
         Args:
-            data (dict): Entrada a ser tratada
+            dados (dict): Entrada a ser tratada
         
         Returns:
-            data (dict): Entrada tratada
+            dict: Entrada tratada
         """
-        if isinstance(data, dict):
-            return {key: self._limparConteudoYaml(value) for key, value in data.items()}
-        elif isinstance(data, list):
-            return [self._limparConteudoYaml(item) if item is not None else "" for item in data]
-        return data
+        if isinstance(dados, dict):
+            return {chave: self._limpar_conteudo_yaml(valor) for chave, valor in dados.items()}
+        elif isinstance(dados, list):
+            return [self._limpar_conteudo_yaml(item) if item is not None else "" for item in dados]
+        return dados
 
-    
-    def validarArquivoTeste(self, arquivoTeste: Path, pathPastaValidator:Path, tempoTimeout:int) -> dict:
+
+    def _gerar_argumentos_validator(self, dict_contexto: dict, secao_interesse: str, prefixo: str) -> str:
+        """
+        Formata os argumentos do contexto para comandos usados pelo validator_cli.
+        
+        Args:
+            dict_contexto (dict): Dicionário com o contexto
+            secao_interesse (str): Seção de interesse no contexto
+            prefixo (str): Prefixo para os argumentos
+            
+        Returns:
+            str: String com argumentos formatados
+        """
+        argumentos_formatados = ''
+        if dict_contexto.get(secao_interesse):
+            if dict_contexto[secao_interesse] not in [None, "", [""]]:
+                argumentos_formatados = f" -{prefixo} " + f" -{prefixo} ".join(dict_contexto[secao_interesse])
+        return argumentos_formatados
+
+
+    def _encontrar_arquivo_instancia(self, dados: dict, arquivo_teste: Path) -> tuple[Path, bool, str]:
+        """
+        Encontra o arquivo de instância a ser testado.
+        
+        Args:
+            dados (dict): Dados do teste
+            arquivo_teste (Path): Caminho do arquivo de teste
+            
+        Returns:
+            tuple: (caminho_instancia, arquivo_encontrado, justificativa_erro)
+        """
+        # Preparar arquivo
+        caminho_instancia = Path(dados['caminho_instancia'])
+        if not caminho_instancia.is_absolute():
+            caminho_instancia = arquivo_teste.parent / caminho_instancia
+
+        # Tentar encontrar o arquivo
+        if caminho_instancia.exists():
+            return caminho_instancia, True, None
+        
+        # Tentar versão com mesmo nome mas extensão .json
+        caminho_json = arquivo_teste.with_suffix('.json')
+        if caminho_json.exists():
+            return caminho_json, True, None
+        
+        # Tentar encontrar pelo ID do teste
+        caminho_por_id = Path(arquivo_teste.parent / f"{dados['test_id']}.json")
+        if caminho_por_id.exists():
+            return caminho_por_id, True, None
+        
+        return None, False, "Não foi possível encontrar o arquivo a ser testado"
+
+
+    def validar_arquivo_teste(self, arquivo_teste: Path, path_pasta_validator: Path, tempo_timeout: int) -> dict:
         """
         Valida um arquivo YAML usando o schema JSON e, se válido, chama a validação FHIR.
 
         Args:
-            arquivoTeste (Path): Caminho do arquivo de teste .yaml 
+            arquivo_teste (Path): Caminho do arquivo de teste .yaml
+            path_pasta_validator (Path): Caminho da pasta do validador
+            tempo_timeout (int): Tempo limite para validação
         
         Returns:
-            Um dict com os dados do teste
+            dict: Dados do resultado da validação
         """
-        # Inicializar variaveis
-        flagYamlValido = True
-        outputValidacao = [None, None]
-        justificativaArquivoInvalido = None
+        # Inicializar variáveis
+        yaml_valido = True
+        output_validacao = [None, None]
+        justificativa_arquivo_invalido = None
+        dados = None
 
+        ## Carregando arquivos
         try:
-            # Schema para validar o arquivo de teste
-            with open(self.pathSchema, 'r', encoding="utf-8") as jsonSchemaFile:
-                schema = json.load(jsonSchemaFile)
-            # Arquivo de teste
-            if arquivoTeste.suffix == ".yaml" or arquivoTeste.suffix == ".yml": # por segurança
-                with open(arquivoTeste, "r", encoding="utf-8") as file:
-                    data = yaml.safe_load(file)  
-        except yaml.YAMLError as e:
-            logger.warning(f"O arquivo {arquivoTeste} é um arquivo YAML invalido")
-            justificativaArquivoInvalido = "O arquivo de teste YAML não é válido, verifique as aspas e indentação"
-            flagYamlValido  = False
+            # Carregar schema para validar o arquivo de teste
+            with open(self.path_schema, 'r', encoding="utf-8") as arquivo_schema:
+                schema = json.load(arquivo_schema)
+            
+            # Carregar arquivo de teste
+            if arquivo_teste.suffix in [".yaml", ".yml"]:
+                with open(arquivo_teste, "r", encoding="utf-8") as arquivo:
+                    dados = yaml.safe_load(arquivo)
+                    
+        except yaml.YAMLError:
+            logger.warning(f"O arquivo {arquivo_teste} é um arquivo YAML inválido")
+            justificativa_arquivo_invalido = "O arquivo de teste YAML não é válido, verifique as aspas e indentação"
+            yaml_valido = False
         except Exception as e:
             logger.error(f"Erro no executor de teste: {e}")
+            yaml_valido = False
+            justificativa_arquivo_invalido = f"Erro ao carregar arquivo: {str(e)}"
 
-        if flagYamlValido:
+        ## Testando arquivo de entrada
+        if yaml_valido and dados:
             # Limpar a entrada
-            data = self._limparConteudoYaml(data)
+            dados = self._limpar_conteudo_yaml(dados)
 
             try:
-                # Validar
-                jsonschema.validate(instance=data, schema=schema)
-                #print("Sucesso")
+                # Validar contra schema
+                jsonschema.validate(instance=dados, schema=schema)
             except jsonschema.exceptions.ValidationError as e:
-                logger.warning(f"Arquivo de teste invalido: {e}")
+                logger.warning(f"Arquivo de teste inválido: {e}")
+                yaml_valido = False
+                
+                # Gerar mensagem de erro mais amigável
                 if " is a required property" in e.message:
-                    justificativaArquivoInvalido = f"O campo {e.message.split(' is a required property')[0]} é obrigatório"
+                    campo_faltando = e.message.split(' is a required property')[0]
+                    justificativa_arquivo_invalido = f"O campo {campo_faltando} é obrigatório"
                 elif " is not of type " in e.message:
-                    secaoMessage = " is not of type "
-                    justificativaArquivoInvalido = f"O valor da variavel '{e.message.split(secaoMessage)[0]}' tem que ser {e.message.split(secaoMessage)[1]}"
-                elif " is not one of ":
-                    secaoMessage = " is not one of "
-                    justificativaArquivoInvalido = f"O valor da variavel {e.message.split(secaoMessage)[0]} deveria ser uma entre {e.message.split(secaoMessage)[1]}"
-                flagYamlValido = False
+                    partes = e.message.split(" is not of type ")
+                    variavel = partes[0]
+                    tipo_esperado = partes[1]
+                    justificativa_arquivo_invalido = f"O valor da variável '{variavel}' deve ser do tipo {tipo_esperado}"
+                elif " is not one of " in e.message:
+                    partes = e.message.split(" is not one of ")
+                    variavel = partes[0]
+                    valores_validos = partes[1]
+                    justificativa_arquivo_invalido = f"O valor da variável {variavel} deve ser um entre {valores_validos}"
+                else:
+                    justificativa_arquivo_invalido = f"Erro de validação: {e.message}"
 
+            # Encontrar arquivo de instância
+            if yaml_valido:
+                caminho_instancia, arquivo_encontrado, erro_arquivo = self._encontrar_arquivo_instancia(dados, arquivo_teste)
+                if not arquivo_encontrado:
+                    yaml_valido = False
+                    justificativa_arquivo_invalido = erro_arquivo
+                else:
+                    dados['caminho_instancia'] = caminho_instancia
 
-            # Ideia: Formata os argumentos do contexto para comandos usados pelo validator_cli
-            def geraArgsValidator(dictContext, secaoInteresse, prefixo):
-                strArgsFormatados = ''
-                if dictContext.get(secaoInteresse):
-                    if dictContext[secaoInteresse] not in [None, "", [""]]:
-                        strArgsFormatados = f" -{prefixo} " + f" -{prefixo} ".join(dictContext[secaoInteresse])
-                return strArgsFormatados
-        
-            # Antes de tentar validar o arquivo verificar se existe:
-            # Preparar arquivo
-            data['caminho_instancia'] = Path(data['caminho_instancia'])
-            if not data['caminho_instancia'].is_absolute(): # Para garantir consistencia
-                data['caminho_instancia'] = arquivoTeste.parent / data['caminho_instancia']
-            # Tentar mais duas maneiras de achar o arquivo
-            if not data['caminho_instancia'].exists(): # Arquivo escrito no teste não existe
-                if arquivoTeste.with_suffix('.json').exists(): # Ver se versão com mesmo nome (mas .json) existe
-                    data['caminho_instancia'] = arquivoTeste.with_suffix('.json')
-                elif Path(arquivoTeste.parent / f"{data['test_id']}.json").exists(): # Ver se existe pelo id
-                    data['caminho_instancia'] = Path(arquivoTeste.parent / f"{data['test_id']}.json")
-                else: # Simplesmente não existe
-                    flagYamlValido = False
-                    justificativaArquivoInvalido = "Não foi possível encontrar o arquivo a ser testado"
-
-        if flagYamlValido:
-            argsArquivoFhir = ''
-            context = data.get('context', {})
-            argsArquivoFhir += geraArgsValidator(context,'igs', 'ig')
-            argsArquivoFhir += geraArgsValidator(context,'profiles', 'profile')
-            argsArquivoFhir += geraArgsValidator(context,'resources', 'ig')
-            from Backend.Classes.gerenciador_validator import GerenciadorValidator
-            gerenciadorValidator = GerenciadorValidator(self.pathValidator)
+        # Executar validação FHIR se tudo estiver válido
+        if yaml_valido and dados:
             try:
-                # Iniciar testes
-                outputValidacao = gerenciadorValidator.validar_arquivo_fhir(data['caminho_instancia'], pathPastaValidator, tempoTimeout, argumentos_extras=argsArquivoFhir)
+                contexto = dados.get('context', {})
+                argumentos_fhir = ''
+                argumentos_fhir += self._gerar_argumentos_validator(contexto, 'igs', 'ig')
+                argumentos_fhir += self._gerar_argumentos_validator(contexto, 'profiles', 'profile')
+                argumentos_fhir += self._gerar_argumentos_validator(contexto, 'resources', 'ig')
+                
+                from Backend.Classes.gerenciador_validator import GerenciadorValidator
+                gerenciador_validator = GerenciadorValidator(self.path_validator)
+                
+                output_validacao = gerenciador_validator.validar_arquivo_fhir(
+                    dados['caminho_instancia'], 
+                    path_pasta_validator, 
+                    tempo_timeout, 
+                    argumentos_extras=argumentos_fhir
+                )
             except Exception as e:
                 logger.info(f"Erro ao usar o validator: {e}")
-                # raise(e)
-                pass # Já está registrado no log 
 
         return {
-            'caminho_yaml': arquivoTeste,
-            'yaml_valido': flagYamlValido,
-            'caminho_output': outputValidacao[0] if outputValidacao[0] is not None else None,
-            'tempo_execucao': outputValidacao[1],
-            'justificativa_arquivo_invalido': justificativaArquivoInvalido,
+            'caminho_yaml': arquivo_teste,
+            'yaml_valido': yaml_valido,
+            'caminho_output': output_validacao[0],
+            'tempo_execucao': output_validacao[1],
+            'justificativa_arquivo_invalido': justificativa_arquivo_invalido,
         }
 
-    
-    def _padronizarArgsEntrada(self, args) -> list:
+
+    def _padronizar_argumentos_entrada(self, argumentos) -> list:
         """
-        Passo de precaução, garante que args segue um padrão pre-definido
+        Garante que os argumentos seguem um padrão pré-definido.
         
         Args: 
-            args: Os argumentos de entrada
+            argumentos: Os argumentos de entrada
         
         Returns:
-            list de formato padronizado com os valores armazenados em args
+            list: Lista de formato padronizado com os valores armazenados em argumentos
         """
-        if isinstance(args, str):
-            args = str(args).split()
-        elif isinstance(args, (tuple, set)): # Conversão direta
-            args = list(args) 
-        elif not isinstance(args, list): # Colocar em uma lista
-            args = [args]  
-        # Limpar a string
-        args = [str(file).replace('"','').replace("'","") for file in args]
+        if isinstance(argumentos, str):
+            argumentos = str(argumentos).split()
+        elif isinstance(argumentos, (tuple, set)):
+            argumentos = list(argumentos)
+        elif not isinstance(argumentos, list):
+            argumentos = [argumentos]
         
-        return args
+        # Limpar as strings
+        argumentos = [str(arquivo).replace('"', '').replace("'", "") for arquivo in argumentos]
+        
+        return argumentos
 
 
-    def gerarListaArquivosTeste(self, argsEntrada) -> list:
+    def gerar_lista_arquivos_teste(self, argumentos_entrada) -> list:
         """
-        Recebe os comandos escritos pelo usuário, verificando os seguintes casos: 
-        # 1. Todos os arquivos .yaml da pasta atual (entrada vazia)
-        # 2. O arquivo em específico
-        # 3. Os arquivos que tenham o mesmo prefixo (uso de '*') 
+        Recebe os comandos escritos pelo usuário, verificando os seguintes casos:
+        1. Todos os arquivos .yaml da pasta atual (entrada vazia)
+        2. O arquivo específico
+        3. Os arquivos que tenham o mesmo prefixo (uso de '*')
 
         Args: 
-            argsEntrada: Entrada para determinar a lista de arquivos de teste
+            argumentos_entrada: Entrada para determinar a lista de arquivos de teste
         
         Returns:
-            list de paths para cada yaml encontrado OU list vazia
+            list: Lista de paths para cada yaml encontrado
         """
-        arquivosYaml = []
-        # Garantir que argsEntrada é uma list
-        argsEntrada = self._padronizarArgsEntrada(argsEntrada)
-        # Ler todos da pasta atual
-        if len(argsEntrada) == 0:
-            arquivosYaml = list(Path.cwd().glob('*.yaml')) + list(Path.cwd().glob('*.yml'))
-        # Arquivos especificados
+        arquivos_yaml = []
+        
+        # Garantir que argumentos_entrada é uma lista
+        argumentos_entrada = self._padronizar_argumentos_entrada(argumentos_entrada)
+        
+        # Ler todos da pasta atual se não há argumentos
+        if len(argumentos_entrada) == 0:
+            arquivos_yaml = list(Path.cwd().glob('*.yaml')) + list(Path.cwd().glob('*.yml'))
         else:
-            # Iterar pela list
-            for pathArquivo in argsEntrada:
-                arquivoAtual = Path(pathArquivo)
+            # Processar arquivos especificados
+            for caminho_arquivo in argumentos_entrada:
+                arquivo_atual = Path(caminho_arquivo)
 
-                # Caminho relativo => caminho absoluto
-                if not arquivoAtual.is_absolute():
-                    arquivoAtual = Path.cwd() / arquivoAtual
+                # Converter caminho relativo para absoluto
+                if not arquivo_atual.is_absolute():
+                    arquivo_atual = Path.cwd() / arquivo_atual
 
-                if '*' in arquivoAtual.name:
-                    pesquisaPrefixo = str(arquivoAtual.name).split('*')[0]
-                    argsEntrada.extend(list(arquivoAtual.parent.glob(f"{pesquisaPrefixo}*.yaml")))
+                # Processar wildcards
+                if '*' in arquivo_atual.name:
+                    prefixo_pesquisa = str(arquivo_atual.name).split('*')[0]
+                    arquivos_encontrados = list(arquivo_atual.parent.glob(f"{prefixo_pesquisa}*.yaml"))
+                    arquivos_encontrados.extend(list(arquivo_atual.parent.glob(f"{prefixo_pesquisa}*.yml")))
+                    arquivos_yaml.extend(arquivos_encontrados)
+                else:
+                    # Verificar se o arquivo tem extensão válida e existe
+                    if (arquivo_atual.suffix in [".yaml", ".yml"]) and arquivo_atual.exists():
+                        arquivos_yaml.append(arquivo_atual)
 
-                # Verificar se o arquivo tem a extensão .yaml ou .yml e existe
-                if (arquivoAtual.suffix in [".yaml", ".yml"]) and arquivoAtual.exists():
-                    arquivosYaml.append(arquivoAtual)
-        
-        # Garantir que não há duplicatas
-        arquivosYaml = list(set(arquivosYaml))
-        # Por segurança, remover qualquer arquivo inexistente
-        arquivosYaml = [arquivo for arquivo in arquivosYaml if arquivo.exists()]
+        # Remover duplicatas e arquivos inexistentes
+        arquivos_yaml = list(set(arquivos_yaml))
+        arquivos_yaml = [arquivo for arquivo in arquivos_yaml if arquivo.exists()]
 
-        return arquivosYaml
+        return arquivos_yaml

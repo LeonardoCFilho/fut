@@ -120,10 +120,10 @@ class GerenciadorTeste:
             logger.debug("Argumentos inválidos para a execução dos testes, lista vazia.")
             args = []
         #print(executorDeTestes.gerarListaArquivosTeste(args))
-        return ExecutorTeste(self.gestorCaminho.return_path('schema_yaml'), self.gestorCaminho.return_path('raiz')).gerarListaArquivosTeste(args)
+        return ExecutorTeste(self.gestorCaminho.return_path('schema_yaml'), self.gestorCaminho.return_path('raiz')).gerar_lista_arquivos_teste(args)
 
 
-    def executarThreadsTeste(self, listaArquivosTestar:list, numThreads:int):
+    def executarThreadsTeste(self, listaArquivosTestar:list, numThreads:int, tempo_timeout: float):
         """
         Execução dos testes que o usuário solicitou + uso de threads
 
@@ -137,7 +137,7 @@ class GerenciadorTeste:
         # Iniciar a validação
         logger.info("Iniciando a execução dos testes requisitados")
         _instanciaExecutorTeste = ExecutorTeste(self.gestorCaminho.return_path('schema_yaml'), self.gestorCaminho.return_path('validator'))
-        validar_completado = partial(_instanciaExecutorTeste.validarArquivoTeste, pathPastaValidator=self.gestorCaminho.return_path('pasta_validator'), tempoTimeout=int(self.gestorCaminho.controlador_configuracao.obter_configuracao_segura('timeout')))
+        validar_completado = partial(_instanciaExecutorTeste.validar_arquivo_teste, path_pasta_validator=self.gestorCaminho.return_path('pasta_validator'), tempo_timeout=tempo_timeout)
         with concurrent.futures.ThreadPoolExecutor(max_workers=numThreads) as executor:
             for resultado in executor.map(validar_completado, listaArquivosTestar):
                 try:
@@ -206,7 +206,7 @@ class GerenciadorTeste:
                 # Caso válido de teste
                 startTestes = time.time()
                 resultadosValidacao = []
-                for resultado in self.executarThreadsTeste(listaArquivosTestar, numThreads):
+                for resultado in self.executarThreadsTeste(listaArquivosTestar, numThreads, int(self.gestorCaminho.controlador_configuracao.obter_configuracao_segura('timeout'))):
                     resultadosValidacao.append(resultado)
                     # Entregas graduais
                     if entregaGradual:
