@@ -124,9 +124,10 @@ class TerminalUI:
                         sys.stdout.flush()
                         print(f"{max(resultadoLimpo, pctPronto) * 100:.1f}% dos testes finalizados em {(time.time() - startTestes):.1f}s")
                         pctPronto = max(pctPronto + 0.1, resultadoLimpo)
-                self.controleAnimacao('end')
             else: 
                 list(self.fachada.iniciarExecucaoTestes(args, entregaGradual=entregaGradual))
+            self.controleAnimacao('end')
+            print("Testes finalizados!")
         except FileNotFoundError as e:
             print("Programa não conseguiu encontrar schema_arquivo_de_teste.json!\nVerifique se ele não foi renomenado ou movido")
         except PermissionError as e:

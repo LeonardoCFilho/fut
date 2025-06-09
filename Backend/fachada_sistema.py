@@ -1,5 +1,5 @@
 """
-Interface feita para armazenar funções usadas pelo terminal e pela interface gráfica
+Fachada feita para armazenar funções usadas pelo terminal e pela interface gráfica
 """
 from Backend.Classes.servico_execucao_teste import ServicoExecucaoTeste
 from Backend.Classes.coordenador_teste import CoordenadorTestes
@@ -18,8 +18,8 @@ class FachadaSistema:
 
 
     ## Endereçamento
-    @staticmethod
-    def acharCaminhoProjeto() -> Path:
+    @classmethod
+    def acharCaminhoProjeto(cls) -> Path:
         """
         Encontra o caminho do diretório do projeto onde o nome do diretório contém 'fut'.
 
