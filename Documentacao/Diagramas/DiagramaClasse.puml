@@ -32,9 +32,9 @@ class GeradorRelatorios {
     {static} +modificarChaves(novas_chaves: dict)
     {static} +modificarErrosEsperados(novos_erros_esperados: dict)
 }
-class GerenciadorTeste {
+class CoordenadorTestes {
     gestorCaminho: GestorCaminho
-    get_instance(gestorCaminho: GestorCaminho) : GerenciadorTeste
+    get_instance(gestorCaminho: GestorCaminho) : CoordenadorTestes
     iniciarSistema()
     baixarArquivoUrl(url: str, enderecoArquivo, requestsTimeout:int, maxTentativas:int)
     prepararExecucaoTestes(args) : list
@@ -62,7 +62,7 @@ class GestorCaminho {
 
 }
 class FachadaSistema {
-    gerenciador_teste: GerenciadorTeste
+    gerenciador_teste: CoordenadorTestes
     acharCaminhoProjeto() : Path   
     listarArquivosYaml(args) : list[Path]
     obterValorConfiguracao(settingsBuscada: str) : str|None
@@ -101,19 +101,19 @@ package GUI {
 
 ' Relacoes
 GUI --> FachadaSistema : usa
-GerenciadorTeste --> GeradorRelatorios : depende de
-GerenciadorTeste --> ExecutorTeste : depende de
+CoordenadorTestes --> GeradorRelatorios : depende de
+CoordenadorTestes --> ExecutorTeste : depende de
 ExecutorTeste --> GerenciadorValidator : depende de
-GerenciadorTeste --> GerenciadorValidator : usa e atualiza validator
+CoordenadorTestes --> GerenciadorValidator : usa e atualiza validator
 
 '' Excecao template
 GerenciadorValidator --> ExcecaoTemplate : lança
-GerenciadorTeste --> ExcecaoTemplate : captura
+CoordenadorTestes --> ExcecaoTemplate : captura
 
 '' Composições
-GerenciadorTeste *-- GestorCaminho : faz parte de
+CoordenadorTestes *-- GestorCaminho : faz parte de
 GestorCaminho *-- ControladorConfiguracao : faz parte de
-FachadaSistema *-- GerenciadorTeste : faz parte de
+FachadaSistema *-- CoordenadorTestes : faz parte de
 TerminalUI *-- FachadaSistema : faz parte de
 
 @enduml

@@ -162,11 +162,8 @@ class GestorCaminho:
         """
         gerenciador_validator = GerenciadorValidator(path_validator)
         if not path_validator.exists():
-            try:
-                logger.info(f"Validator não encontrado em {path_validator}, tentando instalar...")
-                gerenciador_validator.instalaValidatorCli()
-            except Exception as e:
-                logger.fatal(f"Erro ao instalar o validator_cli padrão: {e}")
+            if not gerenciador_validator.atualizar_validator_cli_seguro(self.controlador_configuracao.obter_configuracao_segura('requests_timeout')):
+                logger.fatal(f"Erro ao instalar o validator_cli padrão")
                 sys.exit("Erro ao instalar o validator_cli padrão")
 
         if not gerenciador_validator.verificar_versao_validator(path_validator):

@@ -3,6 +3,7 @@ import sys
 import logging 
 from Backend.fachada_sistema import FachadaSistema
 
+
 def organizarLogs(pathLog: Path):
     """
     Organiza arquivos de log numerados, mantendo um histórico rotativo.
@@ -24,7 +25,7 @@ def organizarLogs(pathLog: Path):
 
 if __name__ == "__main__":
     # Caminhos utilizados no nosso projeto
-    pathFut = FachadaSistema().acharCaminhoProjeto()
+    pathFut = FachadaSistema.acharCaminhoProjeto()
     pathLog  = pathFut / 'Arquivos' / 'fut_1.log'
 
     # Logs

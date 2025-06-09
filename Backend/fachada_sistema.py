@@ -1,7 +1,8 @@
 """
 Interface feita para armazenar funções usadas pelo terminal e pela interface gráfica
 """
-from Backend.Classes.gerenciador_teste import GerenciadorTeste
+from Backend.Classes.servico_execucao_teste import ServicoExecucaoTeste
+from Backend.Classes.coordenador_teste import CoordenadorTestes
 from Backend.Classes.gestor_caminho import GestorCaminho
 from pathlib import Path
 import logging 
@@ -13,11 +14,12 @@ class FachadaSistema:
     # Construtor
     def __init__(self):
         # Se não encontrar o caminho do projeto a função da sys.exit()
-        self.gerenciador_teste = GerenciadorTeste.get_instance(GestorCaminho(self.acharCaminhoProjeto())) 
+        self.coordenador_testes = CoordenadorTestes.get_instance(GestorCaminho(self.acharCaminhoProjeto())) 
 
 
     ## Endereçamento
-    def acharCaminhoProjeto(self) -> Path:
+    @staticmethod
+    def acharCaminhoProjeto() -> Path:
         """
         Encontra o caminho do diretório do projeto onde o nome do diretório contém 'fut'.
 
@@ -48,7 +50,7 @@ class FachadaSistema:
         Returns:
             Lista com endereços dos arquivos de testes a serem testados (pode ser vazia)
         """
-        return self.gerenciador_teste.prepararExecucaoTestes(args)
+        return ServicoExecucaoTeste(self.acharCaminhoProjeto()).preparar_lista_testes(args)
 
 
     ## Configurações
@@ -62,7 +64,7 @@ class FachadaSistema:
         Returns:
             O valor da configuração OU None(caso de erro)
         """
-        return self.gerenciador_teste.gestorCaminho.controlador_configuracao.obter_configuracao_segura(settingsBuscada)
+        return self.coordenador_testes.gestor_caminho.controlador_configuracao.obter_configuracao_segura(settingsBuscada)
 
 
     def atualizarValorConfiguracao(self, configuracaoSerAlterada:str, novoValor) -> str:
@@ -76,7 +78,7 @@ class FachadaSistema:
         Returns:
             Mensagem de sucesso OU mensagem de erro com justificativa"""
         try:
-            self.gerenciador_teste.gestorCaminho.controlador_configuracao.alterar_valor_configuracao(configuracaoSerAlterada, str(novoValor))
+            self.coordenador_testes.gestor_caminho.controlador_configuracao.alterar_valor_configuracao(configuracaoSerAlterada, str(novoValor))
             return f"Configuração alterada com sucesso!"
         except Exception as e:
             return f"Erro ao alterar a configuração '{configuracaoSerAlterada}': {str(e)}"
@@ -105,12 +107,11 @@ class FachadaSistema:
         """
         try: 
             logger.info("Teste de arquivos inicializado")
-            gerenciadorTestes = self.gerenciador_teste
             if entregaGradual: # Lidar com as entregas no frontend
-                for resultado in gerenciadorTestes.executarTestesCompleto(args, tipoRelatorio, entregaGradual):
+                for resultado in self.coordenador_testes.executar_testes_completo(args, tipoRelatorio, entregaGradual):
                     yield resultado # é uma list, contém: dict com os dados do teste, % de testes finalizados
             else:
-                list(gerenciadorTestes.executarTestesCompleto(args, tipoRelatorio, entregaGradual))
+                list(self.coordenador_testes.executar_testes_completo(args, tipoRelatorio, entregaGradual))
 
         except Exception as e:
             raise(e)

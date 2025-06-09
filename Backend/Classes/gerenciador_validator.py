@@ -1,11 +1,13 @@
 from pathlib import Path
 from json import dump
 from Backend.Classes.exceptions import ExcecaoTemplate
+from Backend.Classes.arquivo_downloader import ArquivoDownloader
 import time
 import subprocess
 import requests
 import zipfile
 import logging
+import sys
 import re
 
 logger = logging.getLogger(__name__)
@@ -167,36 +169,34 @@ class GerenciadorValidator:
         return None
 
 
-    def instalar_validator_cli(self) -> None:
+    def instalar_validator_cli(self, downloader_callback: ArquivoDownloader) -> None:
         """
         Faz a instalação inicial do validator_cli
         
         Raises:
             requests.exceptions.ConnectionError: Erro de conexão
             Exception: Outros erros durante instalação
-        """
-        from Backend.Classes.gerenciador_teste import GerenciadorTeste  # Evitar import cíclico
-        
+        """        
         if not self.caminho_validador.exists():  # Evitar sobrescrita
             try:
                 logger.info("Fazendo download do validator_cli")
                 # Timeout de 20 minutos
-                GerenciadorTeste.get_instance().baixarArquivoUrl(
+                downloader_callback.baixar_arquivo(
                     self.URL_DOWNLOAD_VALIDADOR, 
                     self.caminho_validador, 
-                    requestsTimeout=1200
                 )
             except Exception as e:
                 logger.fatal(f"Erro ao instalar o validator_cli: {e}")
                 raise e
 
 
-    def atualizar_validator_cli(self, tempo_timeout_requests: int):
+    def atualizar_validator_cli(self, tempo_timeout_requests: int, downloader_callback: ArquivoDownloader):
         """
         Atualiza o validator_cli para a versão mais recente
         
         Args:
             tempo_timeout_requests (int): Timeout para requisições HTTP
+            downloader_callback (ArquivoDownloader): Instancia de ArquivoDownloader que fará os download
             
         Raises:
             requests.exceptions.Timeout: Timeout nas requisições
@@ -222,7 +222,34 @@ class GerenciadorValidator:
                 logger.info("Verificação de atualização finalizada")
         else:
             logger.info("Nenhuma instância de validator_cli encontrada, iniciando download")
-            self.instalar_validator_cli()
+            self.instalar_validator_cli(downloader_callback)
+
+
+    def atualizar_validator_cli_seguro(self, tempo_timeout_requests: int, downloader_callback: ArquivoDownloader=None) -> bool:
+        """
+        Versão segura que lida com erros sem interromper o programa principal
+        
+        Args:
+            tempo_timeout_requests (int): Timeout para requisições HTTP
+            downloader_callback (ArquivoDownloader): Instancia de ArquivoDownloader que fará os download
+            
+        Returns:
+            bool: True se atualizou com sucesso, False caso contrário
+        """
+        try:
+            if not downloader_callback:
+                downloader_callback = ArquivoDownloader(1800)
+            self.atualizar_validator_cli(tempo_timeout_requests, downloader_callback)
+            return True
+        except ExcecaoTemplate as e:
+            logger.fatal(f"O arquivo do validator_cli é inválido: {e}")
+            sys.exit("Arquivo validator_cli é inválido, verifique seu download ou considere utilizar o validator padrão")
+        except requests.exceptions.ConnectionError:
+            logger.warning("Erro de conexão ao tentar atualizar validator - continuando com versão atual")
+            return False
+        except Exception as e:
+            logger.error(f"Erro ao atualizar o validator: {e}")
+            return False
 
 
     def _executar_atualizacao(self):
@@ -236,11 +263,11 @@ class GerenciadorValidator:
             caminho_temporario = self.caminho_validador.with_name("temp_validator_cli.jar")
             
             # Fazer download da nova versão
-            from Backend.Classes.gerenciador_teste import GerenciadorTeste
-            GerenciadorTeste.get_instance().baixarArquivoUrl(
+            from Backend.Classes.coordenador_teste import CoordenadorTestes
+            CoordenadorTestes.get_instance().baixarArquivoUrl(
                 self.URL_DOWNLOAD_VALIDADOR, 
                 caminho_temporario, 
-                requestsTimeout=600
+                timeout=600
             )
             logger.info("Download da versão mais recente concluído")
             
