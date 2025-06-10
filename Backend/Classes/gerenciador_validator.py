@@ -168,21 +168,26 @@ class GerenciadorValidator:
         return None
 
 
-    def instalar_validator_cli(self, downloader_callback: ArquivoDownloader) -> None:
+    def instalar_validator_cli(self, downloader_callback: ArquivoDownloader, path_customizado: Path = None) -> None:
         """
         Faz a instalação inicial do validator_cli
+        
+        Args:
+            downloader_callback (ArquivoDownloader): Instancia para fazer o download
+            path_customizado (Path, optional): Caminho customizado para instalação
         
         Raises:
             requests.exceptions.ConnectionError: Erro de conexão
             Exception: Outros erros durante instalação
         """        
-        if not self.caminho_validador.exists():  # Evitar sobrescrita
+        caminho_instalacao = path_customizado or self.caminho_validador
+        if not caminho_instalacao.exists():  # Evitar sobrescrita
             try:
                 logger.info("Fazendo download do validator_cli")
                 # Timeout de 20 minutos
                 downloader_callback.baixar_arquivo(
                     self.URL_DOWNLOAD_VALIDADOR, 
-                    self.caminho_validador, 
+                    caminho_instalacao, 
                 )
             except Exception as e:
                 logger.fatal(f"Erro ao instalar o validator_cli: {e}")
@@ -216,7 +221,7 @@ class GerenciadorValidator:
             versao_mais_recente = self._obter_versao_mais_recente_github(tempo_timeout_requests)
             
             if versao_mais_recente and self._precisa_atualizar(versao_atual, versao_mais_recente):
-                self._executar_atualizacao()
+                self._executar_atualizacao(downloader_callback)
             else:
                 logger.info("Verificação de atualização finalizada")
         else:
@@ -251,9 +256,12 @@ class GerenciadorValidator:
             return False
 
 
-    def _executar_atualizacao(self):
+    def _executar_atualizacao(self, downloader_callback: ArquivoDownloader):
         """
         Executa o processo de atualização do validator
+        
+        Args:
+            downloader_callback (ArquivoDownloader): Instancia de ArquivoDownloader que fará o download
         
         Raises:
             Exception: Erros durante processo de atualização
@@ -261,13 +269,9 @@ class GerenciadorValidator:
         try:
             caminho_temporario = self.caminho_validador.with_name("temp_validator_cli.jar")
             
-            # Fazer download da nova versão
-            from Backend.Classes.coordenador_teste import CoordenadorTestes
-            CoordenadorTestes.get_instance().baixarArquivoUrl(
-                self.URL_DOWNLOAD_VALIDADOR, 
-                caminho_temporario, 
-                timeout=600
-            )
+            # Fazer download da nova versão usando o downloader_callback
+            logger.info("Fazendo download da nova versão do validator_cli")
+            self.instalar_validator_cli(downloader_callback, caminho_temporario)
             logger.info("Download da versão mais recente concluído")
             
             # Substituir arquivo antigo
@@ -279,7 +283,7 @@ class GerenciadorValidator:
         except Exception as e:
             logger.error(f"Erro ao atualizar validator: {e}")
             raise e
-
+        
 
     def validar_arquivo_fhir(self, arquivo_validar: Path, pasta_relatorio: Path, tempo_timeout: int, argumentos_extras: str = None) -> list:
         """
