@@ -10,7 +10,7 @@ def render():
     def load_report_data():
         # Caminho absoluto para a pasta de dados
         data_dir = Path(__file__).absolute().parent.parent.parent
-        json_path = data_dir / "Arquivos" / "Testes" /"relatorio.json"
+        json_path = data_dir / "Arquivos" / "Testes" /"relatorio_final_fut.json"
         
         # Verificação robusta do arquivo
         if not json_path.exists():
@@ -85,6 +85,7 @@ def render():
         # Visualização detalhada dos testes
         st.subheader("🧪 Detalhes dos Casos de Teste")
         for test_name, test_data in test_cases.items():
+            test_name = os.path.basename(test_name)
             with st.expander(f"{test_name}", expanded=False):
                 # Status principal
                 if not test_data.get('yaml_valido'):
@@ -104,7 +105,8 @@ def render():
                     st.write("**Status Real:**", test_data.get('status_real', 'N/A'))
                     
                     if test_data.get('tempo_de_execucao'):
-                        st.write(f"⏱️ **Tempo de execução:** {test_data['tempo_de_execucao']}ms")
+                        tempo = test_data['tempo_de_execucao']
+                        st.write(f"⏱️ Tempo de execução:{tempo:.2f} ms")
                 
                 with col_right:
                     if test_data.get('correspondencia'):

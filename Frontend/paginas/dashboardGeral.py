@@ -23,7 +23,7 @@ def render():
     def load_report_data():
         # Ajuste o caminho conforme sua estrutura de pastas
         data_dir = Path(__file__).absolute().parent.parent.parent
-        json_path = data_dir / "Arquivos" / "Testes" /"relatorio.json"
+        json_path = data_dir / "Arquivos" / "Testes" /"relatorio_final_fut.json"
         
         if not json_path.exists():
             st.error(f"Arquivo não encontrado: {json_path}")
