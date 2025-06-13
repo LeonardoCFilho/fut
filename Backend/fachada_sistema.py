@@ -100,6 +100,23 @@ class FachadaSistema:
         except Exception as e:
             logger.error(f"Erro ao obter configuração '{nome_configuracao}': {e}")
             return None
+        
+    
+    def obter_caminho(self, nome_endereco: str) -> Path|None:
+        """
+        Obtém o valor de um caminho específico
+
+        Args:
+            nome_endereco: Nome da configuração buscada
+
+        Returns:
+            Valor do endereço solicitado ou None se o nome do caminho for inválido
+        """
+        try:
+            return self.coordenador_testes.gestor_caminho.return_path(nome_endereco)
+        except Exception as e:
+            logger.warning(f'Erro ao buscar o caminho: {e}')
+            return None
 
 
     def atualizar_configuracao(self, nome_configuracao: str, novo_valor) -> bool:

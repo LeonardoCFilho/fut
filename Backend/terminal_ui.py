@@ -1,5 +1,6 @@
 from Backend.dialogos_sistema import DialogosSistema
 from Backend.fachada_sistema import FachadaSistema
+import subprocess
 import threading
 import logging
 import time
@@ -64,8 +65,22 @@ class TerminalUI:
 
 
     def _mostrar_interface_grafica(self):
-        """Exibe mensagem sobre a futura implementação da interface gráfica."""
-        print("A interface gráfica será implementada em breve!")
+        """Inicia a execução do streamlit."""
+        # Criar o comando do ambiente virtual
+        caminho_venv = self.fachada.obter_caminho('venv')
+        if sys.platform == 'win32':
+            comando = [
+            str(caminho_venv),
+            "&&", "streamlit", "run", str(self.fachada.obter_caminho('script_frontend'))
+        ]
+        else:
+            comando = [
+                "bash", "-i", "-c", f"source {str(caminho_venv)} && streamlit run {str(self.fachada.obter_caminho('script_frontend'))}"
+            ]
+        comando += [
+            "&&", "streamlit", "run", self.fachada.obter_caminho('script_frontend')
+        ]
+        resultado = subprocess.run(comando)
 
 
     def _criar_template(self):
