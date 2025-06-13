@@ -74,7 +74,7 @@ class GestorCaminho:
         self.path_settings = self.path_arquivos / self.SETTINGS_FILE
         self.path_schema_configuracoes = self.path_arquivos / self.SCHEMA_CONFIGURACOES
         self.path_schema_yaml = self.path_arquivos / self.SCHEMA_FILE_YAML
-        self.path_script_frontend = self.path_pasta_frontend / self.SCRIPT_FRONTEND
+        self.path_script_frontend = self.path_fut / self.SCRIPT_FRONTEND
 
 
     def _criar_venv_path(self):
