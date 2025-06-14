@@ -1,0 +1,47 @@
+@startuml Component
+!define C4Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Diagrama de Componentes - Sistema Central FUT
+
+Container_Boundary(core_system, "Sistema Central") {
+    Component(facade, "Camada de Fachada", "Python", "Ponto de entrada único que coordena todas as operações do sistema")
+    
+    Component(coordination_layer, "Camada de Coordenação", "Python", "Coordena execução de testes e gerencia caminhos do sistema")
+    
+    Component(configuration_mgmt, "Gerenciamento de Configuração", "Python", "Controla configurações do sistema e parâmetros de execução")
+    
+    Component(test_execution, "Motor de Execução de Testes", "Python", "Executa testes FHIR em paralelo e gerencia o validator CLI")
+    
+    Component(reporting_engine, "Motor de Relatórios", "Python", "Gera relatórios detalhados e templates de teste")
+    
+    Component(utility_services, "Serviços Utilitários", "Python", "Validação de arquivos, leitura de schemas e downloads")
+    
+    ComponentDb(config_storage, "Armazenamento de Configurações", "YAML/JSON", "Schemas e configurações internas do sistema")
+}
+
+
+Container_Ext(gui, "Interface Gráfica", "Streamlit")
+Container_Ext(cli, "Interface CLI", "Python Terminal")
+System_Ext(fhir_validator, "FHIR Validator CLI", "Validador oficial FHIR para conformidade de instâncias")
+
+' Relações das interfaces com o sistema
+Rel(gui, facade, "Solicita operações via API")
+Rel(cli, facade, "Executa comandos via fachada")
+
+' Relações internas principais
+Rel(facade, coordination_layer, "Delega coordenação")
+Rel(facade, configuration_mgmt, "Obtém configurações")
+
+Rel(coordination_layer, test_execution, "Inicia execução de testes")
+Rel(coordination_layer, reporting_engine, "Solicita geração de relatórios")
+
+Rel(test_execution, utility_services, "Utiliza serviços auxiliares")
+Rel(reporting_engine, utility_services, "Usa utilitários para relatórios")
+
+Rel(configuration_mgmt, config_storage, "Lê e valida configurações")
+Rel(coordination_layer, config_storage, "Acessa configurações via camada de configuração")
+
+' Relações com sistemas externos
+Rel(test_execution, fhir_validator, "Executa validações")
+@enduml

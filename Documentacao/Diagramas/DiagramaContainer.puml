@@ -2,35 +2,27 @@
 !define C4Containers
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-' Título do diagrama
 title Diagrama de Container - FUT
 
-' Usuário principal
-Person(user, "Usuário do FUT", "Interage com o sistema para validar e analisar testes.")
+Person(user, "Usuário do FUT", "Desenvolvedor ou testador que valida instâncias FHIR")
 
-' Sistema principal (Frontend e Backend)
-Container_Boundary(FUT, "FUT") {
-    Container(gui, "Interface Gráfica (GUI)", "Streamlit", "Interface visual para usuários gerenciarem e visualizarem testes.")
-    Container(cli, "Interface de Linha de Comando (CLI)", "Python", "Executa testes diretamente via terminal.")
-    Container(interface_layer, "Camada de Interface", "Python", "Gerencia a comunicação entre frontend e backend.")
-
-    Container(test_manager, "Gerenciador de Testes", "Python", "Gerencia casos de teste, configurações e interações com o executor.")
-    Container(test_executor, "Executor de Testes", "Python", "Executa testes FHIR utilizando validator_cli.")
-    Container(result_compiler, "Compilador de Resultados", "Python", "Gera relatórios comparando saídas esperadas e reais.")
-    ContainerDb(data_storage, "Banco de dados", "", "Guarda resultados de testes e configurações.")
+Container_Boundary(fut_system, "Sistema FUT") {
+    Container(gui, "Interface Gráfica", "Streamlit", "Dashboard e formulários para gerenciar testes e visualizar resultados")
+    Container(cli, "Interface CLI", "Python Terminal", "Interface de linha de comando para execução direta de testes")
+    
+    Container(core_system, "Sistema Central", "Python", "Coordena execução de testes, gerencia configurações e processa resultados")
+    
+    ContainerDb(config_files, "Arquivos de Configuração", "YAML/JSON", "Schemas, configurações do sistema e definições de teste")
 }
 
-' Sistemas externos
-System_Ext(fhir_validator, "Validador FHIR", "Ferramenta externa para validação de conformidade FHIR.")
+System_Ext(fhir_validator, "FHIR Validator CLI", "Validador oficial FHIR para conformidade de instâncias")
 
-' Relações entre containers
-Rel(user, gui, "Gerencia casos de teste e visualiza relatórios")
-Rel(user, cli, "Executa testes diretamente via terminal")
-Rel(gui, interface_layer, "Interage com backend")
-Rel(cli, interface_layer, "Executa comandos via backend")
-Rel(interface_layer, test_manager, "Gerencia e organiza casos de teste")
-Rel(test_manager, result_compiler, "Compila relatórios e processa saídas")
-Rel(test_executor, fhir_validator, "Executa validações FHIR via validator_cli")
-Rel(test_manager, data_storage, "Salva e consulta resultados")
-Rel(test_manager, test_executor, "Orquestra e inicia execução de testes")
+Rel(user, gui, "Gerencia testes e visualiza dashboards")
+Rel(user, cli, "Executa comandos de teste")
+
+Rel(gui, core_system, "Solicita execução de testes e dados")
+Rel(cli, core_system, "Executa testes via fachada")
+
+Rel(core_system, config_files, "Lê configurações e schemas")
+Rel(core_system, fhir_validator, "Executa validações")
 @enduml
