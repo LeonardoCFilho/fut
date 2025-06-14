@@ -3,6 +3,7 @@ from Backend.Classes.validador_arquivo import ValidadorArquivo
 from Backend.Classes.configurador_validator import ConfiguradorValidator
 from pathlib import Path
 import logging
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,8 @@ class GestorCaminho:
     SCHEMA_CONFIGURACOES = "schema_configuracoes.json"
     SCHEMA_FILE_YAML = "schema_arquivo_de_teste.json"
     ARQUIVOS_DIR = "Arquivos"
-
+    PASTA_FRONTEND = "Frontend"
+    SCRIPT_FRONTEND = "app.py"
 
     def __init__(self, path_fut: Path, controlador_configuracao: ControladorConfiguracao = None):
         """
@@ -28,6 +30,7 @@ class GestorCaminho:
         """
         self.path_fut = path_fut
         self._criar_paths()
+        self._criar_venv_path()
         self._validar_arquivos()
         self._inicializar_componentes(controlador_configuracao)
 
@@ -53,6 +56,8 @@ class GestorCaminho:
             'raiz': self.path_fut,
             'settings': self.path_settings,
             'arquivos': self.path_arquivos,
+            'script_frontend': self.path_script_frontend,
+            'venv': self.path_venv  
         }
         
         if path_desejado not in paths:
@@ -67,6 +72,15 @@ class GestorCaminho:
         self.path_settings = self.path_arquivos / self.SETTINGS_FILE
         self.path_schema_configuracoes = self.path_arquivos / self.SCHEMA_CONFIGURACOES
         self.path_schema_yaml = self.path_arquivos / self.SCHEMA_FILE_YAML
+        self.path_script_frontend = self.path_fut / self.SCRIPT_FRONTEND
+
+
+    def _criar_venv_path(self):
+        """Cria o path para o ambiente virtual de acordo com o OS"""
+        if sys.platform == "win32":
+            self.path_venv = self.path_fut / "venv-fut" / "Scripts" / "activate.bat"
+        else:
+            self.path_venv = self.path_fut / "venv-fut" / "bin" / "activate"
 
 
     def _validar_arquivos(self):
