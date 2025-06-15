@@ -26,7 +26,8 @@ def render():
         'conteudo_arquivo': None,
         'confirmar_delete': False,
         'editando': False,
-        'show_raw': False
+        'show_raw': False,
+        'arquivos': []
     }
     
     for key, value in session_defaults.items():
@@ -50,53 +51,95 @@ def render():
             "Caminho": str(file_path)
         }
 
-    # Seção de listagem de arquivos
+    def carregar_arquivos():
+        caminho_arquivos = caminho_projeto / 'Arquivos' / '.temp-fut'
+        arquivos = []
+        
+        try:
+            if caminho_arquivos.exists():
+                arquivos = [caminho_arquivos/arq for arq in os.listdir(caminho_arquivos) 
+                            if arq.endswith(('.yaml', '.yml')) and (caminho_arquivos/arq).is_file()]
+        except Exception as e:
+            st.error(f"Erro ao acessar diretório: {str(e)}")
+        
+        st.session_state.arquivos = arquivos
+        return arquivos
+
+    # Carrega arquivos ou mostra opção de upload
+    arquivos = carregar_arquivos()
+    
+    if not arquivos:
+        st.warning("Nenhum arquivo YAML encontrado na pasta.")
+        
+        # Seção de upload com drag and drop
+        with st.container(border=True):
+            st.subheader("➕ Adicionar Arquivos YAML")
+            st.markdown("""
+            <div style="border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 5px;">
+                <p>Arraste e solte arquivos YAML aqui</p>
+                <p>ou</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            uploaded_file = st.file_uploader(
+                "Selecione arquivos YAML",
+                type=['yaml', 'yml'],
+                accept_multiple_files=True,
+                label_visibility="collapsed"
+            )
+            
+            if uploaded_file:
+                caminho_arquivos = caminho_projeto / 'Arquivos' / '.temp-fut'
+                caminho_arquivos.mkdir(parents=True, exist_ok=True)
+                
+                for file in uploaded_file:
+                    destino = caminho_arquivos / file.name
+                    try:
+                        with open(destino, 'wb') as f:
+                            f.write(file.getbuffer())
+                        st.success(f"Arquivo {file.name} salvo com sucesso!")
+                    except Exception as e:
+                        st.error(f"Erro ao salvar {file.name}: {str(e)}")
+                
+                st.rerun()
+        
+        return  # Encerra a renderização se não houver arquivos
+
+    # Seção de listagem de arquivos (se existirem arquivos)
     st.subheader("📋 Lista de Arquivos YAML")
     
-    caminho_arquivos = caminho_projeto / 'Arquivos' /'.temp-fut'
-    arquivos = []
-    
     try:
-        if caminho_arquivos.exists():
-            arquivos = [caminho_arquivos/arq for arq in os.listdir(caminho_arquivos) 
-                        if arq.endswith(('.yaml', '.yml')) and (caminho_arquivos/arq).is_file()]
-            
-            if not arquivos:
-                st.warning("Nenhum arquivo YAML encontrado na pasta.")
-                return
-            
-            # Criar DataFrame com informações dos arquivos
-            files_data = [get_file_info(f) for f in arquivos]
-            df = pd.DataFrame(files_data)
-            
-            # Exibir tabela interativa
-            st.dataframe(
-                df[['Nome', 'Tamanho (KB)', 'Modificado']],
-                hide_index=True,
-                use_container_width=True,
-                column_config={
-                    "Nome": "Arquivo",
-                    "Tamanho (KB)": st.column_config.NumberColumn(format="%.2f"),
-                    "Modificado": "Última Modificação"
-                }
-            )
-            
-            # Seleção de arquivo
-            arquivo_selecionado = st.selectbox(
-                "Selecione um arquivo para operar:",
-                df['Nome'].tolist(),
-                index=0,
-                key="select_arquivo"
-            )
-            
-            caminho_completo = caminho_arquivos / arquivo_selecionado
-        else:
-            st.warning("Pasta de arquivos YAML não encontrada")
-            return
+        # Criar DataFrame com informações dos arquivos
+        files_data = [get_file_info(f) for f in arquivos]
+        df = pd.DataFrame(files_data)
+        
+        # Exibir tabela interativa
+        st.dataframe(
+            df[['Nome', 'Tamanho (KB)', 'Modificado']],
+            hide_index=True,
+            use_container_width=True,
+            column_config={
+                "Nome": "Arquivo",
+                "Tamanho (KB)": st.column_config.NumberColumn(format="%.2f"),
+                "Modificado": "Última Modificação"
+            }
+        )
+        
+        # Seleção de arquivo
+        arquivo_selecionado = st.selectbox(
+            "Selecione um arquivo para operar:",
+            df['Nome'].tolist(),
+            index=0,
+            key="select_arquivo"
+        )
+        
+        caminho_completo = caminho_projeto / 'Arquivos' / '.temp-fut' / arquivo_selecionado
+        
     except Exception as e:
-        st.error(f"Erro ao carregar arquivos: {str(e)}")
+        st.error(f"Erro ao processar arquivos: {str(e)}")
         return
 
+    # [Restante do código permanece igual...]
     # Operações com arquivos
     st.subheader(f"🔧 Operações: {arquivo_selecionado}")
     col1, col2, col3, col4 = st.columns(4)
@@ -223,22 +266,28 @@ def render():
                     st.session_state.select_arquivo = arq
                     st.rerun()
 
-    # Upload de novos arquivos
-    st.subheader("⬆️ Enviar Novos Arquivos")
+    # Upload de novos arquivos (sempre visível)
+    st.subheader("⬆️ Adicionar Mais Arquivos")
     with st.form("upload-form", clear_on_submit=True):
         novo_arquivo = st.file_uploader(
-            "Selecione um arquivo YAML para upload",
+            "Selecione arquivos YAML para upload",
             type=['yaml', 'yml'],
+            accept_multiple_files=True,
             key="uploader"
         )
         
-        submitted = st.form_submit_button("Enviar Arquivo")
-        if submitted and novo_arquivo is not None:
-            destino = caminho_arquivos / novo_arquivo.name
-            try:
-                with open(destino, 'wb') as f:
-                    f.write(novo_arquivo.getbuffer())
-                st.success(f"Arquivo {novo_arquivo.name} salvo com sucesso!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Erro no upload: {str(e)}")
+        submitted = st.form_submit_button("Enviar Arquivos")
+        if submitted and novo_arquivo:
+            caminho_arquivos = caminho_projeto / 'Arquivos' / '.temp-fut'
+            caminho_arquivos.mkdir(parents=True, exist_ok=True)
+            
+            for file in novo_arquivo:
+                destino = caminho_arquivos / file.name
+                try:
+                    with open(destino, 'wb') as f:
+                        f.write(file.getbuffer())
+                    st.success(f"Arquivo {file.name} salvo com sucesso!")
+                except Exception as e:
+                    st.error(f"Erro ao salvar {file.name}: {str(e)}")
+            
+            st.rerun()
