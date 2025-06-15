@@ -15,7 +15,7 @@ def render():
     st.caption("Altere os parâmetros de execução dos testes de validação FHIR.")
 
     try:
-        # Instancia a fachada que centraliza a lógica de negócio
+        
         fachada = FachadaSistema()
     except Exception as e:
         st.error(f"Não foi possível inicializar o sistema de configuração: {e}")
@@ -23,7 +23,7 @@ def render():
         logger.error(f"Erro ao instanciar FachadaSistema: {e}")
         return
 
-    # --- CARREGAR CONFIGURAÇÕES INICIAIS ---
+    #  CARREGAR CONFIGURAÇÕES INICIAIS 
     # Usa a fachada para obter cada valor do settings.ini, com valores padrão em caso de falha.
     try:
         timeout_default = int(fachada.obter_configuracao("requests_timeout") or 60)
@@ -42,7 +42,7 @@ def render():
         path_validator_default = ""
 
 
-    # --- WIDGETS DA INTERFACE ---
+    # WIDGETS DA INTERFACE 
 
     st.subheader("Validador FHIR")
     
@@ -86,7 +86,8 @@ def render():
 
     st.divider()
 
-    # --- LÓGICA PARA SALVAR ---
+   #Salvando alterações
+   
     if st.button("Salvar Configurações", type="primary", use_container_width=True):
         
         # Define o valor do caminho do validador com base na seleção
