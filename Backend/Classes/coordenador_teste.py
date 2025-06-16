@@ -164,7 +164,7 @@ class CoordenadorTestes:
         
         try:
             self.servico_relatorio.criar_relatorio_completo(
-                resultados, versao_relatorio, tempo_execucao
+                resultados, versao_relatorio, tempo_execucao, self.gestor_caminho.return_path('csv')
             )
         except PermissionError as e:
             logger.error(f"Erro de permissão ao gerar relatório: {e}")

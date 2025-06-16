@@ -5,9 +5,9 @@ from copy import deepcopy
 from yaml import safe_load
 from shutil import rmtree
 import logging
+import csv
 logger = logging.getLogger(__name__)
 
-#TODO: aprenda a usar o logger e implemente -> info, wanning, error, fatal -> logger.info("{descrição}")
 class GeradorRelatorios: 
     chaves = {
         0: "caminho_yaml", # arquivo .yaml
@@ -184,8 +184,9 @@ class GeradorRelatorios:
         return relatorios
 
     # Função recebe os dados de compararResultados() e cria um relatório .json do caso de teste
-    def gerarRelatorioJson(self, tempo_execucao_total:float,):
+    def gerarRelatorioJson(self, tempo_execucao_total:float, caminho_csv: pathlib.Path):
         relatorios = self.gerarRelatorios(tempo_execucao_total=tempo_execucao_total)
+        self.adicionarCsv(caminho_csv, relatorios['relatorio_final'])
         json_valido = json.dumps(relatorios, indent=4, ensure_ascii=False)
 
         try:
@@ -196,6 +197,23 @@ class GeradorRelatorios:
             raise e
 
         rmtree(pathlib.Path().cwd() / '.temp-fut', ignore_errors=True)
+
+    # Função que adiciona o relatório final no csv
+    def adicionarCsv(self,caminho_csv: pathlib.Path, relatorio_final: dict):
+        try:
+            fieldnames = relatorio_final.keys()
+
+            with open(caminho_csv, 'a', newline='', encoding='utf-8') as arquivo:
+                escritor = csv.DictWriter(arquivo, fieldnames=fieldnames)
+
+                if arquivo.tell() == 0:  # Verifica se o arquivo está vazio, e não se existe
+                    logger.debug("Criando csv")
+                    escritor.writeheader()
+
+                escritor.writerow(relatorio_final)
+                logger.info("Adicionando informação no csv")
+        except Exception as e:
+            logger.error(f"{e}")
 
     @classmethod
     def modificarChaves(cls, novas_chaves:dict):

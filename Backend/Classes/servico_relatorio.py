@@ -1,4 +1,5 @@
 from Backend.Classes.gerador_relatorio import GeradorRelatorios
+import pathlib
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ class ServicoRelatorio:
         pass
     
 
-    def criar_relatorio_completo(self, resultados_validacao: list, versao_relatorio: str, tempo_execucao: float):
+    def criar_relatorio_completo(self, resultados_validacao: list, versao_relatorio: str, tempo_execucao: float, path_csv: pathlib.Path):
         """
         Cria relatório completo com base nos resultados da validação
         
@@ -28,7 +29,7 @@ class ServicoRelatorio:
             gerador_relatorio = GeradorRelatorios(resultados_validacao)
             
             # Sempre gerar o JSON
-            gerador_relatorio.gerarRelatorioJson(tempo_execucao_total=tempo_execucao)
+            gerador_relatorio.gerarRelatorioJson(tempo_execucao, path_csv)
             
             # Gerar o relatório legível (HTML)
             #if versao_relatorio.lower() == "html":

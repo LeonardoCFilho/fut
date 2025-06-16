@@ -14,6 +14,7 @@ class GestorCaminho:
 
     # Constantes
     SETTINGS_FILE = "settings.ini"
+    CSV_TESTES = "historico.csv"
     SCHEMA_CONFIGURACOES = "schema_configuracoes.json"
     SCHEMA_FILE_YAML = "schema_arquivo_de_teste.json"
     ARQUIVOS_DIR = "Arquivos"
@@ -49,6 +50,7 @@ class GestorCaminho:
             KeyError: Se o path solicitado não for encontrado
         """
         paths = {
+            'csv': self.path_csv,
             'validator': self.path_validator,
             'schema_configuracoes': self.path_schema_configuracoes,
             'schema_yaml': self.path_schema_yaml,
@@ -69,6 +71,7 @@ class GestorCaminho:
     def _criar_paths(self):
         """Cria todos os caminhos básicos do projeto"""
         self.path_arquivos = self.path_fut / self.ARQUIVOS_DIR
+        self.path_csv = self.path_arquivos / self.CSV_TESTES
         self.path_settings = self.path_arquivos / self.SETTINGS_FILE
         self.path_schema_configuracoes = self.path_arquivos / self.SCHEMA_CONFIGURACOES
         self.path_schema_yaml = self.path_arquivos / self.SCHEMA_FILE_YAML
