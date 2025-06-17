@@ -229,6 +229,31 @@ class FachadaSistema:
 
     # === MÉTODOS DE ENDEREÇAMENTO ===
     
+
+    def _pasta_fut(self, path_atual: Path) -> bool:
+        if not path_atual.is_dir():
+            return False 
+    
+        lista_paths_relevantes = [
+            "Arquivos",  # Pasta relevante
+            "Backend",   # Pasta relevante
+            "Frontend",  # Pasta relevante
+            "fut.py",    # Nossa main
+            "app.py",    # Streamlit
+        ]
+
+        # Pegar tudo
+        enderecos_na_pasta = list(path_atual.iterdir())
+
+        # Contar quantos deles estão na pasta atual
+        contador = 0
+        for item in enderecos_na_pasta:
+            if item.name in lista_paths_relevantes:
+                contador+=1
+        
+        return contador == len(lista_paths_relevantes) 
+
+
     @classmethod
     def acharCaminhoProjeto(cls) -> Path:
         """
@@ -245,7 +270,7 @@ class FachadaSistema:
         path_fut = Path(__file__).resolve()
         
         while num_iteracoes < max_iteracoes:
-            if "fut" in path_fut.name.lower():
+            if cls._pasta_fut(cls, path_fut):
                 return path_fut
             path_fut = path_fut.parent
             num_iteracoes += 1

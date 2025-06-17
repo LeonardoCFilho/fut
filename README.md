@@ -6,26 +6,44 @@ Repositório para o trabalho de Construção de Software, utilizando o padrão F
 Os comandos descritos estão sendo **executados na pasta principal do projeto** (fut ou fut-main):  
 Caso esteja em outro diretório, utilize **endereçamento relativo ou absoluto** para executar o arquivo main.py.
 
-### Ambiente virtual
-O ambiente virtual é necessário para execução até a criação do executável.  
-Para evitar problemas de compatibilidade entre sistema operacionais, é necessário que o ambiente virtual seja criado na máquina de execução.  
-Para fazer isso basta executar o código setup.py e as bibliotecas serão instaladas.  
-O ambiente virtual será criado na pasta fut, e terá o nome 'venv-fut'.  
+## Primeira execução:
+### 1. Baixe o codigo
+- Ou instale o .zip do codigo e o extrai. ([Encontrado aqui](https://github.com/LeonardoCFilho/fut/archive/refs/heads/main.zip))
+- Ou faça um clone do diretorio, via:
+  ```bash
+  git clone LeonardoCFilho/fut
+  ```
+
+### 2. Abra o projeto no terminal
+  ```bash
+  cd fut-main
+  ```
+
+### 3. Realize a instalação do docker
+- Windows
+  ```bash
+  install.bat
+  ```
+- Linux/MacOS  
+  ```bash
+  ./install.sh
+  ```
+
+E com isso a instalação será concluída
 
 ### Execução do programa
-**Garanta que o ambiente virtual esteja ativado antes da execução**
 - Linux  
   ```bash  
-  python3 main.py  
+  fut  
   ```
 - Windows  
   ```bash  
-  python main.py  
+  fut  
   ```
 Adicione '--help' após main.py para mais detalhes quanto o sistema
 Exemplo:  
   ```bash  
-  python main.py --help
+  fut --help
   ```
 
 ### **Importante**
