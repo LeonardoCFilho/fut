@@ -285,7 +285,7 @@ class GerenciadorValidator:
             raise e
         
 
-    def validar_arquivo_fhir(self, arquivo_validar: Path, pasta_relatorio: Path, tempo_timeout: int, argumentos_extras: str = None) -> list:
+    def validar_arquivo_fhir(self, arquivo_validar: Path, pasta_relatorio: Path, num_teste:int, tempo_timeout: int, argumentos_extras: str = None) -> list:
         """
         Executa validação do arquivo FHIR usando validator_cli.jar
         
@@ -312,11 +312,11 @@ class GerenciadorValidator:
                 logger.warning(f"Arquivo não encontrado: {arquivo_validar}")
                 raise FileNotFoundError(f"Arquivo de entrada não encontrado: {arquivo_validar}")
 
-            nome_relatorio = arquivo_validar.with_suffix(".json").name
+            nome_relatorio = f"{arquivo_validar.stem}_{str(num_teste)}.json"
             caminho_relatorio = pasta_relatorio / nome_relatorio
             
             comando = [
-                "java", "-jar", str(self.caminho_validador.resolve()),
+                "java", '-Dfile.encoding=UTF-8', "-jar", str(self.caminho_validador.resolve()),
                 str(arquivo_validar.resolve()),
                 "-output", str(caminho_relatorio.resolve()),
                 "-version", "4.0.1"
@@ -333,6 +333,7 @@ class GerenciadorValidator:
                 timeout=tempo_timeout
             )
             fim = time.time()
+            #print(resultado.returncode)
 
             # Criar relatório manual se não foi gerado
             if not caminho_relatorio.exists():

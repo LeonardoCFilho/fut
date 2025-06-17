@@ -172,6 +172,15 @@ resultados_esperados:  #  (Obrigatório) Define os resultados esperados de valid
       esperado: True # Resultado esperado (Booleano)
 ```
 
+Enquanto uma suite de testes seguiria a seguinte estrutura:  
+```yaml  
+suite_name: "FHIR Validation Suite"  
+tests:
+  - {YAML seguindo a estrutura acima}  
+  ...  
+  - {YAML seguindo a estrutura acima}  
+```
+
 **Regras para caminho_instancia:**
 - Se `caminho_instancia` é fornecida, indica a instância a ser verificada.
 - **Convenção:** Se o arquivo em `caminho_instancia` não for encontrado, a ferramenta irá procurar por:

@@ -1,12 +1,12 @@
 # Não enviar o validator_cli (grande demais)
-**/validator_cli.jar
+Arquivos/validator_cli.jar
 # Ambiente virtual é criado na máquina do usuário (garantir compatibilidade)
-.venv-fut
-venv-fut
-venv
+*venv*
 # Arquivos de upload desnecessário (Criados durante execução)
 **/__pycache__
-# Arquivo de backup
+# Arquivo de backup/teste
 **/OLD*.*
 # Criado a cada iteração do programa
-**/fut*.log
+Arquivos/fut*.log
+# Criado no computador de usuario de acordo com os usos
+historico.csv

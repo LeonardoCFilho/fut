@@ -156,7 +156,7 @@ class FachadaSistema:
 
         Raises:
             ValueError: Lista de testes vazia ou argumentos inválidos
-            FileNotFoundError: Schema do ExecutorTeste não encontrado
+            FileNotFoundError: Schema do Teste não encontrado
             PermissionError: Sem permissão para escrever relatório
         """
         self._validar_argumentos_teste(args, tipo_relatorio)
@@ -188,7 +188,7 @@ class FachadaSistema:
 
         Raises:
             ValueError: Lista de testes vazia ou argumentos inválidos
-            FileNotFoundError: Schema do ExecutorTeste não encontrado
+            FileNotFoundError: Schema do Teste não encontrado
             PermissionError: Sem permissão para escrever relatório
         """
         self._validar_argumentos_teste(args, tipo_relatorio)
