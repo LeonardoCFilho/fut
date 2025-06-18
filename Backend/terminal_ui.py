@@ -65,32 +65,63 @@ class TerminalUI:
 
 
     def _mostrar_interface_grafica(self):
-        """Inicia a execução do streamlit."""
-        script_frontend = str(self.fachada.obter_caminho('script_frontend'))
-        caminho_venv = self.fachada.obter_caminho('venv')
+        """Inicia a execução do streamlit - versão compatível com Docker."""
+        import os
 
-        if sys.platform == 'win32':
-            # Windows
-            if caminho_venv.exists():
-                # With virtual environment on Windows
-                venv_activate = str(caminho_venv)
-                comando = f'{venv_activate} && streamlit run "{script_frontend}"'
-                resultado = subprocess.run(comando, shell=True)
-            else:
-                # Without virtual environment on Windows
-                comando = ["streamlit", "run", script_frontend]
+        # Get the frontend script path
+        script_frontend = str(self.fachada.obter_caminho('script_frontend'))
+
+        # Check if we're running in Docker
+        is_docker = os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER') == 'true'
+
+        if is_docker:
+            # Docker environment - run streamlit directly
+            print("Starting Streamlit in Docker environment...")
+            print("Web interface will be available at: http://localhost:8501")
+
+            # Set Streamlit configuration for Docker
+            os.environ['STREAMLIT_SERVER_PORT'] = '8501'
+            os.environ['STREAMLIT_SERVER_ADDRESS'] = '0.0.0.0'
+            os.environ['STREAMLIT_SERVER_HEADLESS'] = 'true'
+            os.environ['STREAMLIT_BROWSER_GATHER_USAGE_STATS'] = 'false'
+
+            # Run streamlit directly
+            comando = ["streamlit", "run", script_frontend, 
+                      "--server.port", "8501", 
+                      "--server.address", "0.0.0.0",
+                      "--server.headless", "true"]
+
+            try:
                 resultado = subprocess.run(comando)
+            except KeyboardInterrupt:
+                print("\nShutting down Streamlit server...")
+                sys.exit(0)
         else:
-            # Linux/Unix
-            if caminho_venv.exists():
-                # With virtual environment on Linux
-                venv_activate = f"source {str(caminho_venv)}"
-                comando = f'{venv_activate} && streamlit run "{script_frontend}"'
-                resultado = subprocess.run(["bash", "-c", comando])
+            # Original logic for non-Docker environments
+            caminho_venv = self.fachada.obter_caminho('venv')
+
+            if sys.platform == 'win32':
+                # Windows
+                if caminho_venv.exists():
+                    # With virtual environment on Windows
+                    venv_activate = str(caminho_venv)
+                    comando = f'{venv_activate} && streamlit run "{script_frontend}"'
+                    resultado = subprocess.run(comando, shell=True)
+                else:
+                    # Without virtual environment on Windows
+                    comando = ["streamlit", "run", script_frontend]
+                    resultado = subprocess.run(comando)
             else:
-                # Without virtual environment on Linux
-                comando = ["streamlit", "run", script_frontend]
-                resultado = subprocess.run(comando)
+                # Linux/Unix
+                if caminho_venv.exists():
+                    # With virtual environment on Linux
+                    venv_activate = f"source {str(caminho_venv)}"
+                    comando = f'{venv_activate} && streamlit run "{script_frontend}"'
+                    resultado = subprocess.run(["bash", "-c", comando])
+                else:
+                    # Without virtual environment on Linux
+                    comando = ["streamlit", "run", script_frontend]
+                    resultado = subprocess.run(comando)
 
 
     def _criar_template(self):
