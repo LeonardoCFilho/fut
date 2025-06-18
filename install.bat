@@ -1,134 +1,41 @@
 @echo off
 setlocal enabledelayedexpansion
 
-echo === FUT Application Docker Installer ===
-echo.
-
-REM Check if running as administrator
-net session >nul 2>&1
-if %errorlevel% equ 0 (
-    set "IS_ADMIN=true"
-    echo Running with administrator privileges
-) else (
-    set "IS_ADMIN=false"
-    echo Running without administrator privileges
-)
-echo.
-
-REM Check if Docker is installed
-docker --version >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Error: Docker is not installed or not in PATH
-    echo Please install Docker Desktop first: https://docs.docker.com/desktop/windows/
-    pause
-    exit /b 1
-)
-
-REM Check if Docker daemon is running
-docker info >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Error: Docker daemon is not running
-    echo Please start Docker Desktop and try again
-    pause
-    exit /b 1
-)
-
-REM Build the Docker image
-echo Building fut application...
-docker build -t fut-app .
-if %errorlevel% neq 0 (
-    echo Error: Failed to build Docker image
-    pause
-    exit /b 1
-)
-
-REM Create the wrapper script
-echo Installing fut command...
-
-REM Define possible installation directories
-set "SYSTEM_DIR=C:\Windows\System32"
-set "USER_DIR=%USERPROFILE%\AppData\Local\Microsoft\WindowsApps"
-set "LOCAL_DIR=%LOCALAPPDATA%\Programs"
-
-REM Create the batch file content
-(
-echo @echo off
-echo setlocal
-echo.
-echo if "%%~1"=="gui" ^(
-echo     echo Starting GUI mode...
-echo     echo Web interface will be available at: http://localhost:8501
-echo     echo Press Ctrl+C to stop the server
-echo     echo.
-echo     docker run --rm -it -p 8501:8501 fut-app gui
-echo ^) else ^(
-echo     docker run --rm -it fut-app %%*
-echo ^)
-) > fut.bat
-
-REM Try installation based on privileges
-set "INSTALLED=false"
-
-if "!IS_ADMIN!"=="true" (
-    REM Try system directory first if admin
-    copy fut.bat "%SYSTEM_DIR%\fut.bat" >nul 2>&1
-    if !errorlevel! equ 0 (
-        echo Command installed to %SYSTEM_DIR%\fut.bat ^(system-wide^)
-        set "INSTALLED=true"
-    )
-)
-
-if "!INSTALLED!"=="false" (
-    REM Try WindowsApps directory ^(user-specific, no admin needed^)
-    if not exist "%USER_DIR%" mkdir "%USER_DIR%" >nul 2>&1
-    copy fut.bat "%USER_DIR%\fut.bat" >nul 2>&1
-    if !errorlevel! equ 0 (
-        echo Command installed to %USER_DIR%\fut.bat ^(user-specific^)
-        set "INSTALLED=true"
-    )
-)
-
-if "!INSTALLED!"=="false" (
-    REM Try local programs directory
-    if not exist "%LOCAL_DIR%" mkdir "%LOCAL_DIR%" >nul 2>&1
-    copy fut.bat "%LOCAL_DIR%\fut.bat" >nul 2>&1
-    if !errorlevel! equ 0 (
-        echo Command installed to %LOCAL_DIR%\fut.bat ^(user-specific^)
-        echo Note: You may need to add %LOCAL_DIR% to your PATH
-        set "INSTALLED=true"
-    )
-)
-
-if "!INSTALLED!"=="false" (
-    REM Fallback: leave in current directory
-    echo Warning: Could not install to standard directories
-    echo The fut.bat file has been created in the current directory
-    echo You can either:
-    echo   1. Run "fut" from this directory
-    echo   2. Manually copy fut.bat to a directory in your PATH
-    echo   3. Add this directory to your PATH
-    set "INSTALLED=partial"
-)
-
-if "!INSTALLED!"=="true" (
-    REM Clean up local copy
-    del fut.bat >nul 2>&1
+REM Check if the first argument is 'gui'
+if "%1"=="gui" (
+    echo Starting GUI mode...
+    echo Web interface will be available at: http://localhost:8501
+    echo Press Ctrl+C to stop the server
+    echo.
     
+    REM Stop any existing containers using port 8501
+    echo Checking for existing containers on port 8501...
+    for /f "tokens=*" %%i in ('docker ps -q --filter "publish=8501" 2^>nul') do (
+        set "existing_containers=%%i"
+    )
+    
+    if defined existing_containers (
+        echo Stopping existing containers: !existing_containers!
+        docker stop !existing_containers!
+        docker rm !existing_containers!
+        timeout /t 2 /nobreak >nul
+    )
+    
+    REM Generate timestamp for container name
+    for /f "tokens=2 delims==" %%i in ('wmic OS Get localdatetime /value') do set "dt=%%i"
+    set "timestamp=%dt:~0,8%-%dt:~8,6%"
+    set "container_name=fut-gui-%timestamp%"
+    
+    REM Start container with explicit port mapping
+    echo Starting container with command:
+    echo docker run --rm --name !container_name! -p 8501:8501 fut-app gui
     echo.
-    echo Installation complete!
-    echo.
-    echo Usage:
-    echo   fut --help          # Show help
-    echo   fut gui            # Start web interface at http://localhost:8501
-    echo   fut template       # Create template  
-    echo   fut configuracoes  # Configuration menu
-    echo   fut ^<other-args^>   # Run other commands
-    echo.
-    echo Note: You may need to restart Command Prompt for the command to be recognized
+    
+    REM Run the container
+    docker run --rm --name "!container_name!" -p 8501:8501 fut-app gui
+    
 ) else (
-    echo.
-    echo Installation completed with warnings - see messages above
+    REM For all other commands, run normally
+    echo Running command: docker run --rm -it fut-app %*
+    docker run --rm -it fut-app %*
 )
-
-echo.
-pause
