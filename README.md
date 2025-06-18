@@ -26,7 +26,7 @@ Caso esteja em outro diretório, utilize **endereçamento relativo ou absoluto**
   ```
 - Linux/MacOS  
   ```bash
-  ./install.sh
+  chmod +x install.sh && ./install.sh
   ```
 
 E com isso a instalação será concluída

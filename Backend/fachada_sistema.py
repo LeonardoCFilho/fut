@@ -231,6 +231,7 @@ class FachadaSistema:
     
 
     def _pasta_fut(self, path_atual: Path) -> bool:
+        # Caso de erro
         if not path_atual.is_dir():
             return False 
     
@@ -267,7 +268,7 @@ class FachadaSistema:
         """
         max_iteracoes = 10
         num_iteracoes = 0
-        path_fut = Path(__file__).resolve()
+        path_fut = Path(__file__).resolve().parent
         
         while num_iteracoes < max_iteracoes:
             if cls._pasta_fut(cls, path_fut):

@@ -66,21 +66,31 @@ class TerminalUI:
 
     def _mostrar_interface_grafica(self):
         """Inicia a execução do streamlit."""
-        # Criar o comando do ambiente virtual
+        script_frontend = str(self.fachada.obter_caminho('script_frontend'))
         caminho_venv = self.fachada.obter_caminho('venv')
+
         if sys.platform == 'win32':
-            comando = [
-            str(caminho_venv),
-            "&&", "streamlit", "run", str(self.fachada.obter_caminho('script_frontend'))
-        ]
+            # Windows
+            if caminho_venv.exists():
+                # With virtual environment on Windows
+                venv_activate = str(caminho_venv)
+                comando = f'{venv_activate} && streamlit run "{script_frontend}"'
+                resultado = subprocess.run(comando, shell=True)
+            else:
+                # Without virtual environment on Windows
+                comando = ["streamlit", "run", script_frontend]
+                resultado = subprocess.run(comando)
         else:
-            comando = [
-                "bash", "-i", "-c", f"source {str(caminho_venv)} && streamlit run {str(self.fachada.obter_caminho('script_frontend'))}"
-            ]
-        comando += [
-            "&&", "streamlit", "run", self.fachada.obter_caminho('script_frontend')
-        ]
-        resultado = subprocess.run(comando)
+            # Linux/Unix
+            if caminho_venv.exists():
+                # With virtual environment on Linux
+                venv_activate = f"source {str(caminho_venv)}"
+                comando = f'{venv_activate} && streamlit run "{script_frontend}"'
+                resultado = subprocess.run(["bash", "-c", comando])
+            else:
+                # Without virtual environment on Linux
+                comando = ["streamlit", "run", script_frontend]
+                resultado = subprocess.run(comando)
 
 
     def _criar_template(self):
