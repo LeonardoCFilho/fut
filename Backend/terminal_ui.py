@@ -70,7 +70,6 @@ class TerminalUI:
         import os
         import sys
         import subprocess
-        from pathlib import Path
 
         # Get the frontend script path
         script_frontend = self.fachada.obter_caminho('script_frontend')
@@ -233,34 +232,38 @@ class TerminalUI:
                 print(f"Erro inesperado ao iniciar Streamlit: {e}")
                 logger.error(f"Erro inesperado ao iniciar Streamlit: {e}")
         else:
-            # Direct Python execution - check for virtual environment
-            print("Starting Streamlit from Python environment...")
-            print("Web interface will be available at: http://localhost:8501")
-            
-            caminho_venv = self.fachada.obter_caminho('venv')
+            try:
+                # Direct Python execution - check for virtual environment
+                print("Starting Streamlit from Python environment...")
+                print("Web interface will be available at: http://localhost:8501")
 
-            if sys.platform == 'win32':
-                # Windows
-                if caminho_venv and caminho_venv.exists():
-                    # With virtual environment on Windows
-                    venv_activate = str(caminho_venv)
-                    comando = f'{venv_activate} && streamlit run "{script_frontend}"'
-                    resultado = subprocess.run(comando, shell=True)
+                caminho_venv = self.fachada.obter_caminho('venv')
+
+                if sys.platform == 'win32':
+                    # Windows
+                    if caminho_venv and caminho_venv.exists():
+                        # With virtual environment on Windows
+                        venv_activate = str(caminho_venv)
+                        comando = f'{venv_activate} && streamlit run "{script_frontend}"'
+                        resultado = subprocess.run(comando, shell=True)
+                    else:
+                        # Without virtual environment on Windows
+                        comando = ["streamlit", "run", str(script_frontend)]
+                        resultado = subprocess.run(comando)
                 else:
-                    # Without virtual environment on Windows
-                    comando = ["streamlit", "run", str(script_frontend)]
-                    resultado = subprocess.run(comando)
-            else:
-                # Linux/Unix
-                if caminho_venv and caminho_venv.exists():
-                    # With virtual environment on Linux
-                    venv_activate = f"source {str(caminho_venv)}"
-                    comando = f'{venv_activate} && streamlit run "{script_frontend}"'
-                    resultado = subprocess.run(["bash", "-c", comando])
-                else:
-                    # Without virtual environment on Linux
-                    comando = ["streamlit", "run", str(script_frontend)]
-                    resultado = subprocess.run(comando)
+                    # Linux/Unix
+                    if caminho_venv and caminho_venv.exists():
+                        # With virtual environment on Linux
+                        venv_activate = f"source {str(caminho_venv)}"
+                        comando = f'{venv_activate} && streamlit run "{script_frontend}"'
+                        resultado = subprocess.run(["bash", "-c", comando])
+                    else:
+                        # Without virtual environment on Linux
+                        comando = ["streamlit", "run", str(script_frontend)]
+                        resultado = subprocess.run(comando)
+            except KeyboardInterrupt:
+                print("Fechando a GUI...")
+                sys.exit(0)
 
 
     def _criar_template(self):
