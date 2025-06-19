@@ -13,4 +13,4 @@ historico.csv
 # Ignorando os arquivos do pyintaller
 build/
 dist/
-fut.spec
+*.spec
