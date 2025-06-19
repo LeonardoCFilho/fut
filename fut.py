@@ -25,8 +25,9 @@ def organizarLogs(pathLog: Path):
 
 if __name__ == "__main__":
     # Caminhos utilizados no nosso projeto
-    path_fut = FachadaSistema.acharCaminhoProjeto()
-    pathLog  = path_fut / 'Arquivos' / 'fut_1.log'
+    path_arquivos = FachadaSistema().obter_caminho('arquivos')
+    print(path_arquivos)
+    pathLog  = path_arquivos / 'fut_1.log'
 
     # Logs
     organizarLogs(pathLog) # Garantir que a execução atual terá log próprio

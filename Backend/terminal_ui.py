@@ -2,6 +2,7 @@ from Backend.dialogos_sistema import DialogosSistema
 from Backend.fachada_sistema import FachadaSistema
 import subprocess
 import threading
+import streamlit
 import logging
 import time
 import sys
@@ -65,62 +66,200 @@ class TerminalUI:
 
 
     def _mostrar_interface_grafica(self):
-        """Inicia a execução do streamlit - versão compatível com Docker."""
+        """Inicia a execução do streamlit - versão para PyInstaller e execução direta via Python."""
         import os
+        import sys
+        import subprocess
+        from pathlib import Path
 
         # Get the frontend script path
-        script_frontend = str(self.fachada.obter_caminho('script_frontend'))
+        script_frontend = self.fachada.obter_caminho('script_frontend')
+        print(self.fachada.obter_caminho('raiz'))
+        print(script_frontend, script_frontend.exists())
 
-        # Check if we're running in Docker
-        is_docker = os.path.exists('/.dockerenv') or os.environ.get('DOCKER_CONTAINER') == 'true'
+        # Check if running as PyInstaller executable
+        is_frozen = getattr(sys, 'frozen', False)
 
-        if is_docker:
-            # Docker environment - run streamlit directly
-            print("Starting Streamlit in Docker environment...")
+        if is_frozen:
+            # PyInstaller executable
+            print("Starting Streamlit from PyInstaller executable...")
             print("Web interface will be available at: http://localhost:8501")
-
-            # Set Streamlit configuration for Docker
+            
+            # Set Streamlit configuration via environment variables
             os.environ['STREAMLIT_SERVER_PORT'] = '8501'
-            os.environ['STREAMLIT_SERVER_ADDRESS'] = '0.0.0.0'
+            os.environ['STREAMLIT_SERVER_ADDRESS'] = '127.0.0.1'
             os.environ['STREAMLIT_SERVER_HEADLESS'] = 'true'
             os.environ['STREAMLIT_BROWSER_GATHER_USAGE_STATS'] = 'false'
-
-            # Run streamlit directly
-            comando = ["streamlit", "run", script_frontend, 
-                      "--server.port", "8501", 
-                      "--server.address", "0.0.0.0",
-                      "--server.headless", "true"]
-
+            os.environ['STREAMLIT_LOGGER_LEVEL'] = 'error'
+            
             try:
-                resultado = subprocess.run(comando)
+                # Method 1: Direct Streamlit bootstrap (most reliable for PyInstaller)
+                try:
+                    print("Attempting to start Streamlit server directly...")
+                    
+                    import streamlit.web.bootstrap as bootstrap
+                    from streamlit import config
+                    import click
+                    
+                    # Set configuration options before starting
+                    config.set_option('server.port', 8501)
+                    config.set_option('server.address', '127.0.0.1')
+                    config.set_option('server.headless', True)
+                    config.set_option('browser.gatherUsageStats', False)
+                    config.set_option('logger.level', 'error')
+                    config.set_option('server.enableCORS', False)
+                    config.set_option('server.enableXsrfProtection', False)
+                    
+                    # Create a click context for streamlit
+                    @click.command()
+                    @click.argument('target', required=True)
+                    @click.option('--server.port', default=8501)
+                    @click.option('--server.address', default='127.0.0.1')
+                    @click.option('--server.headless', default=True)
+                    @click.option('--browser.gatherUsageStats', default=False)
+                    def run_streamlit(target, **kwargs):
+                        bootstrap.run(target, '', [], {})
+                    
+                    # Use click context
+                    with click.Context(run_streamlit) as ctx:
+                        ctx.params = {
+                            'target': str(script_frontend),
+                            'server.port': 8501,
+                            'server.address': '127.0.0.1',
+                            'server.headless': True,
+                            'browser.gatherUsageStats': False
+                        }
+                        bootstrap.run(str(script_frontend), '', [], {})
+                    
+                except Exception as e:
+                    print(f"Method 1 (bootstrap with context) failed: {e}")
+                    
+                    # Method 2: Try direct bootstrap without click context
+                    try:
+                        print("Attempting direct bootstrap...")
+                        import streamlit.web.bootstrap as bootstrap
+                        from streamlit import config
+                        import os
+                        
+                        # Verify the script exists and is readable
+                        if not script_frontend.exists():
+                            raise FileNotFoundError(f"Frontend script not found: {script_frontend}")
+                        
+                        print(f"Frontend script path: {script_frontend}")
+                        print(f"Frontend script exists: {script_frontend.exists()}")
+                        
+                        # Set configuration
+                        config.set_option('server.port', 8501)
+                        config.set_option('server.address', '127.0.0.1')
+                        config.set_option('server.headless', True)
+                        config.set_option('browser.gatherUsageStats', False)
+                        config.set_option('server.enableCORS', False)
+                        config.set_option('server.enableXsrfProtection', False)
+                        config.set_option('server.runOnSave', False)
+                        config.set_option('server.allowRunOnSave', False)
+                        
+                        # Also set browser config to prevent wrong URL display
+                        config.set_option('browser.serverAddress', '127.0.0.1')
+                        config.set_option('browser.serverPort', 8501)
+                        
+                        # Print the correct URL before starting
+                        print("Streamlit server starting...")
+                        print("You can now view your Streamlit app in your browser:")
+                        print("  Local URL: http://127.0.0.1:8501")
+                        print("  Network URL: http://127.0.0.1:8501")
+                        print(f"Loading script: {script_frontend}")
+                        
+                        # Start bootstrap directly with proper arguments
+                        # bootstrap.run(script_path, command_line_args, prog_name, prog_args)
+                        bootstrap.run(
+                            str(script_frontend), 
+                            'run',  # command ('run' instead of empty string)
+                            [],     # args (empty list)
+                            {}      # flag_options (empty dict)
+                        )
+                        
+                    except Exception as e:
+                        print(f"Method 2 (direct bootstrap) failed: {e}")
+                        import traceback
+                        print("Traceback:")
+                        traceback.print_exc()
+                        
+                        # Method 3: Try using streamlit main module
+                        try:
+                            print("Attempting streamlit main module...")
+                            import streamlit.__main__ as st_main
+                            
+                            # Backup original argv
+                            original_argv = sys.argv.copy()
+                            
+                            # Set argv for streamlit
+                            sys.argv = ['streamlit', 'run', str(script_frontend), 
+                                    '--server.port', '8501',
+                                    '--server.address', '127.0.0.1',
+                                    '--server.headless', 'true',
+                                    '--browser.gatherUsageStats', 'false',
+                                    '--server.enableCORS', 'false',
+                                    '--server.enableXsrfProtection', 'false']
+                            
+                            # Call streamlit main
+                            st_main.main()
+                            
+                            # Restore original argv
+                            sys.argv = original_argv
+                            
+                        except Exception as e:
+                            print(f"Method 3 (main module) failed: {e}")
+                            
+                            # Method 4: Last resort - try subprocess with current python
+                            try:
+                                print("Last resort: trying subprocess with current Python...")
+                                comando = [sys.executable, "-c", 
+                                        f"import streamlit.web.bootstrap; streamlit.web.bootstrap.run('{str(script_frontend)}', '', [], {{}})"]
+                                
+                                resultado = subprocess.run(comando)
+                                
+                            except Exception as e:
+                                print(f"Method 4 (subprocess) failed: {e}")
+                                raise Exception("All Streamlit execution methods failed")
+                        
+            except FileNotFoundError as e:
+                print("Erro ao carregar a GUI!\nArquivo streamlit não foi encontrado")
+                print(f"Detalhes do erro: {e}")
+                logger.warning("Erro ao iniciar a GUI: Arquivo streamlit não foi encontrado")
             except KeyboardInterrupt:
                 print("\nShutting down Streamlit server...")
                 sys.exit(0)
+            except Exception as e:
+                print(f"Erro inesperado ao iniciar Streamlit: {e}")
+                logger.error(f"Erro inesperado ao iniciar Streamlit: {e}")
         else:
-            # Original logic for non-Docker environments
+            # Direct Python execution - check for virtual environment
+            print("Starting Streamlit from Python environment...")
+            print("Web interface will be available at: http://localhost:8501")
+            
             caminho_venv = self.fachada.obter_caminho('venv')
 
             if sys.platform == 'win32':
                 # Windows
-                if caminho_venv.exists():
+                if caminho_venv and caminho_venv.exists():
                     # With virtual environment on Windows
                     venv_activate = str(caminho_venv)
                     comando = f'{venv_activate} && streamlit run "{script_frontend}"'
                     resultado = subprocess.run(comando, shell=True)
                 else:
                     # Without virtual environment on Windows
-                    comando = ["streamlit", "run", script_frontend]
+                    comando = ["streamlit", "run", str(script_frontend)]
                     resultado = subprocess.run(comando)
             else:
                 # Linux/Unix
-                if caminho_venv.exists():
+                if caminho_venv and caminho_venv.exists():
                     # With virtual environment on Linux
                     venv_activate = f"source {str(caminho_venv)}"
                     comando = f'{venv_activate} && streamlit run "{script_frontend}"'
                     resultado = subprocess.run(["bash", "-c", comando])
                 else:
                     # Without virtual environment on Linux
-                    comando = ["streamlit", "run", script_frontend]
+                    comando = ["streamlit", "run", str(script_frontend)]
                     resultado = subprocess.run(comando)
 
 

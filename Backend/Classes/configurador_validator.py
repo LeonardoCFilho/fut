@@ -91,7 +91,7 @@ class ConfiguradorValidator:
             gerenciador_validator = GerenciadorValidator(path_validator)
             
             # Usar a funcionalidade segura do GerenciadorValidator
-            timeout = self.controlador_configuracao.obter_configuracao_segura('requests_timeout', 30)
+            timeout = self.controlador_configuracao.obter_configuracao_segura('requests_timeout', 300)
             downloader = ArquivoDownloader(timeout)
             
             if not gerenciador_validator.atualizar_validator_cli_seguro(timeout, downloader):

@@ -239,7 +239,6 @@ class FachadaSistema:
             "Arquivos",  # Pasta relevante
             "Backend",   # Pasta relevante
             "Frontend",  # Pasta relevante
-            "fut.py",    # Nossa main
             "app.py",    # Streamlit
         ]
 
@@ -277,24 +276,3 @@ class FachadaSistema:
             num_iteracoes += 1
 
         sys.exit("Projeto FUT não encontrado. Garanta que está em um diretório do projeto.")
-
-
-    @staticmethod
-    def _is_fut_project(path: Path) -> bool:
-        """
-        Verifica se um diretório é um projeto FUT válido.
-        
-        Args:
-            path: Caminho a ser verificado
-            
-        Returns:
-            bool: True se for um projeto FUT
-        """
-        # Procura por arquivos/diretórios característicos do projeto FUT
-        markers = [
-            'Backend',
-            'fut.py',  # se houver um arquivo principal
-            'requirements.txt',
-        ]
-        
-        return any((path / marker).exists() for marker in markers) or "fut" in path.name.lower()

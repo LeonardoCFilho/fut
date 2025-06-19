@@ -7,43 +7,27 @@ Os comandos descritos estão sendo **executados na pasta principal do projeto** 
 Caso esteja em outro diretório, utilize **endereçamento relativo ou absoluto** para executar o arquivo main.py.
 
 ## Primeira execução:
-### 1. Baixe o codigo
-- Ou instale o .zip do codigo e o extrai. ([Encontrado aqui](https://github.com/LeonardoCFilho/fut/archive/refs/heads/main.zip))
-- Ou faça um clone do diretorio, via:
-  ```bash
-  git clone LeonardoCFilho/fut
-  ```
+### 1. Baixe o executavel
+- Windows  
+  fut.exe  
+- Linux  
+  fut  
 
-### 2. Abra o projeto no terminal
-  ```bash
-  cd fut-main
-  ```
-
-### 3. Realize a instalação do docker
+## 2. Execução do programa
+- Windows  
 - Windows
   ```bash
-  install.bat
+  \fut.exe
   ```
-- Linux/MacOS  
+- Linux
   ```bash
-  chmod +x install.sh && ./install.sh
+  ./fut
   ```
 
-E com isso a instalação será concluída
-
-### Execução do programa
-- Linux  
-  ```bash  
-  fut  
-  ```
-- Windows  
-  ```bash  
-  fut  
-  ```
 Adicione '--help' após main.py para mais detalhes quanto o sistema
 Exemplo:  
   ```bash  
-  fut --help
+  ./fut --help
   ```
 
 ### **Importante**

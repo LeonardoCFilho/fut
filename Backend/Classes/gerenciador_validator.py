@@ -226,6 +226,7 @@ class GerenciadorValidator:
                 logger.info("Verificação de atualização finalizada")
         else:
             logger.info("Nenhuma instância de validator_cli encontrada, iniciando download")
+            print("O validator padrão não foi encontrado ou não existe!\nIniciando sua instalação.")
             self.instalar_validator_cli(downloader_callback)
 
 

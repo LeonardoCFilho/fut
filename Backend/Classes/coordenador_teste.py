@@ -90,6 +90,7 @@ class CoordenadorTestes:
             logger.error(f"Erro durante execução de testes: {e}")
             raise e
 
+
     def _preparar_ambiente(self):
         """Prepara o ambiente para execução dos testes"""
         logger.info("Preparando ambiente...")
