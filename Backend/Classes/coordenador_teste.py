@@ -38,15 +38,13 @@ class CoordenadorTestes:
         return cls._instance
 
 
-    def executar_testes_completo(self, args: list, versao_relatorio: str, entrega_gradual: bool = True):
+    def executar_testes_completo(self, args: list, versao_relatorio: str):
         """
         Executa o fluxo completo de testes
         
         Args:
             args: Argumentos para lista de testes
             versao_relatorio: Tipo do relatório (JSON/HTML)
-            entrega_gradual: Se True, yielda resultados gradualmente; 
-                           Se False, executa tudo e gera apenas o relatório
             
         Yields:
             list: [resultado, porcentagem] se entrega_gradual=True
@@ -62,30 +60,16 @@ class CoordenadorTestes:
             config_execucao = self._obter_configuracao_execucao()
             
             # 2. Execução
-            if entrega_gradual:
-                # Modo gradual - yielda cada resultado
-                resultados = []
-                for resultado in self._executar_testes_gradual(lista_testes, config_execucao):
-                    resultados.append(resultado[0])
-                    yield resultado  # [resultado, porcentagem]
+            # Modo gradual - yielda cada resultado
+            resultados = []
+            for resultado in self._executar_testes_gradual(lista_testes, config_execucao):
+                resultados.append(resultado[0])
+                yield resultado  # [resultado, porcentagem]
                 
-                # 3. Relatório após todos os yields
-                tempo_total = time.time() - start_time
-                self._gerar_relatorio(resultados, versao_relatorio, tempo_total)
-                
-            else:
-                # Modo completo - executa tudo e gera apenas relatório
-                resultados = self._executar_testes_completo(lista_testes, config_execucao)
-                tempo_total = time.time() - start_time
-                self._gerar_relatorio(resultados, versao_relatorio, tempo_total)
-                
-                return {
-                    'sucesso': True,
-                    'total_testes': len(lista_testes),
-                    'resultados': resultados,
-                    'tempo_execucao': tempo_total
-                }
-            
+            # 3. Relatório após todos os yields
+            tempo_total = time.time() - start_time
+            self._gerar_relatorio(resultados, versao_relatorio, tempo_total)
+
         except Exception as e:
             logger.error(f"Erro durante execução de testes: {e}")
             raise e
@@ -100,7 +84,8 @@ class CoordenadorTestes:
     def _obter_lista_testes(self, args: list) -> list:
         """Obtém e valida lista de testes"""
         logger.info("Obtendo lista de testes...")
-        lista_testes = self.executor_service.preparar_lista_testes(args)
+        lista_arquivos_testes = self.executor_service.preparar_lista__arquivo_teste(args)
+        lista_testes = self.executor_service.preparar_lista_Teste(lista_arquivos_testes)
         
         if not lista_testes:
             raise ValueError("Nenhum arquivo de teste encontrado. Verifique os argumentos.")
@@ -137,26 +122,6 @@ class CoordenadorTestes:
             resultados_processados += 1
             porcentagem = round(resultados_processados / len(lista_testes), 4)
             yield [resultado, porcentagem]
-
-
-    def _executar_testes_completo(self, lista_testes: list, config: dict) -> list:
-        """
-        Executa todos os testes e retorna lista completa
-        
-        Args:
-            lista_testes: Lista de arquivos de teste
-            config: Configuração de execução
-            
-        Returns:
-            list: Lista completa de resultados
-        """
-        logger.info(f"Iniciando execução completa de {len(lista_testes)} testes...")
-        resultados = []
-        
-        for resultado in self.executor_service.executar_testes_paralelos(lista_testes, config['num_threads'], config['timeout']):
-            resultados.append(resultado)
-        
-        return resultados
 
 
     def _gerar_relatorio(self, resultados: list, versao_relatorio: str, tempo_execucao: float):

@@ -81,7 +81,7 @@ class PreparadorTeste:
         return teste
 
 
-    def processar_testes(self, dados: dict, arquivo_origem: Path, justificativa_teste_invalido: str = None) -> list[Teste]:
+    def processar_testes(self, dados: dict, arquivo_origem: Path, path_schema: Path,  justificativa_teste_invalido: str = None) -> list[Teste]:
         """
         Processa um dicionário que pode ser uma suite ou um teste único,
         retornando uma lista de objetos Teste.
@@ -99,14 +99,19 @@ class PreparadorTeste:
             temp_teste = Teste(arquivo_origem, dados, "Invalido", justificativa_teste_invalido)
             return [temp_teste]
 
+        # Não é => Fazer validação com o schema
+        teste_cru = Teste(arquivo_origem, dados)
+        teste_cru.validar_schema(path_schema)
+        
         # Verificar se é uma suite
-        if 'suite_name' in dados and 'tests' in dados:
+        if teste_cru.estado_atual == "Suite":
             testes = []
             # É uma suite - processar cada teste
             for teste_data in dados['tests']:
-                testes.append(self._criar_teste(teste_data, arquivo_origem))
+                temp_teste = self._criar_teste(teste_data, arquivo_origem)
                 # Tornar enderecos unicos
-                testes[-1].path_arquivo_teste = Path(str(testes[-1].path_arquivo_teste) + str(len(testes)))
+                temp_teste.path_arquivo_teste = Path(str(temp_teste.path_arquivo_teste) + str(len(testes)+1))
+                testes.append(temp_teste)
             return testes
         else:
             # É um teste único

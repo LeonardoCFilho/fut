@@ -30,7 +30,7 @@ class ServicoExecucaoTeste:
         return gerenciador_validator.atualizar_validator_cli_seguro(tempo_request_timeout)
 
 
-    def preparar_lista_testes(self, args=None) -> list[Path]:
+    def preparar_lista__arquivo_teste(self, args=None) -> list[Path]:
         """
         Prepara a lista de arquivos de teste a serem executados
         
@@ -68,8 +68,39 @@ class ServicoExecucaoTeste:
             teste.justificativa_teste_invalido += str(e)
             return teste
 
-    
-    def executar_testes_paralelos(self, lista_arquivos: list, num_threads: int, timeout: float):
+
+    def preparar_lista_Teste(self, lista_arquivos: list[Path]) -> list[Teste]:
+        """
+        Retorna uma lista bruta de criada pela leitura dos arquivos de teste (YAML)
+
+        Args:
+            lista_arquivos (list[Path]): A lista com os caminhos dos arquivos YAML
+
+        Returns:
+            list[dict]: Uma lista dos testes encontrados nos arquivos de entrada
+        """
+        gerenciador_arquivo_teste = GerenciadorArquivoTeste() # instancia que será usada para lidar com arquivos
+        preparador_teste = PreparadorTeste() # instancia que será usada para preparar todos os testes
+        try:
+            # ler os arquivos
+            list_conteudo_cru = []
+            for path in lista_arquivos:
+                temp_dict = {}
+                temp_dict['conteudo'], temp_dict['razao_invalidez'] = gerenciador_arquivo_teste.carregar_yaml(path)
+                temp_dict['path_arquivo_teste'] = path
+                list_conteudo_cru.append(temp_dict)
+            # Criar os Testes
+            list_testes = []
+            for teste_parcial in list_conteudo_cru:
+                list_testes.extend(preparador_teste.processar_testes(teste_parcial['conteudo'],teste_parcial['path_arquivo_teste'] ,teste_parcial['razao_invalidez']))
+        except FileNotFoundError as e:
+            logger.warning(f"Arquivo de teste não existe: {e}")
+            raise e
+        
+        return list_testes
+        
+        
+    def executar_testes_paralelos(self, list_testes: list[Teste], num_threads: int, timeout: float):
         """
         Executa os testes em paralelo usando threads
         
@@ -82,26 +113,10 @@ class ServicoExecucaoTeste:
             dict: Resultado de cada teste executado
         """
         logger.info("Iniciando a execução dos testes requisitados")
-        gerenciador_arquivo_teste = GerenciadorArquivoTeste() # instancia que será usada para lidar com arquivos
-        preparador_teste = PreparadorTeste() # instancia que será usada para preparar todos os testes
+        
         gerenciador_validator = GerenciadorValidator(self.gestor_caminho.return_path('validator')) # Instancia que será usada para os testes
         
-
-        # Primeiro, ler os arquivos
-        list_conteudo_cru = []
-        for path in lista_arquivos:
-            temp_dict = {}
-            temp_dict['conteudo'], temp_dict['razao_invalidez'] = gerenciador_arquivo_teste.carregar_yaml(path)
-            temp_dict['path_arquivo_teste'] = path
-            list_conteudo_cru.append(temp_dict)
-
-        # Segundo, criar os testes
-        list_testes = []
-        for teste_parcial in list_conteudo_cru:
-            list_testes.extend(preparador_teste.processar_testes(teste_parcial['conteudo'],teste_parcial['path_arquivo_teste'] ,teste_parcial['razao_invalidez']))
-
-
-        # Finalmente, executar em paralelo
+        # Executar em paralelo
         total_testes = len(list_testes)
         logger.info(f"Total de testes para executar: {total_testes}")
     

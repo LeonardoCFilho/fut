@@ -41,25 +41,22 @@ class FachadaSistema:
 
     # === OPERAÇÕES DE ARQUIVOS ===
 
-    def listar_arquivos_yaml(self, args = None) -> list[Path]:
+    def return_testes(self, path_arquivo_teste: Path) -> list:
         """
-        Lista arquivos YAML para teste baseado nos argumentos fornecidos
+        Retornar uma lista de testes de acordo com as informações do arquivo de teste recebido
 
-        Args: 
-            args: Argumentos para filtrar os testes a serem validados
+        Args:
+            path_arquivo_teste (Path): Caminho de um único arquivo
 
         Returns:
-            Lista com caminhos dos arquivos de teste (pode ser vazia)
-            
-        Raises:
-            OSError: Erro ao acessar sistema de arquivos
+            list: Lista de Teste (entidade), contendo 1+ elementos, determinado por path_arquivo_teste
         """
         try:
-            return ServicoExecucaoTeste(self.path_fut).preparar_lista_testes(args)
+            path_arquivo_teste = [path_arquivo_teste]
+            return ServicoExecucaoTeste(self.path_fut).preparar_lista_Teste(path_arquivo_teste)
         except Exception as e:
-            logger.error(f"Erro ao listar arquivos YAML: {e}")
-            raise OSError(f"Falha ao listar arquivos de teste: {e}") from e
-
+            raise e
+        
 
     def gerar_arquivo_teste(self, dados_teste: dict = None, caminho_arquivo: Path|str = None) -> None:
         """
@@ -142,38 +139,6 @@ class FachadaSistema:
         )
 
     # === OPERAÇÕES DE TESTE ===
-    
-    def executar_testes_com_resultado_completo(self, args, tipo_relatorio: str = 'JSON') -> list[dict]:
-        """
-        Executa testes em múltiplas threads e retorna todos os resultados de uma vez
-
-        Args:
-            args: Argumentos determinando os testes a serem executados
-            tipo_relatorio: Tipo do relatório ('JSON' ou 'HTML')
-
-        Returns:
-            Lista com todos os resultados dos testes
-
-        Raises:
-            ValueError: Lista de testes vazia ou argumentos inválidos
-            FileNotFoundError: Schema do Teste não encontrado
-            PermissionError: Sem permissão para escrever relatório
-        """
-        self._validar_argumentos_teste(args, tipo_relatorio)
-        
-        try:
-            logger.info("Iniciando execução de testes (resultado completo)")
-            resultados = list(
-                self.coordenador_testes.executar_testes_completo(
-                    args, tipo_relatorio, entrega_gradual=False
-                )
-            )
-            logger.info(f"Execução concluída: {len(resultados)} resultados")
-            return resultados
-        except Exception as e:
-            logger.error(f"Erro durante execução dos testes: {e}")
-            raise
-
 
     def executar_testes_com_entrega_gradual(self, args, tipo_relatorio: str = 'JSON'):
         """
@@ -196,7 +161,7 @@ class FachadaSistema:
         try:
             logger.info("Iniciando execução de testes (entrega gradual)")
             yield from self.coordenador_testes.executar_testes_completo(
-                args, tipo_relatorio, entrega_gradual=True
+                args, tipo_relatorio
             )
             logger.info("Execução com entrega gradual concluída")
         except Exception as e:

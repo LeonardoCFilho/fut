@@ -333,23 +333,19 @@ class TerminalUI:
             argumentos (List[str]): Lista de argumentos para execução dos testes.
         """
         try:
-            entrega_gradual = True
             tipo_relatorio = "JSON"
             tempo_inicio = time.time()
             progresso_minimo = 0.1
 
             self.iniciar_spinner()
-
-            if entrega_gradual:
-                for resultado in self.fachada.executar_testes_com_entrega_gradual(argumentos, tipo_relatorio):
-                    if resultado[-1] >= progresso_minimo:
-                        progresso = round(resultado[-1], 1)
-                        tempo_decorrido = time.time() - tempo_inicio
-                        sys.stdout.write('\r' + ' ' * 20 + '\r')
-                        print(f"{max(progresso, progresso_minimo) * 100:.1f}% dos testes finalizados em {tempo_decorrido:.1f}s")
-                        progresso_minimo = max(progresso_minimo + 0.1, progresso)
-            else:
-                list(self.fachada.executar_testes_com_resultado_completo(argumentos, tipo_relatorio))
+            
+            for resultado in self.fachada.executar_testes_com_entrega_gradual(argumentos, tipo_relatorio):
+                if resultado[-1] >= progresso_minimo:
+                    progresso = round(resultado[-1], 1)
+                    tempo_decorrido = time.time() - tempo_inicio
+                    sys.stdout.write('\r' + ' ' * 20 + '\r')
+                    print(f"{max(progresso, progresso_minimo) * 100:.1f}% dos testes finalizados em {tempo_decorrido:.1f}s")
+                    progresso_minimo = max(progresso_minimo + 0.1, progresso)
             
             self.parar_spinner()
             print("Testes finalizados com sucesso!")
