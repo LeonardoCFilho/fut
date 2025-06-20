@@ -28,12 +28,11 @@ class ServicoRelatorio:
         try:
             gerador_relatorio = GeradorRelatorios(resultados_validacao)
             
-            # Sempre gerar o JSON
-            gerador_relatorio.gerarRelatorioJson(tempo_execucao, path_csv)
-            
-            # Gerar o relatório legível (HTML)
-            #if versao_relatorio.lower() == "html":
-            #    gerador_relatorio.gerarRelatorioHtml()
+            if versao_relatorio == "HTML":
+                # Colocar o gerador de HTML aqui
+                pass
+            else:
+                gerador_relatorio.gerarRelatorioJson(tempo_execucao, path_csv)
                 
         except Exception as e:
             logger.error(f"Erro ao criar o relatório: {e}")

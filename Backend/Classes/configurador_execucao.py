@@ -37,3 +37,17 @@ class ConfiguradorExecucao:
             int: tempo de timeout do validator
         """
         return int(self.controlador_configuracao.obter_configuracao_segura('timeout'))
+
+    
+    def obter_tipo_relatorio(self) -> str:
+        """
+        Retorna o tipo de relatorio a ser criado
+
+        Returns:
+            str: HTML ou JSON
+        """
+        tipo_relatorio = "HTML"
+        if not self.controlador_configuracao.obter_categoria_configuracao('relatorio_eh_html'):
+            tipo_relatorio = "JSON"
+        
+        return tipo_relatorio

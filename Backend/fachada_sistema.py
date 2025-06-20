@@ -140,13 +140,12 @@ class FachadaSistema:
 
     # === OPERAÇÕES DE TESTE ===
 
-    def executar_testes_com_entrega_gradual(self, args, tipo_relatorio: str = 'JSON'):
+    def executar_testes_com_entrega_gradual(self, args):
         """
         Executa testes em múltiplas threads com entrega gradual dos resultados
 
         Args:
             args: Argumentos determinando os testes a serem executados
-            tipo_relatorio: Tipo do relatório ('JSON' ou 'HTML')
 
         Yields:
             Dict com informações do teste e porcentagem de progresso
@@ -155,26 +154,16 @@ class FachadaSistema:
             ValueError: Lista de testes vazia ou argumentos inválidos
             FileNotFoundError: Schema do Teste não encontrado
             PermissionError: Sem permissão para escrever relatório
-        """
-        self._validar_argumentos_teste(args, tipo_relatorio)
-        
+        """        
         try:
             logger.info("Iniciando execução de testes (entrega gradual)")
             yield from self.coordenador_testes.executar_testes_completo(
-                args, tipo_relatorio
+                args
             )
             logger.info("Execução com entrega gradual concluída")
         except Exception as e:
             logger.error(f"Erro durante execução dos testes: {e}")
             raise
-
-
-    def _validar_argumentos_teste(self, args, tipo_relatorio: str) -> None:
-        """Valida argumentos para execução de testes"""
-        if tipo_relatorio not in ['JSON', 'HTML']:
-            raise ValueError(f"Tipo de relatório inválido: {tipo_relatorio}. Use 'JSON' ou 'HTML'")
-        
-        # Validação adicional de args poderia ser implementada aqui
 
     # === UTILITÁRIOS DE INTERFACE ===
     

@@ -40,13 +40,12 @@ class CoordenadorTestes:
         return cls._instance
 
 
-    def executar_testes_completo(self, args: list, versao_relatorio: str):
+    def executar_testes_completo(self, args: list):
         """
         Executa o fluxo completo de testes
         
         Args:
             args: Argumentos para lista de testes
-            versao_relatorio: Tipo do relatório (JSON/HTML)
             
         Yields:
             list: [resultado, porcentagem] se entrega_gradual=True
@@ -70,7 +69,7 @@ class CoordenadorTestes:
                 
             # 3. Relatório após todos os yields
             tempo_total = time.time() - start_time
-            self._gerar_relatorio(resultados, versao_relatorio, tempo_total)
+            self._gerar_relatorio(resultados, tempo_total)
 
         except Exception as e:
             logger.error(f"Erro durante execução de testes: {e}")
@@ -128,9 +127,12 @@ class CoordenadorTestes:
             yield [resultado, porcentagem]
 
 
-    def _gerar_relatorio(self, resultados: list, versao_relatorio: str, tempo_execucao: float):
+    def _gerar_relatorio(self, resultados: list, tempo_execucao: float):
         """Gera o relatório final"""
         logger.info("Testes listados completos")
+        
+        # Determinar o tipo de relatório a ser gerado
+        versao_relatorio = self.configurador.obter_tipo_relatorio()
         
         try:
             self.servico_relatorio.criar_relatorio_completo(

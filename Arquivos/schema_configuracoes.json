@@ -41,10 +41,10 @@
       "description": "Determina se os arquivos do validator_cli serão armazendados ou não",
       "category": "enderecamento"
     },
-    "tipo_relatorio": {
-      "type": "string",
-      "default": "HTML",
-      "description": "Determina o tipo do relatório que será criado",
+    "relatorio_eh_html": {
+      "type": "boolean",
+      "default": true,
+      "description": "Determina se o relatorio será HTML ou JSON",
       "category": "relatorio"
     }
   }

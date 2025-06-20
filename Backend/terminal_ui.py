@@ -195,13 +195,12 @@ class TerminalUI:
             argumentos (List[str]): Lista de argumentos para execução dos testes.
         """
         try:
-            tipo_relatorio = "JSON"
             tempo_inicio = time.time()
             progresso_minimo = 0.1
 
             self.iniciar_spinner()
             
-            for resultado in self.fachada.executar_testes_com_entrega_gradual(argumentos, tipo_relatorio):
+            for resultado in self.fachada.executar_testes_com_entrega_gradual(argumentos):
                 if resultado[-1] >= progresso_minimo:
                     progresso = round(resultado[-1], 1)
                     tempo_decorrido = time.time() - tempo_inicio
