@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "description": "Schema para os valores de configurações",
   "configuracoes": {
     "timeout": {
@@ -40,6 +40,12 @@
       "default": true,
       "description": "Determina se os arquivos do validator_cli serão armazendados ou não",
       "category": "enderecamento"
+    },
+    "tipo_relatorio": {
+      "type": "string",
+      "default": "HTML",
+      "description": "Determina o tipo do relatório que será criado",
+      "category": "relatorio"
     }
   }
 }

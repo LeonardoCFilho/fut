@@ -1,9 +1,9 @@
 from Backend.dialogos_sistema import DialogosSistema
 from Backend.fachada_sistema import FachadaSistema
+import streamlit.web.cli as stcli
 import subprocess
 import threading
 import logging
-import shutil
 import time
 import sys
 import os
@@ -72,8 +72,6 @@ class TerminalUI:
 
         # Get the frontend script path
         script_frontend = self.fachada.obter_caminho('script_frontend')
-        #print(f"Root path: {self.fachada.obter_caminho('raiz')}")
-        #print(f"Frontend script: {script_frontend}, exists: {script_frontend.exists()}")
 
         if not script_frontend.exists():
             print(f"ERROR: Frontend script not found: {script_frontend}")
@@ -90,32 +88,25 @@ class TerminalUI:
                 
                 print(f"Changed to directory: {os.getcwd()}")
                 print(f"Script to run: {script_frontend.name}")
+                print("Web interface will be available at: http://127.0.0.1:8501")
+                                
                 
-                # Find Python executable - try common names
-                python_cmd = None
-                for py_name in ['python3', 'python', 'python3.exe', 'python.exe']:
-                    if shutil.which(py_name):
-                        python_cmd = py_name
-                        break
-                
-                if not python_cmd:
-                    print("ERROR: Python executable not found in PATH")
-                    print("Please ensure Python is installed and available in your system PATH")
-                    return
-                
-                # Build command with found Python executable
-                cmd = [
-                    python_cmd, '-m', 'streamlit', 'run', 
-                    script_frontend.name,  # Just the filename
-                    '--global.developmentMode=false'
+                # Set up sys.argv as if streamlit run was called
+                original_argv = sys.argv.copy()
+                sys.argv = [
+                    "streamlit",
+                    "run",
+                    str(script_frontend),
+                    "--global.developmentMode=false"
                 ]
                 
-                print("Command:", ' '.join(cmd))
-                print("Web interface will be available at: http://127.0.0.1:8501")
-                
-                # Run the command
-                result = subprocess.run(cmd)
-                
+                try:
+                    # Run streamlit directly
+                    stcli.main()
+                finally:
+                    # Restore original sys.argv
+                    sys.argv = original_argv
+                    
             except KeyboardInterrupt:
                 print("Encerrando a GUI...")
                 sys.exit(0)
@@ -125,7 +116,7 @@ class TerminalUI:
                 traceback.print_exc()
                 
         else:
-            # Direct Python execution
+            # Direct Python execution using subprocess (non-frozen)
             try:
                 cmd = ["streamlit", "run", str(script_frontend)]
                 subprocess.run(cmd)
