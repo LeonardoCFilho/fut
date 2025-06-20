@@ -1,6 +1,7 @@
 from Backend.Classes.servico_execucao_teste import ServicoExecucaoTeste
 from Backend.Classes.configurador_execucao import ConfiguradorExecucao
 from Backend.Classes.servico_relatorio import ServicoRelatorio
+from Backend.Classes.gerenciador_java import GerenciadorJava
 from Backend.Classes.gestor_caminho import GestorCaminho
 import threading
 import logging
@@ -22,6 +23,7 @@ class CoordenadorTestes:
         self.executor_service = ServicoExecucaoTeste(gestor_caminho)
         self.configurador = ConfiguradorExecucao(gestor_caminho.controlador_configuracao)
         self.servico_relatorio = ServicoRelatorio()
+        self.gerenciador_java = GerenciadorJava(self.gestor_caminho.return_path('arquivos'))
         
         CoordenadorTestes._instance = self
 
@@ -78,6 +80,8 @@ class CoordenadorTestes:
     def _preparar_ambiente(self):
         """Prepara o ambiente para execução dos testes"""
         logger.info("Preparando ambiente...")
+        self.gerenciador_java.java_instalado()
+        self.gerenciador_java.extrair_java()
         self.executor_service.garantir_atualizacao_validator()
 
 

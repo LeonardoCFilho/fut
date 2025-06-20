@@ -117,7 +117,7 @@ class TerminalUI:
                 result = subprocess.run(cmd)
                 
             except KeyboardInterrupt:
-                print("\Encerrando a GUI...")
+                print("Encerrando a GUI...")
                 sys.exit(0)
             except Exception as e:
                 print(f"Error starting Streamlit: {e}")

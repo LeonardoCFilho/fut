@@ -18,7 +18,7 @@ class GerenciadorValidator:
     URL_DOWNLOAD_VALIDADOR = "https://github.com/hapifhir/org.hl7.fhir.core/releases/latest/download/validator_cli.jar"
     URL_API_GITHUB = "https://api.github.com/repos/hapifhir/org.hl7.fhir.core/releases/latest"
     MAXIMO_TENTATIVAS_PADRAO = 3
-    TEMPO_ESPERA_TENTATIVA = 3  # segundos
+    TEMPO_ESPERA_TENTATIVA = 300  # segundos
 
     # Construtor
     def __init__(self, caminho_validador: Path):
@@ -243,7 +243,7 @@ class GerenciadorValidator:
         """
         try:
             if not downloader_callback:
-                downloader_callback = ArquivoDownloader(1800)
+                downloader_callback = ArquivoDownloader(self.TEMPO_ESPERA_TENTATIVA)
             self.atualizar_validator_cli(tempo_timeout_requests, downloader_callback)
             return True
         except ExcecaoTemplate as e:
@@ -286,14 +286,16 @@ class GerenciadorValidator:
             raise e
         
 
-    def validar_arquivo_fhir(self, arquivo_validar: Path, pasta_relatorio: Path, num_teste:int, tempo_timeout: int, argumentos_extras: str = None) -> list:
+    def validar_arquivo_fhir(self, arquivo_validar: Path, pasta_relatorio: Path, num_teste: int, tempo_timeout: int, java_path: Path = None, argumentos_extras: str = None) -> list:
         """
         Executa validação do arquivo FHIR usando validator_cli.jar
         
         Args:
             arquivo_validar (Path): Arquivo FHIR a ser validado
             pasta_relatorio (Path): Pasta onde relatório será salvo
+            num_teste (int): Número do teste
             tempo_timeout (int): Timeout para execução
+            java_path (Path): Caminho para o executável Java (opcional)
             argumentos_extras (str): Argumentos adicionais para validação
             
         Returns:
@@ -316,8 +318,11 @@ class GerenciadorValidator:
             nome_relatorio = f"{arquivo_validar.stem}_{str(num_teste)}.json"
             caminho_relatorio = pasta_relatorio / nome_relatorio
             
+            # Usa o java_path fornecido ou fallback para "java" do sistema
+            java_executable = str(java_path.resolve()) if java_path else "java"
+            
             comando = [
-                "java", '-Dfile.encoding=UTF-8', "-jar", str(self.caminho_validador.resolve()),
+                java_executable, '-Dfile.encoding=UTF-8', "-jar", str(self.caminho_validador.resolve()),
                 str(arquivo_validar.resolve()),
                 "-output", str(caminho_relatorio.resolve()),
                 "-version", "4.0.1"

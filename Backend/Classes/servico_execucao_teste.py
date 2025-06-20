@@ -1,5 +1,6 @@
 from Backend.Classes.gerenciador_arquivo_teste import GerenciadorArquivoTeste
 from Backend.Classes.gerenciador_validator import GerenciadorValidator
+from Backend.Classes.gerenciador_java import GerenciadorJava
 from Backend.Classes.preparador_teste import PreparadorTeste
 from Backend.Classes.gestor_caminho import GestorCaminho
 from Backend.Classes.teste import Teste
@@ -48,13 +49,15 @@ class ServicoExecucaoTeste:
         return GerenciadorArquivoTeste().gerar_lista_arquivos_teste(args)
     
 
-    def _executar_teste(self, gerenciador_validator: GerenciadorValidator, teste: Teste, timeout:float, contador:int):
+    def _executar_teste(self, gerenciador_validator: GerenciadorValidator, teste: Teste, timeout:float, contador:int, path_java: Path):
         try:
+            #print(path_java)
             output_validacao = gerenciador_validator.validar_arquivo_fhir(
                 Path(teste.conteudo['caminho_instancia']), 
                 Path(self.gestor_caminho.return_path('pasta_validator')), 
                 contador,
                 timeout, 
+                path_java,
                 teste.argumentos_validator,
             )
             teste.path_resultado = output_validacao[0]
@@ -115,6 +118,7 @@ class ServicoExecucaoTeste:
         logger.info("Iniciando a execução dos testes requisitados")
         
         gerenciador_validator = GerenciadorValidator(self.gestor_caminho.return_path('validator')) # Instancia que será usada para os testes
+        gerenciador_java = GerenciadorJava(self.gestor_caminho.return_path('arquivos')) # Instancia que será usada para encontrar o java baixado
         
         # Executar em paralelo
         total_testes = len(list_testes)
@@ -123,7 +127,7 @@ class ServicoExecucaoTeste:
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             # Submeter todos os testes para execução
             future_to_teste = {
-                executor.submit(self._executar_teste, gerenciador_validator,  teste, timeout, list_testes.index(teste)): teste 
+                executor.submit(self._executar_teste, gerenciador_validator,  teste, timeout, list_testes.index(teste), gerenciador_java.obter_java_executavel()): teste 
                 for teste in list_testes
             }
 

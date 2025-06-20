@@ -2,9 +2,9 @@ from Backend.Classes.controlador_configuracao import ControladorConfiguracao
 from Backend.Classes.validador_arquivo import ValidadorArquivo
 from Backend.Classes.configurador_validator import ConfiguradorValidator
 from pathlib import Path
-import logging
 import shutil
 import sys
+import logging
 
 logger = logging.getLogger(__name__)
 
