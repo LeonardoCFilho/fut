@@ -204,7 +204,7 @@ class FachadaSistema:
             "Arquivos",  # Pasta relevante
             "Backend",   # Pasta relevante
             "Frontend",  # Pasta relevante
-            "app.py",    # Streamlit
+            #"app.py",    # Streamlit
         ]
 
         # Pegar tudo
