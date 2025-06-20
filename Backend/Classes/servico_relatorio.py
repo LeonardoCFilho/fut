@@ -3,7 +3,6 @@ import pathlib
 import logging
 
 logger = logging.getLogger(__name__)
-# TODO implementar relatorio HTML
 class ServicoRelatorio:
     """
     Responsável por coordenar a criação de relatórios
@@ -14,7 +13,7 @@ class ServicoRelatorio:
         pass
     
 
-    def criar_relatorio_completo(self, resultados_validacao: list, versao_relatorio: str, tempo_execucao: float, path_csv: pathlib.Path):
+    def criar_relatorio_completo(self, resultados_validacao: list, versao_relatorio: str, tempo_execucao: float, path_csv: pathlib.Path, path_template_html: pathlib.Path = None):
         """
         Cria relatório completo com base nos resultados da validação
         
@@ -28,9 +27,8 @@ class ServicoRelatorio:
         try:
             gerador_relatorio = GeradorRelatorios(resultados_validacao)
             
-            if versao_relatorio == "HTML":
-                # Colocar o gerador de HTML aqui
-                pass
+            if versao_relatorio == "HTML" and path_template_html.exists():
+                gerador_relatorio.gerarRelatorioHtml(tempo_execucao, path_csv, path_template_html)
             else:
                 gerador_relatorio.gerarRelatorioJson(tempo_execucao, path_csv)
                 

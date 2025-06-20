@@ -15,6 +15,7 @@ class GestorCaminho:
 
     # Constantes
     SETTINGS_FILE = "settings.ini"
+    TEMPLATE_HTML = "template_relatorio.html"
     CSV_TESTES = "historico.csv"
     SCHEMA_CONFIGURACOES = "schema_configuracoes.json"
     SCHEMA_FILE_YAML = "schema_arquivo_de_teste.json"
@@ -74,6 +75,7 @@ class GestorCaminho:
         """
         paths = {
             'csv': self.path_csv,
+            'template_html': self.path_template_html,
             'validator': self.path_validator,
             'schema_configuracoes': self.path_schema_configuracoes,
             'schema_yaml': self.path_schema_yaml,
@@ -101,6 +103,7 @@ class GestorCaminho:
         self.path_schema_configuracoes = self.path_arquivos / self.SCHEMA_CONFIGURACOES
         self.path_schema_yaml = self.path_arquivos / self.SCHEMA_FILE_YAML
         self.path_settings = self.path_arquivos / self.SETTINGS_FILE
+        self.path_template_html = self.path_arquivos / self.TEMPLATE_HTML
         # Endereço do nosso streamlit
         self.path_script_frontend = self.path_fut / self.SCRIPT_FRONTEND
 
@@ -157,7 +160,8 @@ class GestorCaminho:
         default_files = [
             self.SETTINGS_FILE,
             self.SCHEMA_CONFIGURACOES,
-            self.SCHEMA_FILE_YAML
+            self.SCHEMA_FILE_YAML,
+            self.TEMPLATE_HTML,
         ]
         
         for filename in default_files:

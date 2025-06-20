@@ -198,6 +198,29 @@ class GeradorRelatorios:
 
         rmtree(pathlib.Path().cwd() / '.temp-fut', ignore_errors=True)
 
+    def gerarRelatorioHtml(self, tempo_execucao_total:float, caminho_csv: pathlib.Path, path_template_html: pathlib.Path):
+        relatorios = self.gerarRelatorios(tempo_execucao_total=tempo_execucao_total)
+        self.adicionarCsv(caminho_csv, relatorios['relatorio_final'])
+        # Preparar o dict para o html
+        lista_testes = []
+        for key in relatorios.keys():
+            if key != "relatorio_final":
+                relatorios[key]['caminho_do_arquivo'] = key
+                lista_testes.append(relatorios[key])
+        novo_dict = {
+            "relatorio_final": relatorios['relatorio_final'],
+            "lista_testes": lista_testes,
+        }
+        with open(path_template_html, "r", encoding="utf-8") as arquivo:
+            html_template = arquivo.read()
+        data_injection = f"const validationData = {json.dumps(novo_dict, indent=2)};\nloadValidationData(validationData);"
+        contaudo_html = html_template.replace(
+            "// DATA_PLACEHOLDER_DO_NOT_REMOVE", 
+            data_injection
+        )
+        with open(pathlib.Path.cwd() / 'relatorio_final_fut.html', "w", encoding="utf-8") as arquivo:
+            arquivo.write(contaudo_html)
+    
     # Função que adiciona o relatório final no csv
     def adicionarCsv(self,caminho_csv: pathlib.Path, relatorio_final: dict):
         try:
