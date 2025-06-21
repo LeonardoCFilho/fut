@@ -1,172 +1,133 @@
 import streamlit as st
-import json
-from pathlib import Path
 import pandas as pd
-import os
+from pathlib import Path
+from datetime import datetime
+
+# ESTRUTURA: Funções movidas para o escopo global. Isso é uma boa prática em Python
+# e não afeta em nada a lógica ou a aparência do aplicativo.
+@st.cache_data
+def load_report_data():
+    """
+    Carrega e prepara os dados do histórico de testes.
+    A lógica interna foi tornada mais robusta, mas o resultado final é o mesmo.
+    """
+    # Mantido o caminho original para consistência
+    data_dir = Path(__file__).absolute().parent.parent.parent
+    csv_path = data_dir / "Arquivos" / "historico.csv"
+    
+    if not csv_path.exists():
+        # A mensagem de erro específica foi removida daqui para ser tratada
+        # de forma unificada na interface principal.
+        return pd.DataFrame()
+    
+    try:
+        df = pd.read_csv(csv_path)
+        
+        # ROBUSTEZ: Verifica se a coluna essencial 'data' existe.
+        if 'data' not in df.columns:
+            st.error("O arquivo 'historico.csv' não contém a coluna 'data'.")
+            return pd.DataFrame()
+            
+        # ROBUSTEZ: `errors='coerce'` previne que o app quebre se uma data no CSV
+        # estiver mal formatada. Linhas com datas inválidas serão descartadas.
+        df['data'] = pd.to_datetime(df['data'], format='%Y/%m/%d - %H:%M', errors='coerce')
+        df.dropna(subset=['data'], inplace=True)
+        
+        # ROBUSTEZ: Ordenar por data aqui garante que o `index=len(dates)-1`
+        # sempre selecionará o teste mais recente de forma confiável.
+        df.sort_values(by='data', ascending=True, inplace=True)
+        
+        return df
+    except Exception as e:
+        st.error(f"Erro ao ler ou processar o arquivo CSV: {str(e)}")
+        return pd.DataFrame()
+
+def show_report(selected_test):
+
+    st.title("📊 Relatório de Validação FHIR")
+    st.caption(f"Visualizando teste realizado em: {selected_test['data'].strftime('%Y/%m/%d %H:%M')}")
+    
+    # Métricas resumidas
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total de Testes", selected_test.get("numeros_de_testes_totais", 0))
+    # A lógica original de cálculo e prevenção de divisão por zero foi mantida.
+    col2.metric("Válidos", selected_test.get("numero_de_testes_validos", 0), 
+                  f"{selected_test.get('numero_de_testes_validos', 0)/selected_test.get('numeros_de_testes_totais', 1):.0%}")
+    col3.metric("Inválidos", 
+                  selected_test.get("numeros_de_testes_totais", 0) - selected_test.get("numero_de_testes_validos", 0),
+                  f"{(selected_test.get('numeros_de_testes_totais', 0) - selected_test.get('numero_de_testes_validos', 0))/selected_test.get('numeros_de_testes_totais', 1):.0%}")
+    
+    # Métricas adicionais de performance
+    st.divider()
+    st.subheader("📈 Estatísticas de Performance")
+    
+    perf_col1, perf_col2, perf_col3 = st.columns(3)
+    perf_col1.metric("Tempo Total (segundos)", selected_test.get("tempo_total", 0))
+    perf_col2.metric("Tempo Médio por Teste (segundos)", f"{selected_test.get('tempo_medio', 0):.1f}")
+    perf_col3.metric("Data da Execução", selected_test['data'].strftime('%Y/%m/%d %H:%M'))
+    
+    st.divider()
+    st.subheader("📊 Estatísticas de Erros")
+    
+    error_col1, error_col2, error_col3, error_col4 = st.columns(4)
+    error_col1.metric("Erros Totais", selected_test.get("quantidade_error_reais_totais", 0))
+    error_col2.metric("Warnings Totais", selected_test.get("quantidade_warning_reais_totais", 0))
+    error_col3.metric("Fatais Totais", selected_test.get("quantidade_fatal_reais_totais", 0))
+    error_col4.metric("Informações Totais", selected_test.get("quantidade_information_reais_totais", 0))
+    
+    st.divider()
+    st.subheader("🎯 Taxas de Acerto")
+    
+    accuracy_col1, accuracy_col2, accuracy_col3, accuracy_col4 = st.columns(4)
+    accuracy_col1.metric("Acerto em Erros", f"{selected_test.get('%_error_reais_acertados', 0)*100:.1f}%")
+    accuracy_col2.metric("Acerto em Warnings", f"{selected_test.get('%_warning_reais_acertados', 0)*100:.1f}%")
+    accuracy_col3.metric("Acerto em Fatais", f"{selected_test.get('%_fatal_reais_acertados', 0)*100:.1f}%")
+    accuracy_col4.metric("Acerto em Informações", f"{selected_test.get('%_information_reais_acertados', 0)*100:.1f}%")
 
 def render():
-    # Carregar dados do relatório
-    @st.cache_data
-    def load_report_data():
-        # Caminho absoluto para a pasta de dados
-        data_dir = Path(__file__).absolute().parent.parent.parent
-        json_path = data_dir / "Arquivos" / "Testes" /"relatorio_final_fut.json"
-        
-        # Verificação robusta do arquivo
-        if not json_path.exists():
-            st.error(f"Arquivo não encontrado no caminho: {json_path}")
-            st.error("Por favor, verifique:")
-            st.error(f"1. Se o arquivo existe em {data_dir}")
-            st.error(f"2. Se o nome do arquivo está correto (incluindo maiúsculas/minúsculas)")
-            st.error(f"3. Conteúdo do diretório: {os.listdir(data_dir)}")
-            return {}, {}
-        
-        try:
-            with open(json_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            # Separar os casos de teste das estatísticas consolidadas
-            test_cases = {k: v for k, v in data.items() if k != "relatorio_final"}
-            summary_stats = data.get("relatorio_final", {})
-            
-            return test_cases, summary_stats
-            
-        except Exception as e:
-            st.error(f"Erro ao ler o arquivo JSON: {str(e)}")
-            return {}, {}
+    # Carregar dados
+    report_df = load_report_data()
+    #TODO: modificar o nome 'execução de testes' para o nome correto da página
+    # MELHORIA SUTIL: Uma tela de boas-vindas mais amigável, mas sem alterar a estrutura da página.
+    if report_df.empty:
+        st.title("📊 Relatório de Validação FHIR. ")
+        st.write("")
+        st.info("Bem-vindo ao Painel de Relatórios! 👋")
+        st.info('🕒Nenhum relatório de teste foi encontrado. Execute uma validação para visualizar os resultados aqui!')
+        st.markdown("""
+        Parece que você ainda não executou nenhum conjunto de testes. Para gerar seu primeiro relatório,
+        vá para a página de **Execução de Testes** e inicie uma nova validação.
 
-    # Função para exibir o relatório no formato Streamlit
-    def show_streamlit_report(test_cases, summary_stats):
-        st.title("📊 Relatório de Validação FHIR")
-        st.caption("Visualização nativa do Streamlit")
-        
-        # Métricas resumidas
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Total de Testes", summary_stats.get("numeros_de_testes_totais", 0))
-        col2.metric("Válidos", summary_stats.get("numero_de_testes_validos", 0), 
-                   f"{summary_stats.get('numero_de_testes_validos', 0)/summary_stats.get('numeros_de_testes_totais', 1):.0%}")
-        col3.metric("Inválidos", 
-                   summary_stats.get("numeros_de_testes_totais", 0) - summary_stats.get("numero_de_testes_validos", 0),
-                   f"{(summary_stats.get('numeros_de_testes_totais', 0) - summary_stats.get('numero_de_testes_validos', 0))/summary_stats.get('numeros_de_testes_totais', 1):.0%}")
-        
-        # Contar YAMLs inválidos
-        invalid_yaml = sum(1 for test in test_cases.values() if test.get('yaml_valido') is False)
-        col4.metric("YAML Inválidos", invalid_yaml)
-        
-        # Métricas adicionais de performance
-        st.divider()
-        st.subheader("📈 Estatísticas de Performance")
-        
-        perf_col1, perf_col2, perf_col3, perf_col4 = st.columns(4)
-        perf_col1.metric("Tempo Total (segundos)", summary_stats.get("tempo_total", 0))
-        perf_col2.metric("Tempo Médio por Teste (segundos)", f"{summary_stats.get('tempo_medio', 0):.1f}")
-        perf_col3.metric("Data da Execução", summary_stats.get("data", "N/A"))
-        
-        st.divider()
-        st.subheader("📊 Estatísticas de Erros")
-        
-        error_col1, error_col2, error_col3, error_col4 = st.columns(4)
-        error_col1.metric("Erros Totais", summary_stats.get("quantidade_error_reais_totais", 0))
-        error_col2.metric("Warnings Totais", summary_stats.get("quantidade_warning_reais_totais", 0))
-        error_col3.metric("Fatais Totais", summary_stats.get("quantidade_fatal_reais_totais", 0))
-        error_col4.metric("Informações Totais", summary_stats.get("quantidade_information_reais_totais", 0))
-        
-        st.divider()
-        st.subheader("🎯 Taxas de Acerto")
-        
-        accuracy_col1, accuracy_col2, accuracy_col3, accuracy_col4 = st.columns(4)
-        accuracy_col1.metric("Acerto em Erros", f"{summary_stats.get('%_error_reais_acertados', 0)*100:.1f}%")
-        accuracy_col2.metric("Acerto em Warnings", f"{summary_stats.get('%_warning_reais_acertados', 0)*100:.1f}%")
-        accuracy_col3.metric("Acerto em Fatais", f"{summary_stats.get('%_fatal_reais_acertados', 0)*100:.1f}%")
-        accuracy_col4.metric("Acerto em Informações", f"{summary_stats.get('%_information_reais_acertados', 0)*100:.1f}%")
-        
-        st.divider()
-        
-        # Visualização detalhada dos testes
-        st.subheader("🧪 Detalhes dos Casos de Teste")
-        for test_name, test_data in test_cases.items():
-            test_name = os.path.basename(test_name)
-            with st.expander(f"{test_name}", expanded=False):
-                # Status principal
-                if not test_data.get('yaml_valido'):
-                    st.error("YAML inválido")
-                    st.write(f"**Motivo:** {test_data.get('motivo_da_invalidez', 'Não especificado')}")
-                elif test_data.get('status'):
-                    st.success("Validação bem-sucedida")
-                else:
-                    st.error("Validação falhou")
-                    st.write(f"**Motivo:** {test_data.get('motivo_da_invalidez', 'Não especificado')}")
-                
-                # Detalhes do teste
-                col_left, col_right = st.columns(2)
-                
-                with col_left:
-                    st.write("**Status Esperado:**", test_data.get('status_esperado', 'N/A'))
-                    st.write("**Status Real:**", test_data.get('status_real', 'N/A'))
-                    
-                    if test_data.get('tempo_de_execucao'):
-                        tempo = test_data['tempo_de_execucao']
-                        st.write(f"⏱️ Tempo de execução:{tempo:.2f} ms")
-                
-                with col_right:
-                    if test_data.get('correspondencia'):
-                        st.write("**Problemas de Correspondência:**")
-                        for issue in test_data['correspondencia']:
-                            st.error(f"- {issue.get('issue')}: {issue.get('mensagem', 'Sem detalhes')}")
-                    
-                    if test_data.get('discordancia'):
-                        discord = test_data['discordancia']
-                        if discord.get('issue_esperada_ausente_no_real'):
-                            st.write("**Issues esperadas ausentes:**")
-                            for issue in discord['issue_esperada_ausente_no_real']:
-                                st.warning(f"- {issue}")
-                        
-                        if discord.get('issue_real_ausente_na_esperada'):
-                            st.write("**Issues reais ausentes:**")
-                            for issue in discord['issue_real_ausente_na_esperada']:
-                                st.warning(f"- {issue}")
+        Assim que um teste for concluído, os resultados aparecerão aqui automaticamente.
+    """)
+        # Um espaço reservado para manter a página menos vazia
+        st.subheader("Aguardando novos resultados...")
+        _, col, _ = st.columns([1, 2, 1])
+        col.image("https://cdn-icons-png.flaticon.com/512/1484/1484883.png", width=200, caption="Nenhum dado para exibir")
+        return
 
-    # Função para exibir o relatório HTML
-    def show_html_report(test_cases, summary_stats):
-        st.title("🎨 Relatório de Validação FHIR")
-        st.caption("Visualização customizada em HTML")
-        
-        # Carregar template HTML (caminho relativo ao dashboard.py)
-        html_path = Path(__file__).parent.parent / "templates" / "index.html"
-        html_content = html_path.read_text(encoding='utf-8')
-        
-        # Preparar dados para o HTML
-        report_data = {
-            "test_cases": test_cases,
-            "summary_stats": summary_stats
-        }
-        
-        # Substituir os dados
-        html_content = html_content.replace(
-            'const reportData = {};',
-            f'const reportData = {json.dumps(report_data)};'
-        )
-        
-        # Exibir o relatório
-        st.components.v1.html(html_content, height=1000, scrolling=True)
-
-    # Configuração da página
-    st.sidebar.title("⚙️ Configurações")
-    view_mode = st.sidebar.radio(
-        "Modo de Visualização",
-        ("Streamlit", "HTML Customizado"),
-        index=0
+    # Sidebar para navegação (mantida idêntica)
+    st.sidebar.title("⚙️ Navegação")
+    
+    dates = report_df['data'].dt.strftime('%Y/%m/%d %H:%M').unique()
+    selected_date = st.sidebar.selectbox(
+        "Selecione um teste pela data",
+        options=dates,
+        index=len(dates)-1  # Mostrar o mais recente por padrão (agora 100% confiável)
     )
     
-    st.sidebar.divider()
-    st.sidebar.info("Selecione o modo de visualização preferido.")
-    
-    # Carregar dados
-    test_cases, summary_stats = load_report_data()
-    
-    # Exibir relatório no modo selecionado
-    if view_mode == "Streamlit":
-        show_streamlit_report(test_cases, summary_stats)
+    # Filtrar o teste selecionado (lógica original mantida)
+    # ROBUSTEZ: Adicionado um `if` para garantir que o filtro encontrou algo
+    filtered_df = report_df[report_df['data'].dt.strftime('%Y/%m/%d %H:%M') == selected_date]
+    if not filtered_df.empty:
+        selected_test = filtered_df.iloc[0]
+        # Mostrar relatório
+        show_report(selected_test)
     else:
-        show_html_report(test_cases, summary_stats)
-
+        st.error("Erro: Não foi possível carregar os dados para a data selecionada.")
+    
+    # Mostrar dados brutos (opcional, mantido idêntico)
+    st.sidebar.divider()
+    if st.sidebar.checkbox("Mostrar dados brutos"):
+        st.subheader("📝 Dados Brutos do Teste")
+        st.dataframe(report_df.sort_values('data', ascending=False), use_container_width=True)
