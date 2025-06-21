@@ -6,288 +6,220 @@ from pathlib import Path
 from datetime import datetime
 from Backend.fachada_sistema import FachadaSistema
 
+
+
+# utilizando cache para a inicialização da fachada.
+@st.cache_resource
+def inicializar_fachada():
+    """Inicializa e retorna uma instância da FachadaSistema."""
+    return FachadaSistema()
+
+# Cache para a leitura dos metadados dos arquivos.
+# A lista de arquivos só será lida do disco se algo mudar (novo arquivo, etc.).
+# O ttl (time-to-live) de 600 segundos (10 minutos) invalida o cache periodicamente
+# para que a lista de arquivos seja atualizada caso haja mudanças externas.
+@st.cache_data(ttl=600)
+def carregar_metadados_arquivos(caminho_projeto):
+    """
+    Lista todos os arquivos YAML e retorna um DataFrame com seus metadados.
+    Esta função é otimizada para ser executada poucas vezes.
+    """
+    #caminho_arquivos_yaml = caminho_projeto / 'Arquivos' / '.temp-fut'
+    #Path.cwd() adicionado 
+    caminho_arquivos_yaml = Path.cwd()
+    if not caminho_arquivos_yaml.is_dir():
+        caminho_arquivos_yaml.mkdir(parents=True, exist_ok=True)
+        return pd.DataFrame(columns=["Nome", "Tamanho (KB)", "Modificado", "Caminho"])
+
+    files_data = []
+    for f in caminho_arquivos_yaml.iterdir():
+        if f.is_file() and f.suffix.lower() in ('.yaml', '.yml'):
+            try:
+                stat = f.stat()
+                files_data.append({
+                    "Nome": f.name,
+                    "Tamanho (KB)": f"{stat.st_size / 1024:.2f}",
+                    "Modificado": datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M'),
+                    "Caminho": str(f)
+                })
+            except FileNotFoundError:
+                # O arquivo pode ter sido deletado entre o iterdir e o stat
+                continue
+    
+    if not files_data:
+        return pd.DataFrame(columns=["Nome", "Tamanho (KB)", "Modificado", "Caminho"])
+        
+    return pd.DataFrame(files_data)
+
+# OTIMIZAÇÃO: Cache para o conteúdo de um arquivo específico.
+# O arquivo só será lido do disco uma vez, a menos que ele mude.
+@st.cache_data
+def ler_conteudo_yaml(caminho_arquivo):
+    """Lê e parseia o conteúdo de um arquivo YAML, com cache."""
+    try:
+        with open(caminho_arquivo, 'r', encoding='utf-8') as file:
+            return yaml.safe_load(file)
+    except FileNotFoundError:
+        st.error(f"Arquivo '{caminho_arquivo.name}' não encontrado.")
+        return None
+    except yaml.YAMLError as e:
+        st.error(f"Erro de sintaxe no arquivo YAML: {e}")
+        return None
+
+# --- Função Principal da Página ---
+
 def render():
     st.title("📂 Test Manager - YAML Files")
-    
-    # Inicialização da Fachada
+
+    # OTIMIZAÇÃO: Usa a função com cache para inicializar o sistema
     try:
-        fachada = FachadaSistema()
+        fachada = inicializar_fachada()
         caminho_projeto = fachada.acharCaminhoProjeto()
         if not caminho_projeto:
-            st.error("Não foi possível determinar o caminho do projeto")
+            st.error("Não foi possível determinar o caminho do projeto.")
             return
     except Exception as e:
-        st.error(f"Erro ao inicializar sistema: {str(e)}")
+        st.error(f"Erro ao inicializar o sistema: {str(e)}")
         return
 
-    # Configuração de sessão
-    session_defaults = {
-        'arquivos_recentes': [],
-        'conteudo_arquivo': None,
-        'confirmar_delete': False,
-        'editando': False,
-        'show_raw': False,
-        'arquivos': []
-    }
+    # Configuração de sessão (sem mudanças)
+    if 'hidden_files' not in st.session_state:
+        st.session_state.hidden_files = set()
     
+    session_defaults = {'confirmar_delete': False, 'editando': False}
     for key, value in session_defaults.items():
         if key not in st.session_state:
             st.session_state[key] = value
 
-    # Funções auxiliares
-    def atualizar_arquivos_recentes(nome_arquivo):
-        recentes = st.session_state.arquivos_recentes
-        if nome_arquivo in recentes:
-            recentes.remove(nome_arquivo)
-        recentes.insert(0, nome_arquivo)
-        st.session_state.arquivos_recentes = recentes[:7]
+    # OTIMIZAÇÃO: Carrega todos os metadados de uma vez usando a função com cache
+    df_todos_arquivos = carregar_metadados_arquivos(caminho_projeto)
 
-    def get_file_info(file_path):
-        stat = file_path.stat()
-        return {
-            "Nome": file_path.name,
-            "Tamanho (KB)": f"{stat.st_size / 1024:.2f}",
-            "Modificado": datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M'),
-            "Caminho": str(file_path)
-        }
+    # Função auxiliar para upload (agora sem st.rerun(), é mais limpo)
+    def salvar_arquivos_enviados(uploaded_files, target_path):
+        if not uploaded_files: return
+        target_path.mkdir(parents=True, exist_ok=True)
+        for file in uploaded_files:
+            try:
+                with open(target_path / file.name, 'wb') as f: f.write(file.getbuffer())
+                st.session_state.hidden_files.discard(file.name)
+                st.success(f"Arquivo '{file.name}' salvo.")
+            except Exception as e:
+                st.error(f"Erro ao salvar '{file.name}': {e}")
+        # OTIMIZAÇÃO: Invalida o cache para forçar a releitura da lista de arquivos
+        carregar_metadados_arquivos.clear()
+        st.rerun()
 
-    def carregar_arquivos():
-        caminho_arquivos = caminho_projeto / 'Arquivos' / '.temp-fut'
-        arquivos = []
-        
-        try:
-            if caminho_arquivos.exists():
-                arquivos = [caminho_arquivos/arq for arq in os.listdir(caminho_arquivos) 
-                            if arq.endswith(('.yaml', '.yml')) and (caminho_arquivos/arq).is_file()]
-        except Exception as e:
-            st.error(f"Erro ao acessar diretório: {str(e)}")
-        
-        st.session_state.arquivos = arquivos
-        return arquivos
-
-    # Carrega arquivos ou mostra opção de upload
-    arquivos = carregar_arquivos()
-    
-    if not arquivos:
-        st.warning("Nenhum arquivo YAML encontrado na pasta.")
-        
-        # Seção de upload com drag and drop
+    # Seção de upload inicial
+    if df_todos_arquivos.empty:
+        st.warning("Nenhum arquivo YAML encontrado.")
         with st.container(border=True):
             st.subheader("➕ Adicionar Arquivos YAML")
-            st.markdown("""
-            <div style="border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 5px;">
-                <p>Arraste e solte arquivos YAML aqui</p>
-                <p>ou</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            uploaded_file = st.file_uploader(
-                "Selecione arquivos YAML",
-                type=['yaml', 'yml'],
-                accept_multiple_files=True,
-                label_visibility="collapsed"
-            )
-            
-            if uploaded_file:
-                caminho_arquivos = caminho_projeto / 'Arquivos' / '.temp-fut'
-                caminho_arquivos.mkdir(parents=True, exist_ok=True)
-                
-                for file in uploaded_file:
-                    destino = caminho_arquivos / file.name
-                    try:
-                        with open(destino, 'wb') as f:
-                            f.write(file.getbuffer())
-                        st.success(f"Arquivo {file.name} salvo com sucesso!")
-                    except Exception as e:
-                        st.error(f"Erro ao salvar {file.name}: {str(e)}")
-                
-                st.rerun()
-        
-        return  # Encerra a renderização se não houver arquivos
-
-    # Seção de listagem de arquivos (se existirem arquivos)
-    st.subheader("📋 Lista de Arquivos YAML")
-    
-    try:
-        # Criar DataFrame com informações dos arquivos
-        files_data = [get_file_info(f) for f in arquivos]
-        df = pd.DataFrame(files_data)
-        
-        # Exibir tabela interativa
-        st.dataframe(
-            df[['Nome', 'Tamanho (KB)', 'Modificado']],
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "Nome": "Arquivo",
-                "Tamanho (KB)": st.column_config.NumberColumn(format="%.2f"),
-                "Modificado": "Última Modificação"
-            }
-        )
-        
-        # Seleção de arquivo
-        arquivo_selecionado = st.selectbox(
-            "Selecione um arquivo para operar:",
-            df['Nome'].tolist(),
-            index=0,
-            key="select_arquivo"
-        )
-        
-        caminho_completo = caminho_projeto / 'Arquivos' / '.temp-fut' / arquivo_selecionado
-        
-    except Exception as e:
-        st.error(f"Erro ao processar arquivos: {str(e)}")
+            uploaded_files = st.file_uploader("Selecione arquivos", type=['yaml', 'yml'], accept_multiple_files=True, label_visibility="collapsed")
+            if uploaded_files:
+                #caminho_base_arquivos = caminho_projeto / 'Arquivos' / '.temp-fut'
+                caminho_base_arquivos = Path.cwd()
+                salvar_arquivos_enviados(uploaded_files, caminho_base_arquivos)
         return
 
-    # [Restante do código permanece igual...]
+    # Filtra o DataFrame para mostrar apenas arquivos não ocultos
+    df_visiveis = df_todos_arquivos[~df_todos_arquivos['Nome'].isin(st.session_state.hidden_files)]
+
+    st.subheader("📋 Lista de Arquivos YAML")
+    if df_visiveis.empty:
+        st.info("Todos os arquivos estão ocultos.")
+        if st.button("Mostrar Todos", key="show_all"):
+            st.session_state.hidden_files.clear()
+            st.rerun()
+        return
+
+    # Seleção de arquivo
+    nomes_arquivos = df_visiveis['Nome'].tolist()
+    try:
+        idx = nomes_arquivos.index(st.session_state.get('selected_file'))
+    except (ValueError, TypeError):
+        idx = 0
+    
+    arquivo_selecionado = st.selectbox(
+        "Selecione um arquivo:", nomes_arquivos, index=idx, key="selected_file"
+    )
+    caminho_completo = Path(df_visiveis.set_index('Nome').loc[arquivo_selecionado, 'Caminho'])
+    
+    st.dataframe(
+        df_visiveis[['Nome', 'Tamanho (KB)', 'Modificado']],
+        hide_index=True, use_container_width=True,
+        column_config={"Nome": "Arquivo", "Tamanho (KB)": st.column_config.NumberColumn(format="%.2f")}
+    )
+
     # Operações com arquivos
     st.subheader(f"🔧 Operações: {arquivo_selecionado}")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
-    with col1:
-        if st.button("📖 Ler Arquivo", use_container_width=True):
-            try:
-                with open(caminho_completo, 'r', encoding='utf-8') as file:
-                    conteudo = yaml.safe_load(file)
-                    st.session_state.conteudo_arquivo = conteudo
-                    atualizar_arquivos_recentes(arquivo_selecionado)
-                    st.success("Arquivo carregado com sucesso!")
-                    st.session_state.show_raw = False
-            except Exception as e:
-                st.error(f"Erro ao ler arquivo: {str(e)}")
+    if col1.button("✏️ Editar/Ver", use_container_width=True):
+        st.session_state.editando = True
+        # A leitura do arquivo ocorrerá na seção de edição
+    
+    if col2.button("🗑️ Ocultar", use_container_width=True):
+        st.session_state.confirmar_delete = True
 
-    with col2:
-        if st.button("✏️ Editar Arquivo", use_container_width=True):
-            if st.session_state.conteudo_arquivo is None:
-                st.warning("Leia o arquivo antes de editar")
-            else:
-                st.session_state.editando = True
+    if col3.button("🔄 Recarregar Lista", use_container_width=True, help="Força a releitura da lista de arquivos do disco"):
+        carregar_metadados_arquivos.clear()
+        st.rerun()
 
-    with col3:
-        if st.button("👁️ Mostrar RAW", use_container_width=True):
-            st.session_state.show_raw = not st.session_state.show_raw
-
-    with col4:
-        if st.button("🗑️ Deletar Arquivo", use_container_width=True):
-            st.session_state.confirmar_delete = True
-
-    # Confirmação de deleção
-    if st.session_state.confirmar_delete:
-        st.warning("⚠️ Tem certeza que deseja deletar este arquivo?")
-        col_sim, col_nao = st.columns(2)
-        with col_sim:
-            if st.button("✅ Confirmar", use_container_width=True):
-                try:
-                    os.remove(caminho_completo)
-                    st.success(f"Arquivo {arquivo_selecionado} removido!")
-                    if arquivo_selecionado in st.session_state.arquivos_recentes:
-                        st.session_state.arquivos_recentes.remove(arquivo_selecionado)
-                    st.session_state.confirmar_delete = False
-                    st.session_state.conteudo_arquivo = None
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Erro ao deletar: {str(e)}")
-        with col_nao:
-            if st.button("❌ Cancelar", use_container_width=True):
-                st.session_state.confirmar_delete = False
+    # Lógica de confirmação de ocultação
+    if st.session_state.get('confirmar_delete'):
+        st.warning(f"⚠️ Ocultar '{arquivo_selecionado}' da lista?")
+        col_sim, col_nao, _ = st.columns([1, 1, 4])
+        if col_sim.button("✅ Sim", key="confirm_hide", use_container_width=True):
+            st.session_state.hidden_files.add(arquivo_selecionado)
+            st.session_state.confirmar_delete = False
+            st.session_state.pop(f"conteudo_{arquivo_selecionado}", None) # Limpa cache de conteúdo se houver
+            st.rerun()
+        if col_nao.button("❌ Não", key="cancel_hide", use_container_width=True):
+            st.session_state.confirmar_delete = False
+            st.rerun()
 
     # Exibição/Edição de conteúdo
-    if st.session_state.conteudo_arquivo:
-        st.subheader(f"📝 Conteúdo: {arquivo_selecionado}")
+    if st.session_state.get('editando'):
+        st.markdown("---")
+        st.subheader(f"📝 Conteúdo de: {arquivo_selecionado}")
         
-        if st.session_state.editando:
-            novo_conteudo = st.text_area(
+        # OTIMIZAÇÃO: Usa a função com cache para ler o conteúdo do arquivo
+        conteudo_arquivo = ler_conteudo_yaml(caminho_completo)
+
+        if conteudo_arquivo is not None:
+            novo_conteudo_str = st.text_area(
                 "Edite o conteúdo YAML:",
-                yaml.dump(st.session_state.conteudo_arquivo, allow_unicode=True, sort_keys=False),
-                height=400,
-                key="editor_yaml"
+                yaml.dump(conteudo_arquivo, allow_unicode=True, sort_keys=False, indent=2),
+                height=400, key="editor_yaml"
             )
-            
-            col_salvar, col_cancelar = st.columns(2)
-            with col_salvar:
-                if st.button("💾 Salvar Alterações", use_container_width=True):
-                    try:
-                        with open(caminho_completo, 'w', encoding='utf-8') as file:
-                            yaml.safe_dump(yaml.safe_load(novo_conteudo), file, allow_unicode=True, sort_keys=False)
-                        st.session_state.conteudo_arquivo = yaml.safe_load(novo_conteudo)
-                        st.session_state.editando = False
-                        st.success("Alterações salvas com sucesso!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Erro ao salvar: {str(e)}")
-            with col_cancelar:
-                if st.button("🚫 Cancelar Edição", use_container_width=True):
-                    st.session_state.editando = False
-        else:
-            data = st.session_state.conteudo_arquivo
-            
-            if st.session_state.show_raw:
-                # Visualização RAW simplificada
-                st.code(yaml.dump(data, allow_unicode=True, sort_keys=False), language='yaml')
-            else:
-                # Visualização organizada em abas
-                tab1, tab2 = st.tabs(["Visão Geral", "Detalhes"])
-                
-                with tab1:
-                    # Card de informações básicas
-                    st.markdown("### Informações Básicas")
-                    cols = st.columns(3)
-                    cols[0].metric("Test ID", data.get('test_id', 'N/A'))
-                    cols[1].metric("Status Esperado", data.get('resultados_esperados', {}).get('status', 'N/A'))
-                    cols[2].metric("Descrição", data.get('description', 'N/A')[:20] + "..." if data.get('description') else 'N/A')
-                    
-                    # Contexto resumido
-                    st.markdown("### Contexto")
-                    if 'context' in data:
-                        context_cols = st.columns(3)
-                        context_cols[0].metric("IGs", len(data['context'].get('igs', [])))
-                        context_cols[1].metric("Profiles", len(data['context'].get('profiles', [])))
-                        context_cols[2].metric("Resources", len(data['context'].get('resources', [])))
-                
-                with tab2:
-                    # Detalhes completos
-                    st.markdown("### Contexto Completo")
-                    if 'context' in data:
-                        st.json(data['context'], expanded=False)
-                    else:
-                        st.warning("Nenhum contexto definido")
-                    
-                    st.markdown("### Resultados Esperados")
-                    expected = data.get('resultados_esperados', {})
-                    st.json(expected, expanded=False)
-
-    # Seção de arquivos recentes
-    if st.session_state.arquivos_recentes:
-        st.subheader("⏳ Arquivos Recentes")
-        recent_cols = st.columns(4)
-        for i, arq in enumerate(st.session_state.arquivos_recentes[:4]):
-            with recent_cols[i]:
-                if st.button(f"📄 {arq}", key=f"recente_{arq}", use_container_width=True):
-                    st.session_state.select_arquivo = arq
-                    st.rerun()
-
-    # Upload de novos arquivos (sempre visível)
-    st.subheader("⬆️ Adicionar Mais Arquivos")
-    with st.form("upload-form", clear_on_submit=True):
-        novo_arquivo = st.file_uploader(
-            "Selecione arquivos YAML para upload",
-            type=['yaml', 'yml'],
-            accept_multiple_files=True,
-            key="uploader"
-        )
-        
-        submitted = st.form_submit_button("Enviar Arquivos")
-        if submitted and novo_arquivo:
-            caminho_arquivos = caminho_projeto / 'Arquivos' / '.temp-fut'
-            caminho_arquivos.mkdir(parents=True, exist_ok=True)
-            
-            for file in novo_arquivo:
-                destino = caminho_arquivos / file.name
+            col_s, col_c, col_raw = st.columns(3)
+            if col_s.button("💾 Salvar", use_container_width=True):
                 try:
-                    with open(destino, 'wb') as f:
-                        f.write(file.getbuffer())
-                    st.success(f"Arquivo {file.name} salvo com sucesso!")
-                except Exception as e:
-                    st.error(f"Erro ao salvar {file.name}: {str(e)}")
+                    conteudo_validado = yaml.safe_load(novo_conteudo_str)
+                    with open(caminho_completo, 'w', encoding='utf-8') as f:
+                        yaml.safe_dump(conteudo_validado, f, allow_unicode=True, sort_keys=False, indent=2)
+                    ler_conteudo_yaml.clear() # Limpa o cache para este arquivo
+                    carregar_metadados_arquivos.clear() # Limpa o cache da lista (data modif. mudou)
+                    st.session_state.editando = False
+                    st.success("Alterações salvas!")
+                    st.rerun()
+                except (yaml.YAMLError, IOError) as e:
+                    st.error(f"Erro ao salvar: {e}")
+
+            if col_c.button("🚫 Fechar", use_container_width=True):
+                st.session_state.editando = False
+                st.rerun()
+
+    # Seções finais (upload e mostrar ocultos)
+    st.markdown("---")
+    with st.expander("⬆️ Adicionar Mais Arquivos"):
+        novos_arquivos = st.file_uploader("Selecione", type=['yaml', 'yml'], accept_multiple_files=True, key="bottom_uploader")
+        if novos_arquivos:
+            #caminho_antigo = caminho_projeto / 'Arquivos' / '.temp-fut'
+            caminho = Path.cwd()
+            salvar_arquivos_enviados(novos_arquivos, caminho)
             
+    if st.session_state.hidden_files:
+        if st.button("👁️ Mostrar Arquivos Ocultos"):
+            st.session_state.hidden_files.clear()
             st.rerun()
