@@ -6,7 +6,7 @@ import plotly.express as px
 # ESTRUTURA: Funções movidas para o escopo global. Melhora a organização
 # sem qualquer impacto visual ou funcional.
 
-@st.cache_data
+@st.cache_data(ttl=20)
 def load_report_data():
     """
     Carrega e prepara os dados do histórico de testes.
