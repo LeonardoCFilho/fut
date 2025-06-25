@@ -27,10 +27,17 @@ def carregar_configuracoes(_fachada):
         
         try:
             # Usa o valor do .ini como fallback primário
-            valor_timeout = _fachada.obter_configuracao("requests_timeout") or "120"
+            valor_timeout = _fachada.obter_configuracao("timeout") or "120"
             config['timeout'] = int(valor_timeout)
         except (ValueError, TypeError):
             config['timeout'] = 120 # Fallback final
+            
+        try:
+            # Usa o valor do .ini como fallback primário
+            valor_timeout_requests = _fachada.obter_configuracao("requests_timeout") or "120"
+            config['timeout_requests'] = int(valor_timeout_requests)
+        except (ValueError, TypeError):
+            config['timeout_requests'] = 120 # Fallback final
 
         try:
             valor_threads = _fachada.obter_configuracao("max_threads") or "8"
@@ -58,7 +65,8 @@ def carregar_configuracoes(_fachada):
         st.error(f"Erro geral ao carregar as configurações: {e}")
         logger.error(f"Falha ao chamar obter_configuracao: {e}")
         return {
-            'timeout': 120,
+            'timeout': 300,
+            'timeout_requests': 120,
             'max_threads': 8,
             'armazenar_saida': False,
             'path_validator': "default",
@@ -141,9 +149,16 @@ def render():
     )
 
     timeout = st.number_input(
-        "Timeout das requisições (segundos):",
+        "Timeout dos testes:",
         min_value=1, max_value=600,
         value=configs_atuais.get('timeout', 120),
+        help="Tempo limite para a execução de cada teste individual."
+    )
+    
+    timeout_requests = st.number_input(
+        "Timeout das requisições (segundos):",
+        min_value=1, max_value=600,
+        value=configs_atuais.get('timeout_requests', 120),
         help="Tempo máximo que o sistema aguardará por uma resposta de um servidor externo."
     )
 
@@ -169,7 +184,8 @@ def render():
             "caminho_validator": valor_caminho_validator,
             "armazenar_saida_validator": armazenar_saida_validator,
             "max_threads": max_threads,
-            "requests_timeout": timeout,
+            "timeout": timeout,
+            "requests_timeout": timeout_requests,
             "relatorio_eh_html": relatorio_html
         }
         
