@@ -51,7 +51,6 @@ class ServicoExecucaoTeste:
 
     def _executar_teste(self, gerenciador_validator: GerenciadorValidator, teste: Teste, timeout:float, contador:int, path_java: Path):
         try:
-            #print(path_java)
             output_validacao = gerenciador_validator.validar_arquivo_fhir(
                 Path(teste.conteudo['caminho_instancia']), 
                 Path(self.gestor_caminho.return_path('pasta_validator')), 

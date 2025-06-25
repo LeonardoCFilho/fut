@@ -44,7 +44,7 @@ class ArquivoDownloader:
                 num_tentativas += 1
                 if num_tentativas < max_tentativas:
                     logger.warning(f"Erro na tentativa {num_tentativas} de download para {url}")
-                    print(f"Erro na tentativa {num_tentativas} de download, reiniciando...")
+                    print(f"\rErro na tentativa {num_tentativas} de download, reiniciando...")
                     time.sleep(3)
                 else:
                     logger.error(f"Falha ao tentar fazer o download de {url} após {max_tentativas} tentativas. Erro: {str(e)}")

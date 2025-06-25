@@ -44,7 +44,6 @@ class GeradorRelatorios:
 
             # As chaves de ambos precisam ser iguais
             for chave in resultados_esperados.keys():
-                # print(chave)
                 if chave != 'status':
                     resultados_esperados[chave] = sorted([i.lower() for i in resultados_esperados[chave]])
         return [resultados_reais, resultados_esperados, yaml_valido, caminho_saida_esperada]

@@ -157,13 +157,13 @@ class GerenciadorValidator:
                 numero_tentativas += 1
                 if numero_tentativas < self.MAXIMO_TENTATIVAS_PADRAO:
                     logger.warning(f"Erro na tentativa {numero_tentativas} de conexão com git")
-                    print(f"Erro na tentativa {numero_tentativas} de conexão, reiniciando...")
+                    print(f"\rErro na tentativa {numero_tentativas} de conexão, reiniciando...")
                     time.sleep(self.TEMPO_ESPERA_TENTATIVA)
                 else:
                     logger.warning(f"Erro ao conectar com github do validator_cli: {e}")
                     versao_local = self.verificar_versao_validator(self.caminho_validador)
                     if versao_local:
-                        print(f"Não foi possível atualizar o validator_cli, executando com versão '{versao_local}'")
+                        print(f"\rNão foi possível atualizar o validator_cli, executando com versão '{versao_local}'")
                     raise e
         return None
 
@@ -226,7 +226,7 @@ class GerenciadorValidator:
                 logger.info("Verificação de atualização finalizada")
         else:
             logger.info("Nenhuma instância de validator_cli encontrada, iniciando download")
-            print("O validator padrão não foi encontrado ou não existe!\nIniciando sua instalação.")
+            print("\rO validator padrão não foi encontrado ou não existe!\nIniciando sua instalação.")
             self.instalar_validator_cli(downloader_callback)
 
 
@@ -339,7 +339,6 @@ class GerenciadorValidator:
                 timeout=tempo_timeout
             )
             fim = time.time()
-            #print(resultado.returncode)
 
             # Criar relatório manual se não foi gerado
             if not caminho_relatorio.exists():
