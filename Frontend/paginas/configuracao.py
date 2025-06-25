@@ -38,24 +38,31 @@ def carregar_configuracoes(_fachada):
         except (ValueError, TypeError):
             config['max_threads'] = 8
             
-        # O padrão para strings/booleanos já estava correto
-        armazenar_str = _fachada.obter_configuracao("armazenar_saida_validator") or "False"
-        config['armazenar_saida'] = armazenar_str.lower() in ["true", "1", "yes"]
+        # Configurações booleanas - tratamento seguro
+        armazenar_str = _fachada.obter_configuracao("armazenar_saida_validator")
+        config['armazenar_saida'] = str(armazenar_str).lower() in ["true", "1", "yes"] if armazenar_str is not None else False
         
         config['path_validator'] = _fachada.obter_configuracao("caminho_validator") or "default"
+        
+        # Configuração de relatório - tratamento seguro para booleanos
+        relatorio_html = _fachada.obter_configuracao("relatorio_eh_html")
+        if isinstance(relatorio_html, bool):
+            config['relatorio_html'] = relatorio_html
+        else:
+            relatorio_html_str = str(relatorio_html).lower() if relatorio_html is not None else "true"
+            config['relatorio_html'] = relatorio_html_str in ["true", "1", "yes"]
         
         return config
 
     except Exception as e:
-        # Este erro agora só deve acontecer se a própria fachada falhar de forma inesperada.
         st.error(f"Erro geral ao carregar as configurações: {e}")
         logger.error(f"Falha ao chamar obter_configuracao: {e}")
-        # Retorna um dicionário de fallback completo se a comunicação com a fachada falhar
         return {
             'timeout': 120,
             'max_threads': 8,
             'armazenar_saida': False,
-            'path_validator': "default"
+            'path_validator': "default",
+            'relatorio_html': True
         }
 
 def salvar_configuracoes(_fachada, novas_configs):
@@ -142,6 +149,15 @@ def render():
 
     st.divider()
     
+    st.subheader("Relatórios")
+    relatorio_html = st.checkbox(
+        "Gerar relatórios em formato HTML",
+        value=configs_atuais.get('relatorio_html', True),
+        help="Se desmarcado, os relatórios serão gerados em formato texto simples."
+    )
+
+    st.divider()
+    
     if st.button("Salvar Configurações", type="primary", use_container_width=True):
         
         if validador_selecionado == "Customizado (Executável local)":
@@ -154,6 +170,7 @@ def render():
             "armazenar_saida_validator": armazenar_saida_validator,
             "max_threads": max_threads,
             "requests_timeout": timeout,
+            "relatorio_eh_html": relatorio_html
         }
         
         salvar_configuracoes(fachada, configuracoes_para_salvar)
