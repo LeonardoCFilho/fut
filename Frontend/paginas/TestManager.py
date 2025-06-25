@@ -158,7 +158,7 @@ def render():
         st.session_state.editando = True
         # A leitura do arquivo ocorrerá na seção de edição
     
-    if col2.button("🗑️ Ocultar", use_container_width=True):
+    if col2.button("🗑️ Remover da Lista", use_container_width=True):
         st.session_state.confirmar_delete = True
 
     if col3.button("🔄 Recarregar Lista", use_container_width=True, help="Força a releitura da lista de arquivos do disco"):
