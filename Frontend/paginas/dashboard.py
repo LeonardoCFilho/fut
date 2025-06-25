@@ -44,7 +44,7 @@ def load_report_data():
 
 def show_report(selected_test):
 
-    st.title("📊 Relatório de Validação FHIR")
+    st.title("📊 Análise Completa - FHIR")
     st.caption(f"Visualizando teste realizado em: {selected_test['data'].strftime('%Y/%m/%d %H:%M')}")
     
     # Métricas resumidas
@@ -90,7 +90,7 @@ def render():
     #TODO: modificar o nome 'execução de testes' para o nome correto da página
     # MELHORIA SUTIL: Uma tela de boas-vindas mais amigável, mas sem alterar a estrutura da página.
     if report_df.empty:
-        st.title("📊 Relatório de Validação FHIR. ")
+        st.title("📊 Análise Completa - FHIR")
         st.write("")
         st.info("Bem-vindo ao Painel de Relatórios! 👋")
         st.info('🕒Nenhum relatório de teste foi encontrado. Execute uma validação para visualizar os resultados aqui!')
