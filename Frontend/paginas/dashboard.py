@@ -3,61 +3,54 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
-# ESTRUTURA: Funções movidas para o escopo global. Isso é uma boa prática em Python
-# e não afeta em nada a lógica ou a aparência do aplicativo.
-@st.cache_data
+@st.cache_data(ttl=20)  # Cache expira após 5 minutos ou se o arquivo mudar
 def load_report_data():
     """
     Carrega e prepara os dados do histórico de testes.
-    A lógica interna foi tornada mais robusta, mas o resultado final é o mesmo.
+    Versão atualizada para detectar mudanças no arquivo CSV.
     """
-    # Mantido o caminho original para consistência
     data_dir = Path(__file__).absolute().parent.parent.parent
     csv_path = data_dir / "Arquivos" / "historico.csv"
     
+    # Captura o timestamp de modificação do arquivo
+    file_timestamp = csv_path.stat().st_mtime if csv_path.exists() else 0
+    
     if not csv_path.exists():
-        # A mensagem de erro específica foi removida daqui para ser tratada
-        # de forma unificada na interface principal.
-        return pd.DataFrame()
+        return pd.DataFrame(), file_timestamp
     
     try:
         df = pd.read_csv(csv_path)
         
-        # ROBUSTEZ: Verifica se a coluna essencial 'data' existe.
         if 'data' not in df.columns:
             st.error("O arquivo 'historico.csv' não contém a coluna 'data'.")
-            return pd.DataFrame()
+            return pd.DataFrame(), file_timestamp
             
-        # ROBUSTEZ: `errors='coerce'` previne que o app quebre se uma data no CSV
-        # estiver mal formatada. Linhas com datas inválidas serão descartadas.
+        # Conversão robusta de datas
         df['data'] = pd.to_datetime(df['data'], format='%Y/%m/%d - %H:%M', errors='coerce')
         df.dropna(subset=['data'], inplace=True)
         
-        # ROBUSTEZ: Ordenar por data aqui garante que o `index=len(dates)-1`
-        # sempre selecionará o teste mais recente de forma confiável.
-        df.sort_values(by='data', ascending=True, inplace=True)
+        # Ordenação decrescente por data (testes mais recentes primeiro)
+        df.sort_values(by='data', ascending=False, inplace=True)
         
-        return df
+        return df, file_timestamp
     except Exception as e:
-        st.error(f"Erro ao ler ou processar o arquivo CSV: {str(e)}")
-        return pd.DataFrame()
+        st.error(f"Erro ao processar o arquivo CSV: {str(e)}")
+        return pd.DataFrame(), file_timestamp
 
 def show_report(selected_test):
-
     st.title("📊 Análise Completa - FHIR")
     st.caption(f"Visualizando teste realizado em: {selected_test['data'].strftime('%Y/%m/%d %H:%M')}")
     
     # Métricas resumidas
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total de Testes", selected_test.get("numeros_de_testes_totais", 0))
-    # A lógica original de cálculo e prevenção de divisão por zero foi mantida.
     col2.metric("Válidos", selected_test.get("numero_de_testes_validos", 0), 
-                  f"{selected_test.get('numero_de_testes_validos', 0)/selected_test.get('numeros_de_testes_totais', 1):.0%}")
+                f"{selected_test.get('numero_de_testes_validos', 0)/selected_test.get('numeros_de_testes_totais', 1):.0%}")
     col3.metric("Inválidos", 
-                  selected_test.get("numeros_de_testes_totais", 0) - selected_test.get("numero_de_testes_validos", 0),
-                  f"{(selected_test.get('numeros_de_testes_totais', 0) - selected_test.get('numero_de_testes_validos', 0))/selected_test.get('numeros_de_testes_totais', 1):.0%}")
+                selected_test.get("numeros_de_testes_totais", 0) - selected_test.get("numero_de_testes_validos", 0),
+                f"{(selected_test.get('numeros_de_testes_totais', 0) - selected_test.get('numero_de_testes_validos', 0))/selected_test.get('numeros_de_testes_totais', 1):.0%}")
     
-    # Métricas adicionais de performance
+    # Métricas de performance
     st.divider()
     st.subheader("📈 Estatísticas de Performance")
     
@@ -66,6 +59,7 @@ def show_report(selected_test):
     perf_col2.metric("Tempo Médio por Teste (segundos)", f"{selected_test.get('tempo_medio', 0):.1f}")
     perf_col3.metric("Data da Execução", selected_test['data'].strftime('%Y/%m/%d %H:%M'))
     
+    # Estatísticas de erros
     st.divider()
     st.subheader("📊 Estatísticas de Erros")
     
@@ -75,6 +69,7 @@ def show_report(selected_test):
     error_col3.metric("Fatais Totais", selected_test.get("quantidade_fatal_reais_totais", 0))
     error_col4.metric("Informações Totais", selected_test.get("quantidade_information_reais_totais", 0))
     
+    # Taxas de acerto
     st.divider()
     st.subheader("🎯 Taxas de Acerto")
     
@@ -85,49 +80,52 @@ def show_report(selected_test):
     accuracy_col4.metric("Acerto em Informações", f"{selected_test.get('%_information_reais_acertados', 0)*100:.1f}%")
 
 def render():
-    # Carregar dados
-    report_df = load_report_data()
-    #TODO: modificar o nome 'execução de testes' para o nome correto da página
-    # MELHORIA SUTIL: Uma tela de boas-vindas mais amigável, mas sem alterar a estrutura da página.
+    # Carrega os dados com o novo sistema de cache
+    report_data = load_report_data()
+    report_df = report_data[0] if isinstance(report_data, tuple) else report_data
+    
     if report_df.empty:
         st.title("📊 Análise Completa - FHIR")
         st.write("")
         st.info("Bem-vindo ao Painel de Relatórios! 👋")
-        st.info('🕒Nenhum relatório de teste foi encontrado. Execute uma validação para visualizar os resultados aqui!')
+        st.info('🕒 Nenhum relatório de teste foi encontrado. Execute uma validação para visualizar os resultados aqui!')
         st.markdown("""
         Parece que você ainda não executou nenhum conjunto de testes. Para gerar seu primeiro relatório,
         vá para a página de **Execução de Testes** e inicie uma nova validação.
 
         Assim que um teste for concluído, os resultados aparecerão aqui automaticamente.
-    """)
-        # Um espaço reservado para manter a página menos vazia
+        """)
         st.subheader("Aguardando novos resultados...")
         _, col, _ = st.columns([1, 2, 1])
         col.image("https://cdn-icons-png.flaticon.com/512/1484/1484883.png", width=200, caption="Nenhum dado para exibir")
         return
 
-    # Sidebar para navegação (mantida idêntica)
+    # Sidebar de navegação
     st.sidebar.title("⚙️ Navegação")
     
+    # Obtém datas únicas (já ordenadas decrescentemente)
     dates = report_df['data'].dt.strftime('%Y/%m/%d %H:%M').unique()
+    
     selected_date = st.sidebar.selectbox(
         "Selecione um teste pela data",
         options=dates,
-        index=len(dates)-1  # Mostrar o mais recente por padrão (agora 100% confiável)
+        index=0  # Seleciona o mais recente por padrão
     )
     
-    # Filtrar o teste selecionado (lógica original mantida)
-    # ROBUSTEZ: Adicionado um `if` para garantir que o filtro encontrou algo
+    # Filtra o teste selecionado
     filtered_df = report_df[report_df['data'].dt.strftime('%Y/%m/%d %H:%M') == selected_date]
+    
     if not filtered_df.empty:
         selected_test = filtered_df.iloc[0]
-        # Mostrar relatório
         show_report(selected_test)
     else:
         st.error("Erro: Não foi possível carregar os dados para a data selecionada.")
     
-    # Mostrar dados brutos (opcional, mantido idêntico)
+    # Opção para mostrar dados brutos
     st.sidebar.divider()
     if st.sidebar.checkbox("Mostrar dados brutos"):
         st.subheader("📝 Dados Brutos do Teste")
-        st.dataframe(report_df.sort_values('data', ascending=False), use_container_width=True)
+        st.dataframe(report_df, use_container_width=True)
+
+if __name__ == "__main__":
+    render()
