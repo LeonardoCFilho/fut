@@ -4,9 +4,9 @@ Repositório para o trabalho de Construção de Software, utilizando o padrão F
 ## Execução:  
 [Funcionamento segue a orientação dos requisitos](https://github.com/kyriosdata/construcao-2025-01/blob/main/docs/fut.md#ilustração-de-usos)  
 
-## Primeira execução:
-### 1. Baixe o executavel
-- [Windows](https://github.com/LeonardoCFilho/fut/releases/download/untagged-1266861a0255b44f2864/fut.exe)
+## Primeira execução:  
+### 1. Baixe o executavel  
+- [Windows](https://github.com/LeonardoCFilho/fut/releases/download/v1.0.0/fut.exe)
 - [Linux](https://github.com/LeonardoCFilho/fut/releases/download/v1.0.0_linux/fut)  
 
 ## 2. Execução do programa
@@ -20,7 +20,7 @@ Repositório para o trabalho de Construção de Software, utilizando o padrão F
   ./fut
   ```
 
-Adicione '--help' após main.py para mais detalhes quanto o sistema
+Adicione '--help' após main.py para mais detalhes quanto o sistema.  
 Exemplo:  
   ```bash  
   ./fut --help
