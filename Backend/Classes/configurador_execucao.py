@@ -25,8 +25,8 @@ class ConfiguradorExecucao:
             cpu_cores = os.cpu_count() or 1
             return min(max_threads, max(1, (cpu_cores - 2)))
         except Exception as e:
-            logger.warning(f"Erro ao calcular threads, usando valor padrão: {e}")
-            return 2  # por segurança
+            logger.warning(f"Erro ao calcular threads usando valor padrão: {e}")
+            return 1  # por segurança
     
 
     def obter_timeout(self) -> int:

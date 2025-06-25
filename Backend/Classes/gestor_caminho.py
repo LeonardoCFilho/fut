@@ -39,7 +39,6 @@ class GestorCaminho:
         self._setup_user_data_dir()
         # Necessidades padrão
         self._criar_paths()
-        self._criar_venv_path() # Criado por causa do streamlit
         self._copiar_arquivos_padrão() # necessidade do executavel
         self._validar_arquivos()
         self._inicializar_componentes(controlador_configuracao)
@@ -84,7 +83,6 @@ class GestorCaminho:
             'settings': self.path_settings,
             'arquivos': self.path_arquivos,
             'script_frontend': self.path_script_frontend,
-            'venv': self.path_venv  
         }
         
         if path_desejado not in paths:
@@ -106,14 +104,6 @@ class GestorCaminho:
         self.path_template_html = self.path_arquivos / self.TEMPLATE_HTML
         # Endereço do nosso streamlit
         self.path_script_frontend = self.path_fut / self.SCRIPT_FRONTEND
-
-
-    def _criar_venv_path(self):
-        """Cria o path para o ambiente virtual de acordo com o OS"""
-        if sys.platform == "win32":
-            self.path_venv = self.path_fut / "venv-fut" / "Scripts" / "activate.bat"
-        else:
-            self.path_venv = self.path_fut / "venv-fut" / "bin" / "activate"
 
 
     def _validar_arquivos(self):
