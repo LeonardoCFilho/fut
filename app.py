@@ -15,17 +15,17 @@ st.set_page_config(page_title="Minha Aplicação", page_icon="🧪", layout="wid
 # Barra lateral de navegação
 pagina = st.sidebar.selectbox(
     "Escolha a página",
-    ["📊 Dashboard","🎲 Dados Gerais", "🧱 Test Manager", "📋 Teste Manual", "⚙️ Configuração"]
+    ["📊 Análise Completa","🎲 Visão Rápida", "🧱 Gerenciador de Testes", "📋 Execução Manual", "⚙️ Configuração"]
 )
 
 # Chama a função render de acordo com a escolha do usuário
-if pagina == "📊 Dashboard":
+if pagina == "📊 Análise Completa":
     dashboard.render()
-elif pagina == "🎲 Dados Gerais":
+elif pagina == "🎲 Visão Rápida":
     dashboardGeral.render()
-elif pagina == "🧱 Test Manager":
+elif pagina == "🧱 Gerenciador de Testes":
     TestManager.render()
-elif pagina == "📋 Teste Manual":
+elif pagina == "📋 Execução Manual":
     formulario.render()
 elif pagina == "⚙️ Configuração":
     configuracao.render()
