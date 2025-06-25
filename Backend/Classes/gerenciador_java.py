@@ -49,7 +49,7 @@ class GerenciadorJava:
             logger.info("Java ja instalado")
             return True
         
-        print("Fazendo instação inicial do java")
+        print("\rFazendo instação inicial do java")
         
         # URLs para download do JDK
         sistema = platform.system().lower()

@@ -82,4 +82,7 @@ Mais detalhes em: {cls.get_ansi_code("textoHyperlink")}https://github.com/Leonar
  - {cls.get_ansi_code("ciano")}caminho_validator (str):{cls.get_ansi_code("fimTextoColorido")} Caminho personalizado para o arquivo `validator_cli.jar`, caso seja necessário sobrescrever o caminho padrão. Exemplo de valor: `~/Downloads/validator_cli.jar`.
  - {cls.get_ansi_code("ciano")}armazenar_saida_validator (bool):{cls.get_ansi_code("fimTextoColorido")} Indica se a saída do validador deve ser armazenada. Valores aceitos: `True` (armazenar saída) ou `False` (não armazenar). Exemplo de valor: `False`.
 
+3. {cls.get_ansi_code("textoSublinhado")}[relatorio]{cls.get_ansi_code("fimTextoColorido")}
+ - {cls.get_ansi_code("ciano")}relatorio_eh_html (bool):{cls.get_ansi_code("fimTextoColorido")} Determina se o relatório dos testes será um arquivo HTML ou não (nesse caso ele será um JSON). Exemplo de valor: `True`.
+ 
 Essas configurações podem ser editadas com o comando `fut configuracoes <nome da configuração> <novo valor>`, permitindo ajustar o comportamento global do sistema conforme suas necessidades. Certifique-se de que os valores correspondam aos tipos esperados para garantir a atualização da configuração."""
