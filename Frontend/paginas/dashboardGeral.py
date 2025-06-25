@@ -114,7 +114,7 @@ def render():
     #TODO: modificar o nome 'execução de testes' para o nome correto da página
     # MELHORIA SUTIL: Uma tela de boas-vindas consistente com a outra página.
     if report_df.empty:
-        st.title("📊 Dashboard FHIR - Visão Geral")
+        st.title("📊 Análise Rápida - FHIR")
         st.info("📈 Nenhum dado de teste disponível para gerar os gráficos. Execute uma validação primeiro!", icon="💡")
         st.markdown("""
         Parece que você ainda não executou nenhum conjunto de testes. Para gerar seu primeiro relatório,
@@ -149,7 +149,7 @@ def render():
     selected_test = filtered_df.iloc[0].to_dict()
     
     # Cabeçalho (mantido idêntico)
-    st.title("📊 Dashboard FHIR - Visão Geral")
+    st.title("📊 Análise Rápida - FHIR")
     # Acessa a data do dicionário. `selected_test['data']` ainda é um objeto datetime.
     st.write(f"**Data do teste selecionado:** {selected_test['data'].strftime('%Y/%m/%d %H:%M')}")
     
